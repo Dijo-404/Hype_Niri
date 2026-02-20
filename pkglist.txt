@@ -1,0 +1,116 @@
+# ── Core System ───────────────────────────────────
+base
+base-devel
+linux
+linux-firmware
+linux-lts
+sudo
+efibootmgr
+btrfs-progs
+zram-generator
+
+# ── Niri + Wayland ────────────────────────────────
+niri
+uwsm
+xdg-desktop-portal-gnome
+xdg-utils
+wl-clipboard
+grim
+slurp
+
+# ── Shell ─────────────────────────────────────────
+zsh
+zsh-completions
+zsh-autosuggestions
+zsh-syntax-highlighting
+zsh-theme-powerlevel10k-git
+
+# ── Terminal & Editor ─────────────────────────────
+alacritty
+neovim
+nano
+vim
+
+# ── Desktop Components ────────────────────────────
+waybar
+fuzzel
+mako
+swaylock
+swayidle
+swww
+hyprpicker
+polkit-gnome
+greetd
+greetd-tuigreet
+
+# ── GTK Apps ──────────────────────────────────────
+nautilus
+gnome-text-editor
+firefox
+brave-bin
+
+# ── CLI Tools ─────────────────────────────────────
+bat
+eza
+fd
+fzf
+zoxide
+git
+htop
+wget
+fastfetch
+lazygit
+lazydocker
+imagemagick
+
+# ── Audio & Media ─────────────────────────────────
+pipewire
+pipewire-alsa
+pipewire-jack
+pipewire-pulse
+wireplumber
+libpulse
+gst-plugin-pipewire
+playerctl
+
+# ── Networking ────────────────────────────────────
+networkmanager
+network-manager-applet
+iwd
+wireless_tools
+wpa_supplicant
+
+# ── Bluetooth ─────────────────────────────────────
+bluez
+bluez-utils
+
+# ── Printing ──────────────────────────────────────
+cups
+cups-pk-helper
+system-config-printer
+
+# ── Hardware & Firmware ───────────────────────────
+brightnessctl
+power-profiles-daemon
+intel-media-driver
+intel-ucode
+libva-intel-driver
+vulkan-intel
+sof-firmware
+smartmontools
+
+# ── Clipboard & Emoji ────────────────────────────
+cliphist
+bemoji
+
+# ── Fonts & Theming ──────────────────────────────
+ttf-jetbrains-mono-nerd
+terminus-font
+papirus-folders-catppuccin-git
+
+# ── Containers ────────────────────────────────────
+docker
+miniconda3
+
+# ── Package Management ───────────────────────────
+yay-bin

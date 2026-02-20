@@ -1,0 +1,192 @@
+@import "colors/everforest.css";
+
+/* Summer Night Theme - Everforest */
+/* margin: top right bottom left */
+/* padding: top right bottom left */
+
+* {
+    font-family: JetBrainsMono Nerd Font, FontAwesome;
+    font-size: 12px;
+    font-weight: bold;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: rgba(45, 53, 59, 0.85);
+    color: @fg;
+    transition-property: background-color;
+    transition-duration: 0.5s;
+    border-radius: 6px;
+    padding-left: 0px;
+    padding-right: 0px;
+    margin-left: 2px;
+    margin-right: 2px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+
+    border-width: 2px;
+    border-color: rgba(127, 187, 179, 0.3);
+    border-style: solid;
+}
+
+#custom-launcher,
+#clock,
+#clock-date,
+#workspaces,
+#pulseaudio,
+#pulseaudio\.microphone,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#backlight,
+#idle_inhibitor,
+#custom-caffeine,
+#custom-power-profile,
+#tray,
+#custom-power {
+    background-color: rgba(45, 53, 59, 0.85);
+    color: @fg;
+
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    border-radius: 10px;
+
+    border-bottom-width: 2px;
+    border-bottom-color: #161a1d;
+    border-bottom-style: solid;
+}
+
+#workspaces {
+    padding: 0px;
+}
+
+#workspaces button {
+    background-color: @bg1;
+    color: @fg;
+    padding: 0 5px;
+    min-width: 20px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-left: 3px;
+    margin-right: 3px;
+    border-radius: 8px;
+    border-bottom-width: 2px;
+    border-bottom-color: #161a1d;
+    border-bottom-style: solid;
+}
+
+#workspaces button:hover {
+    background-color: @bg3;
+}
+
+#workspaces button.active,
+#workspaces button.focused {
+    background-color: @blue;
+    color: @bg0;
+    border-radius: 8px;
+    margin-bottom: 3px;
+
+    border-bottom-width: 2px;
+    border-bottom-color: #366660;
+    border-bottom-style: solid;
+}
+
+#custom-launcher {
+    background-color: @green;
+    color: @bg0;
+    border-bottom-color: #556a35;
+
+    margin-left: 0px;
+    padding-left: 20px;
+    padding-right: 21px;
+}
+
+#custom-power-profile {
+    padding-left: 9px;
+    padding-right: 12px;
+}
+
+#idle_inhibitor,
+#custom-caffeine {
+    padding-left: 10px;
+    padding-right: 12px;
+}
+
+#custom-power {
+    background-color: @red;
+    color: @bg0;
+    border-bottom-color: #951c1f;
+
+    margin-right: 5px;
+    padding-left: 12px;
+    padding-right: 15px;
+}
+
+/* Battery states */
+#battery.charging {
+    background-color: @green;
+    color: @bg0;
+}
+
+#battery.warning:not(.charging) {
+    background-color: @yellow;
+    color: @bg0;
+}
+
+#battery.critical:not(.charging) {
+    background-color: @red;
+    color: @bg0;
+}
+
+/* Volume muted - yellow color (exclude microphone) */
+#pulseaudio.muted:not(.microphone),
+#pulseaudio.bluetooth.muted:not(.microphone) {
+    background-color: @yellow;
+    color: @bg0;
+}
+
+/* Microphone muted - yellow color */
+#pulseaudio.microphone.source-muted {
+    background-color: @yellow;
+    color: @bg0;
+}
+
+/* Network disconnected */
+#network.disconnected {
+    background-color: @red;
+    color: @bg0;
+}
+
+/* Idle inhibitor active */
+#idle_inhibitor.activated,
+#custom-caffeine.activated {
+    background-color: @yellow;
+    color: @bg0;
+}
+
+/* Temperature critical */
+#temperature.critical {
+    background-color: @red;
+    color: @bg0;
+}
+
+/* Tray */
+#tray>.passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray>.needs-attention {
+    -gtk-icon-effect: highlight;
+    background-color: @red;
+}
+
+#cpu {
+    margin-left: 5px;
+}

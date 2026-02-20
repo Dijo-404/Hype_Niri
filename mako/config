@@ -1,0 +1,31 @@
+# Mako notification daemon config (Wayland-native)
+# Everforest theme
+
+font=JetBrainsMono Nerd Font 10
+background-color=#2d353bdd
+text-color=#d3c6aa
+border-color=#7fbbb3
+border-size=2
+border-radius=8
+width=350
+height=120
+margin=10
+padding=12
+default-timeout=5000
+max-visible=3
+layer=overlay
+anchor=top-right
+icon-path=/usr/share/icons/Papirus-Dark
+
+[urgency=low]
+background-color=#2d353bdd
+border-color=#83c092
+
+[urgency=normal]
+background-color=#2d353bdd
+border-color=#7fbbb3
+
+[urgency=critical]
+background-color=#2d353bdd
+border-color=#e67e80
+default-timeout=0

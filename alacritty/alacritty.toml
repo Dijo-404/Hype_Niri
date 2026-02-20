@@ -1,0 +1,77 @@
+# Alacritty Configuration
+
+[shell]
+program = "/bin/zsh"
+
+# ============ Font Configuration ============
+
+[font]
+size = 10.0
+
+[font.normal]
+family = "JetBrainsMono Nerd Font"
+style = "Regular"
+
+[font.bold]
+style = "Bold"
+
+[font.italic]
+style = "Italic"
+
+[font.bold_italic]
+style = "Bold Italic"
+
+# ============ Window Appearance ============
+
+[window]
+decorations = "None"
+dynamic_padding = true
+opacity = 0.85
+
+[window.padding]
+x = 8
+y = 8
+
+# ============ Everforest Color Scheme ============
+
+[colors.primary]
+background = "#2d353b"
+foreground = "#d3c6aa"
+
+[colors.cursor]
+text = "#2d353b"
+cursor = "#d3c6aa"
+
+[colors.selection]
+text = "#2d353b"
+background = "#7fbbb3"
+
+[colors.normal]
+black = "#343f44"
+red = "#e67e80"
+green = "#a7c080"
+yellow = "#dbbc7f"
+blue = "#7fbbb3"
+magenta = "#d699b6"
+cyan = "#83c092"
+white = "#d3c6aa"
+
+[colors.bright]
+black = "#475258"
+red = "#e67e80"
+green = "#a7c080"
+yellow = "#dbbc7f"
+blue = "#7fbbb3"
+magenta = "#d699b6"
+cyan = "#83c092"
+white = "#d3c6aa"
+
+# ============ Scrolling ============
+
+[scrolling]
+history = 10000
+
+# ============ Performance ============
+
+[terminal]
+osc52 = "CopyPaste"

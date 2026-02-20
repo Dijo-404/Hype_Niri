@@ -1,0 +1,323 @@
+// ╔═══════════════════════════════════════════════╗
+// ║  Niri Configuration — Everforest Dark Theme   ║
+// ╚═══════════════════════════════════════════════╝
+
+// ── Outputs ──────────────────────────────────────
+// Laptop display (always present)
+output "eDP-1" {
+    mode "2880x1800@120"
+    scale 2.0
+}
+
+// External monitor (left of laptop)
+// Niri auto-ignores this when disconnected
+output "HDMI-A-1" {
+    mode "2560x1440@180"
+    scale 1.0
+    position x=0 y=0
+}
+
+// ── Environment ──────────────────────────────────
+
+environment {
+    XCURSOR_SIZE "24"
+    XDG_SESSION_TYPE "wayland"
+    DISPLAY null
+}
+
+// ── Input ────────────────────────────────────────
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+    }
+
+    touchpad {
+        tap
+    }
+
+    mouse {}
+
+    focus-follows-mouse max-scroll-amount="0%"
+}
+
+// ── Layout ───────────────────────────────────────
+
+layout {
+    gaps 4
+
+    preset-column-widths {
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+    }
+
+    default-column-width { proportion 0.5; }
+
+    focus-ring {
+        width 2
+        active-color "#7fbbb3"
+        inactive-color "#e67e80"
+    }
+
+    border {
+        off
+    }
+
+    shadow {
+        on
+        softness 8
+        spread 2
+        offset x=0 y=2
+        color "#1a1a1aee"
+    }
+}
+
+// ── Animations ───────────────────────────────────
+
+animations {
+    workspace-switch {
+        spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+    }
+
+    window-open {
+        duration-ms 150
+        curve "ease-out-expo"
+    }
+
+    window-close {
+        duration-ms 150
+        curve "ease-out-quad"
+    }
+
+    horizontal-view-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    window-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    window-resize {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+    }
+
+    config-notification-open-close {
+        spring damping-ratio=0.6 stiffness=1000 epsilon=0.001
+    }
+}
+
+// ── Miscellaneous ────────────────────────────────
+
+prefer-no-csd
+
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+// ── Window Rules ─────────────────────────────────
+
+// Rounded corners
+window-rule {
+    geometry-corner-radius 4
+    clip-to-geometry true
+}
+
+// Opacity: focused vs unfocused
+window-rule {
+    opacity 0.90
+}
+
+window-rule {
+    match is-focused=false
+    opacity 0.80
+}
+
+// Firefox PiP floating
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+// ── Autostart ────────────────────────────────────
+
+spawn-at-startup "waybar"
+spawn-at-startup "nm-applet"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "mako"
+spawn-at-startup "alacritty"
+
+// Wallpaper (uses wallpaper.sh script for proper init)
+spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
+
+// Idle + lock
+spawn-sh-at-startup "swayidle -w timeout 60 'swaylock -f' before-sleep 'swaylock -f'"
+
+// Clipboard history
+spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
+spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
+
+// ── Keybindings ──────────────────────────────────
+
+binds {
+
+    // ── Window Management ────────────────────────
+
+    Mod+Q repeat=false { close-window; }
+    Ctrl+Q repeat=false { close-window; }
+    Alt+F4 repeat=false { close-window; }
+    Mod+Delete { quit; }
+
+    Mod+W { toggle-column-tabbed-display; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+F { maximize-column; }
+    Mod+O repeat=false { toggle-overview; }
+    Mod+L { spawn "swaylock"; }
+
+    // Float toggle
+    Mod+Space { toggle-window-floating; }
+    Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
+
+    // ── Focus ────────────────────────────────────
+
+    Mod+Left  { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up    { focus-window-up; }
+    Mod+Down  { focus-window-down; }
+    Alt+Tab   { focus-window-down; }
+
+    // ── Resize ───────────────────────────────────
+
+    Mod+Ctrl+Left  { set-column-width "-30"; }
+    Mod+Ctrl+Right { set-column-width "+30"; }
+    Mod+Ctrl+Up    { set-window-height "-30"; }
+    Mod+Ctrl+Down  { set-window-height "+30"; }
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // ── Move Window ──────────────────────────────
+
+    Mod+Ctrl+Shift+Left  { move-column-left; }
+    Mod+Ctrl+Shift+Right { move-column-right; }
+    Mod+Ctrl+Shift+Up    { move-window-up; }
+    Mod+Ctrl+Shift+Down  { move-window-down; }
+
+    // ── Applications ─────────────────────────────
+
+    Mod+T hotkey-overlay-title="Terminal: alacritty" { spawn "alacritty"; }
+    Mod+E { spawn "nautilus"; }
+    Mod+C { spawn-sh "alacritty -e nvim"; }
+    Mod+B { spawn "firefox"; }
+    Ctrl+Shift+Escape { spawn-sh "alacritty -e htop"; }
+
+    // ── Launcher & Menus ─────────────────────────
+
+    Mod+A hotkey-overlay-title="App Launcher: fuzzel" { spawn "fuzzel"; }
+    Mod+Tab { toggle-overview; }
+    Mod+Period { spawn-sh "bemoji -t"; }
+    Mod+V { spawn-sh "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"; }
+
+    // ── Column Management ────────────────────────
+
+    Mod+R { switch-preset-column-width; }
+    Mod+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+R { reset-window-height; }
+    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+Shift+C { center-column; }
+    Mod+BracketLeft { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+    Mod+Comma { consume-window-into-column; }
+
+    // ── Audio ────────────────────────────────────
+
+    F10 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh mute"; }
+    XF86AudioMute allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh mute"; }
+    F11 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh down"; }
+    F12 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh up"; }
+    XF86AudioMicMute allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/mic-control.sh mute"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh down"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh up"; }
+
+    // ── Media ────────────────────────────────────
+
+    XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioPause allow-when-locked=true { spawn-sh "playerctl play-pause"; }
+    XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
+    XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
+
+    // ── Brightness ───────────────────────────────
+
+    XF86MonBrightnessUp allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
+    F6 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
+    F5 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
+
+    // ── Screenshots ──────────────────────────────
+
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Alt+Print { screenshot-window; }
+    Mod+Shift+P { spawn-sh "hyprpicker -a"; }
+
+    // ── Wallpaper ────────────────────────────────
+
+    Mod+Alt+Right { spawn-sh "~/.config/waybar/scripts/wallpaper.sh random"; }
+    Mod+Alt+Left { spawn-sh "~/.config/waybar/scripts/wallpaper.sh random"; }
+    Mod+Shift+W { spawn-sh "~/.config/waybar/scripts/wallpaper.sh select"; }
+
+    // ── Waybar ───────────────────────────────────
+
+    Mod+Alt+Up { spawn-sh "pkill waybar; waybar &"; }
+    Mod+Alt+Down { spawn-sh "pkill waybar; waybar &"; }
+
+    // ── Workspaces ───────────────────────────────
+
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+0 { focus-workspace 10; }
+
+    Mod+Page_Down { focus-workspace-down; }
+    Mod+Page_Up { focus-workspace-up; }
+    Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
+
+    // ── Move to Workspace ────────────────────────
+
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+    Mod+Shift+0 { move-column-to-workspace 10; }
+
+    Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up { move-column-to-workspace-up; }
+
+    // ── Monitors ─────────────────────────────────
+
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+
+    // ── Power ────────────────────────────────────
+
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+}
