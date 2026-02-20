@@ -140,7 +140,7 @@
         "format": "⏻",
         "tooltip": true,
         "tooltip-format": "Power Menu",
-        "on-click": "systemctl poweroff",
-        "on-click-right": "systemctl reboot"
+        "on-click": "wlogout",
+        "on-click-right": "wlogout"
     }
 }

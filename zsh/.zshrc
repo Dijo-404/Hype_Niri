@@ -1,8 +1,5 @@
-# ── Powerlevel10k Instant Prompt ──────────────────
-# Must stay near the top of ~/.zshrc
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# Disable P10k instant prompt — we print a greeting + fastfetch on startup
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 
 # Exit if non-interactive
 [[ $- != *i* ]] && return
@@ -181,25 +178,8 @@ autoload -Uz colors && colors
 
 source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
-# Greeting
-cat << 'EOF'
-        _..._
-      .'     '.      _
-     /    .-""-\   _/ \
-   .-|   /:.   |  |   |
-   |  \  |:.   /.-'-./
-   | .-'-;:__.'    =/
-   .'=  *=|Dj   _.='
-  /   _.  |    ;
- ;-.-'|    \   |
-/   | \    _\  _\
-\__/'._;.  ==' =='
-         \    \   |
-         /    /   /
-         /-._/-._/
-         \   `\  \
-          `-._/._/
-EOF
+
+
 
 fastfetch
 

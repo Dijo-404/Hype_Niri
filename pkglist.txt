@@ -12,6 +12,7 @@ zram-generator
 # ── Niri + Wayland ────────────────────────────────
 niri
 uwsm
+wlogout
 xdg-desktop-portal-gnome
 xdg-utils
 wl-clipboard

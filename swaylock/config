@@ -1,0 +1,64 @@
+# Swaylock Everforest Dark Theme Configuration
+# Colors are based on the Everforest color palette 
+
+# Show number of failed attempts
+show-failed-attempts
+
+# Don't show keyboard layout
+# show-keyboard-layout
+
+# Turn off screen immediately when locking
+# This is usually handled by swayidle but can be added here
+# hide-keyboard-layout
+daemonize
+ignore-empty-password
+
+# Font settings
+font="JetBrainsMono Nerd Font"
+font-size=24
+
+# Indicator settings
+indicator-radius=150
+indicator-thickness=15
+indicator-caps-lock
+
+# Color configuration (Everforest Dark)
+# Base colors
+color=2d353b        # Background (Everforest dark bg)
+
+# Ring colors
+ring-color=475258       # Normal ring (Grey)
+ring-clear-color=e67e80 # Clear ring (Red)
+ring-caps-lock-color=d699b6 # Capslock ring (Purple)
+ring-ver-color=7fbbb3   # Verifying ring (Blue)
+ring-wrong-color=e67e80 # Wrong ring (Red)
+
+# Inside colors
+inside-color=2d353b00       # Normal inside (Transparent)
+inside-clear-color=2d353b00 # Clear inside (Transparent)
+inside-caps-lock-color=2d353b00 # Capslock inside (Transparent)
+inside-ver-color=2d353b00   # Verifying inside (Transparent)
+inside-wrong-color=2d353b00 # Wrong inside (Transparent)
+
+# Line colors (separators between ring segments)
+line-color=2d353b00
+line-clear-color=2d353b00
+line-caps-lock-color=2d353b00
+line-ver-color=2d353b00
+line-wrong-color=2d353b00
+
+# Text colors
+text-color=d3c6aa       # Normal text (Fg)
+text-clear-color=d3c6aa
+text-caps-lock-color=d3c6aa
+text-ver-color=d3c6aa
+text-wrong-color=d3c6aa
+
+# Key highlight colors
+key-hl-color=a7c080     # Green
+bs-hl-color=e67e80      # Red
+separator-color=2d353b00
+
+# Other options
+# image=/path/to/wallpaper.jpg # Optional: Set a background image instead of solid color
+scaling=fill

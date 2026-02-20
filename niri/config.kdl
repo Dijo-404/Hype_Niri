@@ -57,13 +57,14 @@ layout {
     default-column-width { proportion 0.5; }
 
     focus-ring {
-        width 2
-        active-color "#7fbbb3"
-        inactive-color "#e67e80"
+        on
     }
 
     border {
-        off
+        on
+        width 2
+        active-color "#a7c080"
+        inactive-color "#4f585e"
     }
 
     shadow {
@@ -121,10 +122,11 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
-// Rounded corners
+// Rounded corners + draw borders around (not behind) windows
 window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
+    draw-border-with-background false
 }
 
 // Opacity: focused vs unfocused
@@ -155,7 +157,7 @@ spawn-at-startup "alacritty"
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
 // Idle + lock
-spawn-sh-at-startup "swayidle -w timeout 60 'swaylock -f' before-sleep 'swaylock -f'"
+spawn-sh-at-startup "swayidle -w timeout 60 'swaylock -f' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'swaylock -f'"
 
 // Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
