@@ -324,4 +324,5 @@ binds {
     // ── Power ────────────────────────────────────
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+    XF86PowerOff { spawn "wlogout"; }
 }

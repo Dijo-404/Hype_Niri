@@ -18,6 +18,9 @@ xdg-utils
 wl-clipboard
 grim
 slurp
+qt5-wayland
+qt6-wayland
+xorg-xwayland
 
 # ── Shell ─────────────────────────────────────────
 zsh

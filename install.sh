@@ -281,8 +281,13 @@ setup_system() {
 
     for service in "${services[@]}"; do
         if systemctl list-unit-files "$service.service" &>/dev/null; then
-            systemctl --user enable "$service" 2>/dev/null || \
             sudo systemctl enable "$service" 2>/dev/null || true
+            print_step "Enabled system service: $service"
+        elif systemctl --global list-unit-files "$service.service" &>/dev/null; then
+            systemctl --user enable "$service" 2>/dev/null || systemctl --global enable "$service" 2>/dev/null || true
+            print_step "Enabled user service: $service"
+        else
+            print_warn "Service $service not found"
         fi
     done
     print_done "System services configured"
