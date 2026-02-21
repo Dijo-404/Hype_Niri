@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Replace file for deduplicating notifications (notify-send 0.8+)
-REPLACE_FILE="/tmp/notify-volume-id"
+# Replace ID for deduplicating notifications
+REPLACE_ID=2000
 
 case "$1" in
     up)
@@ -22,7 +22,7 @@ mute=$(echo "$vol_info" | grep "MUTED")
 
 if [ -n "$mute" ]; then
     # Muted state
-    notify-send --replace-file="$REPLACE_FILE" \
+    notify-send -r "$REPLACE_ID" \
         "󰝟  Muted"
 else
     # Select icon based on volume level
@@ -34,8 +34,7 @@ else
         icon="󰕾"
     fi
     
-    # Send notification with progress bar
-    notify-send --replace-file="$REPLACE_FILE" \
+    notify-send -r "$REPLACE_ID" \
         -h int:value:"$vol" \
         "$icon  Volume: ${vol}%"
 fi
