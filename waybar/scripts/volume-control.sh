@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# Replace ID for deduplicating notifications
-REPLACE_ID=2000
+# File to store notification ID
+ID_FILE="/tmp/notify-volume-id"
+
+send_notification() {
+    if [ -f "$ID_FILE" ]; then
+        ID=$(cat "$ID_FILE")
+        notify-send -p -r "$ID" "$@" > "$ID_FILE"
+    else
+        notify-send -p "$@" > "$ID_FILE"
+    fi
+}
 
 case "$1" in
     up)
@@ -22,7 +31,7 @@ mute=$(echo "$vol_info" | grep "MUTED")
 
 if [ -n "$mute" ]; then
     # Muted state
-    notify-send -r "$REPLACE_ID" \
+    send_notification \
         "󰝟  Muted"
 else
     # Select icon based on volume level
@@ -34,7 +43,7 @@ else
         icon="󰕾"
     fi
     
-    notify-send -r "$REPLACE_ID" \
+    send_notification \
         -h int:value:"$vol" \
         "$icon  Volume: ${vol}%"
 fi

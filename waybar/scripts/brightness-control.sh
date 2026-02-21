@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# Replace ID for deduplicating notifications
-REPLACE_ID=2001
+# File to store notification ID
+ID_FILE="/tmp/notify-brightness-id"
+
+send_notification() {
+    if [ -f "$ID_FILE" ]; then
+        ID=$(cat "$ID_FILE")
+        notify-send -p -r "$ID" "$@" > "$ID_FILE"
+    else
+        notify-send -p "$@" > "$ID_FILE"
+    fi
+}
 
 # Smooth brightness transition
 smooth_set() {
@@ -63,6 +72,6 @@ else
 fi
 
 # Send notification with progress bar
-notify-send -r "$REPLACE_ID" \
+send_notification \
     -h int:value:"$percent" \
     "$icon  Brightness: ${percent}%"
