@@ -1,36 +1,25 @@
 {
-    "label" : "lock",
-    "action" : "~/.config/swaylock/lock.sh",
-    "text" : "Lock",
-    "keybind" : "l"
+    "label": "lock",
+    "action": "~/.config/swaylock/lock.sh",
+    "text": "Lock",
+    "keybind": "l"
+}
+
+{
+    "label": "logout",
+    "action": "niri msg action quit",
+    "text": "Logout",
+    "keybind": "e"
 }
 {
-    "label" : "hibernate",
-    "action" : "systemctl hibernate",
-    "text" : "Hibernate",
-    "keybind" : "h"
+    "label": "shutdown",
+    "action": "systemctl poweroff",
+    "text": "Shutdown",
+    "keybind": "s"
 }
 {
-    "label" : "logout",
-    "action" : "niri msg action quit",
-    "text" : "Logout",
-    "keybind" : "e"
-}
-{
-    "label" : "shutdown",
-    "action" : "systemctl poweroff",
-    "text" : "Shutdown",
-    "keybind" : "s"
-}
-{
-    "label" : "suspend",
-    "action" : "systemctl suspend",
-    "text" : "Suspend",
-    "keybind" : "u"
-}
-{
-    "label" : "reboot",
-    "action" : "systemctl reboot",
-    "text" : "Reboot",
-    "keybind" : "r"
+    "label": "reboot",
+    "action": "systemctl reboot",
+    "text": "Reboot",
+    "keybind": "r"
 }
