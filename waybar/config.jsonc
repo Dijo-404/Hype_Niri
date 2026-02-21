@@ -64,14 +64,14 @@
         "thermal-zone": 10,
         "interval": 2,
         "critical-threshold": 80,
-        "format": "󰢮 {temperatureC}°C",
-        "format-critical": "󰢮 {temperatureC}°C",
+        "format": "󰈐 {temperatureC}°C",
+        "format-critical": "󰈐 {temperatureC}°C",
         "format-icons": [
-            "󰢮",
-            "󰢮",
-            "󰢮",
-            "󰢮",
-            "󰢮"
+            "󰈐",
+            "󰈐",
+            "󰈐",
+            "󰈐",
+            "󰈐"
         ]
     },
     "backlight": {
