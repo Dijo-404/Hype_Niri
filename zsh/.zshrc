@@ -178,9 +178,6 @@ autoload -Uz colors && colors
 
 source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
-
-
-
 fastfetch
 
 # ── Plugins (must be last) ───────────────────────

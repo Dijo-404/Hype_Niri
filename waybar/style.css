@@ -28,9 +28,7 @@ window#waybar {
     border-style: solid;
 }
 
-#custom-launcher,
 #clock,
-#clock-date,
 #workspaces,
 #pulseaudio,
 #pulseaudio\.microphone,
@@ -39,7 +37,6 @@ window#waybar {
 #memory,
 #temperature,
 #backlight,
-#idle_inhibitor,
 #custom-caffeine,
 #custom-power-profile,
 #tray,
@@ -97,22 +94,13 @@ window#waybar {
     border-bottom-style: solid;
 }
 
-#custom-launcher {
-    background-color: @green;
-    color: @bg0;
-    border-bottom-color: #556a35;
 
-    margin-left: 0px;
-    padding-left: 20px;
-    padding-right: 21px;
-}
 
 #custom-power-profile {
     padding-left: 9px;
     padding-right: 12px;
 }
 
-#idle_inhibitor,
 #custom-caffeine {
     padding-left: 10px;
     padding-right: 12px;
@@ -157,14 +145,9 @@ window#waybar {
     color: @bg0;
 }
 
-/* Network disconnected */
-#network.disconnected {
-    background-color: @red;
-    color: @bg0;
-}
 
-/* Idle inhibitor active */
-#idle_inhibitor.activated,
+
+/* Caffeine active */
 #custom-caffeine.activated {
     background-color: @yellow;
     color: @bg0;

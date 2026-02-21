@@ -117,4 +117,3 @@ docker
 miniconda3
 
 # ── Package Management ───────────────────────────
-yay-bin

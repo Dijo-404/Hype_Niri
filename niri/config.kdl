@@ -122,7 +122,6 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
-
 // Rounded corners + draw borders around (not behind) windows
 window-rule {
     geometry-corner-radius 4
