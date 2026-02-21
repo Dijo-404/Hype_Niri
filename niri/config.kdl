@@ -122,6 +122,7 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
+
 // Rounded corners + draw borders around (not behind) windows
 window-rule {
     geometry-corner-radius 4
@@ -148,6 +149,7 @@ window-rule {
 // ── Autostart ────────────────────────────────────
 
 spawn-at-startup "waybar"
+spawn-at-startup "~/.config/niri/auto-maximize.sh"
 spawn-at-startup "nm-applet"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-at-startup "mako"
@@ -205,10 +207,10 @@ binds {
 
     // ── Move Window ──────────────────────────────
 
-    Mod+Ctrl+Shift+Left  { move-column-left; }
-    Mod+Ctrl+Shift+Right { move-column-right; }
-    Mod+Ctrl+Shift+Up    { move-window-up; }
-    Mod+Ctrl+Shift+Down  { move-window-down; }
+    Alt+Shift+Left  { move-column-left; }
+    Alt+Shift+Right { move-column-right; }
+    Alt+Shift+Up    { move-window-up; }
+    Alt+Shift+Down  { move-window-down; }
 
     // ── Applications ─────────────────────────────
 
