@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Notification ID
-ID=2001
+# Replace file for deduplicating notifications (notify-send 0.8+)
+REPLACE_FILE="/tmp/notify-brightness-id"
 
 # Smooth brightness transition
 smooth_set() {
@@ -63,6 +63,6 @@ else
 fi
 
 # Send notification with progress bar
-notify-send -r "$ID" \
+notify-send --replace-file="$REPLACE_FILE" \
     -h int:value:"$percent" \
     "$icon  Brightness: ${percent}%"
