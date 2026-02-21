@@ -268,6 +268,13 @@ setup_system() {
         fi
     fi
 
+    # Polkit Rules
+    print_step "Installing Polkit rules (NetworkManager)..."
+    if [ -d "$SCRIPT_DIR/polkit" ]; then
+        sudo cp -r "$SCRIPT_DIR/polkit/"*.rules /etc/polkit-1/rules.d/ 2>/dev/null || true
+        print_done "Polkit rules applied"
+    fi
+
     # Enable essential services
     print_step "Enabling system services..."
 
