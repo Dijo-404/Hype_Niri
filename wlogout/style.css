@@ -56,3 +56,13 @@ button:hover {
 #reboot:hover {
     background-color: #556a35;
 }
+
+#sleep {
+    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+    background-color: #7fbbb3;
+    color: #2d353b;
+}
+
+#sleep:hover {
+    background-color: #366660;
+}

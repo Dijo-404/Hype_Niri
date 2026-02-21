@@ -23,3 +23,9 @@
     "text": "Reboot",
     "keybind": "r"
 }
+{
+    "label": "sleep",
+    "action": "systemctl suspend",
+    "text": "Sleep",
+    "keybind": "s"
+}
