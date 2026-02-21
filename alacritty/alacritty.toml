@@ -1,6 +1,6 @@
 # Alacritty Configuration
 
-[shell]
+[terminal.shell]
 program = "/bin/zsh"
 
 # ============ Font Configuration ============

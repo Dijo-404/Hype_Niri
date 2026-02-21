@@ -143,6 +143,7 @@ backup_configs() {
         "mako"
         "fastfetch"
         "swaylock"
+        "wlogout"
     )
 
     has_existing=false
@@ -190,6 +191,8 @@ copy_configs() {
         "fuzzel"
         "mako"
         "fastfetch"
+        "swaylock"
+        "wlogout"
     )
 
     for config in "${configs[@]}"; do
@@ -349,6 +352,8 @@ validate() {
         "$HOME/.config/fuzzel/fuzzel.ini"
         "$HOME/.config/mako/config"
         "$HOME/.config/fastfetch/config.jsonc"
+        "$HOME/.config/swaylock/config"
+        "$HOME/.config/wlogout/layout"
         "$HOME/.zshrc"
     )
 

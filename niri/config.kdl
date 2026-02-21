@@ -157,7 +157,7 @@ spawn-at-startup "alacritty"
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
 // Idle + lock
-spawn-sh-at-startup "swayidle -w timeout 60 'swaylock -f' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'swaylock -f'"
+spawn-sh-at-startup "swayidle -w timeout 60 '~/.config/swaylock/lock.sh' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep '~/.config/swaylock/lock.sh'"
 
 // Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
@@ -178,7 +178,7 @@ binds {
     Mod+Shift+F { fullscreen-window; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
-    Mod+L { spawn "swaylock"; }
+    Mod+L { spawn-sh "~/.config/swaylock/lock.sh"; }
 
     // Float toggle
     Mod+Space { toggle-window-floating; }

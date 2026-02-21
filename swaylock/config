@@ -1,64 +1,49 @@
-# Swaylock Everforest Dark Theme Configuration
-# Colors are based on the Everforest color palette 
+# Swaylock-Effects Everforest Dark Theme Configuration
 
-# Show number of failed attempts
+# General
 show-failed-attempts
-
-# Don't show keyboard layout
-# show-keyboard-layout
-
-# Turn off screen immediately when locking
-# This is usually handled by swayidle but can be added here
-# hide-keyboard-layout
 daemonize
 ignore-empty-password
 
-# Font settings
-font="JetBrainsMono Nerd Font"
-font-size=24
+# Font
+font=JetBrainsMono Nerd Font
+font-size=20
 
-# Indicator settings
-indicator-radius=150
-indicator-thickness=15
+# Indicator settings (Centered)
+indicator
+indicator-radius=100
+indicator-thickness=10
 indicator-caps-lock
 
-# Color configuration (Everforest Dark)
-# Base colors
-color=2d353b        # Background (Everforest dark bg)
-
 # Ring colors
-ring-color=475258       # Normal ring (Grey)
-ring-clear-color=e67e80 # Clear ring (Red)
-ring-caps-lock-color=d699b6 # Capslock ring (Purple)
-ring-ver-color=7fbbb3   # Verifying ring (Blue)
-ring-wrong-color=e67e80 # Wrong ring (Red)
+ring-color=475258ff
+ring-clear-color=e67e80aa
+ring-caps-lock-color=d699b6aa
+ring-ver-color=7fbbb3aa
+ring-wrong-color=e67e80aa
 
-# Inside colors
-inside-color=2d353b00       # Normal inside (Transparent)
-inside-clear-color=2d353b00 # Clear inside (Transparent)
-inside-caps-lock-color=2d353b00 # Capslock inside (Transparent)
-inside-ver-color=2d353b00   # Verifying inside (Transparent)
-inside-wrong-color=2d353b00 # Wrong inside (Transparent)
+# Inside colors (semi-transparent dark)
+inside-color=1e2326cc
+inside-clear-color=1e2326cc
+inside-caps-lock-color=1e2326cc
+inside-ver-color=1e2326cc
+inside-wrong-color=1e2326cc
 
-# Line colors (separators between ring segments)
-line-color=2d353b00
-line-clear-color=2d353b00
-line-caps-lock-color=2d353b00
-line-ver-color=2d353b00
-line-wrong-color=2d353b00
+# Line colors (hidden)
+line-color=00000000
+line-clear-color=00000000
+line-caps-lock-color=00000000
+line-ver-color=00000000
+line-wrong-color=00000000
 
 # Text colors
-text-color=d3c6aa       # Normal text (Fg)
-text-clear-color=d3c6aa
-text-caps-lock-color=d3c6aa
-text-ver-color=d3c6aa
-text-wrong-color=d3c6aa
+text-color=d3c6aaff
+text-clear-color=d3c6aaff
+text-caps-lock-color=d3c6aaff
+text-ver-color=d3c6aaff
+text-wrong-color=d3c6aaff
 
 # Key highlight colors
-key-hl-color=a7c080     # Green
-bs-hl-color=e67e80      # Red
-separator-color=2d353b00
-
-# Other options
-# image=/path/to/wallpaper.jpg # Optional: Set a background image instead of solid color
-scaling=fill
+key-hl-color=a7c080ff
+bs-hl-color=e67e80ff
+separator-color=00000000
