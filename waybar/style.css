@@ -19,11 +19,10 @@ window#waybar {
     border-radius: 6px;
     padding-left: 0px;
     padding-right: 0px;
-    margin-left: 2px;
-    margin-right: 2px;
+    margin-left: 4px;
+    margin-right: 4px;
     margin-top: 2px;
     margin-bottom: 2px;
-
     border-width: 2px;
     border-color: rgba(127, 187, 179, 0.3);
     border-style: solid;

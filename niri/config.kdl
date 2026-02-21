@@ -46,7 +46,7 @@ input {
 // ── Layout ───────────────────────────────────────
 
 layout {
-    gaps 4
+    gaps 2
 
     preset-column-widths {
         proportion 0.33333
@@ -57,14 +57,14 @@ layout {
     default-column-width { proportion 0.5; }
 
     focus-ring {
-        on
+        off
     }
 
     border {
         on
         width 2
-        active-color "#a7c080"
-        inactive-color "#4f585e"
+        active-color "#7fbbbc"
+        inactive-color "#e67e80"
     }
 
     shadow {
@@ -324,5 +324,5 @@ binds {
     // ── Power ────────────────────────────────────
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    XF86PowerOff { spawn "wlogout"; }
+    XF86PowerOff allow-when-locked=true { spawn "wlogout"; }
 }
