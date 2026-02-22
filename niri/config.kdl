@@ -148,7 +148,7 @@ window-rule {
 // ── Autostart ────────────────────────────────────
 
 spawn-at-startup "waybar"
-spawn-at-startup "~/.config/niri/auto-maximize.sh"
+
 spawn-at-startup "nm-applet"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-at-startup "mako"
