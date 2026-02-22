@@ -1,32 +1,39 @@
-# Hype Niri
+# Hype Niri 🍃
 
-> Arch Linux + Niri — Everforest themed scrollable-tiling Wayland setup
+> A hyper-aesthetic, highly functional Wayland setup based on the Niri scrollable-tiling compositor and the Everforest dark scheme.
 
-![Niri](https://img.shields.io/badge/Niri-Wayland-7fbbb3?style=flat-square)
-![Arch Linux](https://img.shields.io/badge/Arch_Linux-a7c080?style=flat-square&logo=archlinux&logoColor=white)
-![Everforest](https://img.shields.io/badge/Theme-Everforest-2d353b?style=flat-square)
+![Niri](https://img.shields.io/badge/Niri-Wayland-7fbbb3?style=for-the-badge&logo=wayland&logoColor=white)
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-a7c080?style=for-the-badge&logo=archlinux&logoColor=white)
+![Everforest Theme](https://img.shields.io/badge/Theme-Everforest-2d353b?style=for-the-badge)
 
-## Overview
+<br/>
 
-Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable tiling Wayland compositor with the **Everforest** dark color scheme. Fully Wayland-native — no X11 dependencies.
+## ✨ Overview
 
-## Stack
+Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable tiling Wayland compositor. Focused on delivering a premium, smooth, and full-featured desktop experience using native Wayland tools—no X11 dependencies.
 
-| Component | Tool |
-|---|---|
-| Compositor | [Niri](https://github.com/YaLTeR/niri) |
-| Bar | [Waybar](https://github.com/Alexays/Waybar) |
-| Terminal | [Alacritty](https://github.com/alacritty/alacritty) |
-| Shell | [Zsh](https://www.zsh.org/) + [Powerlevel10k](https://github.com/romkatv/powerlevel10k) |
-| Launcher | [Fuzzel](https://codeberg.org/dnkl/fuzzel) |
-| Notifications | [Mako](https://github.com/emersion/mako) |
-| Lock Screen | [Hyprlock](https://github.com/hyprwm/hyprlock) |
-| Idle Daemon | [Swayidle](https://github.com/swaywm/swayidle) |
-| Wallpaper | [Swww](https://github.com/LGFae/swww) |
-| Login | [Greetd](https://sr.ht/~kennylevinsen/greetd/) + [TuiGreet](https://github.com/apognu/tuigreet) |
-| Fetch | [Fastfetch](https://github.com/fastfetch-cli/fastfetch) |
+## 🛠️ Tech Stack
 
-## Install
+| Component | Tool / Link |
+| :--- | :--- |
+| **Compositor** | [Niri](https://github.com/YaLTeR/niri) |
+| **Bar** | [Waybar](https://github.com/Alexays/Waybar) |
+| **Terminal** | [Alacritty](https://github.com/alacritty/alacritty) |
+| **Shell** | [Zsh](https://www.zsh.org/) + [Powerlevel10k](https://github.com/romkatv/powerlevel10k) |
+| **Launcher** | [Fuzzel](https://codeberg.org/dnkl/fuzzel) |
+| **Notifications** | [Mako](https://github.com/emersion/mako) |
+| **Lock Screen** | [Hyprlock](https://github.com/hyprwm/hyprlock) |
+| **Idle Daemon** | [Hypridle](https://github.com/hyprwm/hypridle) |
+| **Wallpaper** | [Swww](https://github.com/LGFae/swww) |
+| **Login Manager** | [Greetd](https://sr.ht/~kennylevinsen/greetd/) + [TuiGreet](https://github.com/apognu/tuigreet) |
+| **Fetch App** | [Fastfetch](https://github.com/fastfetch-cli/fastfetch) |
+| **Logout Menu** | [Wlogout](https://github.com/ArtsyMacaw/wlogout) |
+
+<br/>
+
+## 🚀 Installation
+
+For a fully automated installation, just clone the repository and run the setup script:
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -34,27 +41,37 @@ cd Hype_Niri
 ./install.sh
 ```
 
-See [INSTALL.md](INSTALL.md) for manual setup.
+> [!NOTE]  
+> See [INSTALL.md](INSTALL.md) for manual setup instructions and post-installation steps.
 
-## Structure
+<br/>
 
+## 📁 Repository Structure
+
+```text
+.
+├── alacritty/       # Fast, GPU-accelerated terminal configuration
+├── fastfetch/       # System information fetch utility with custom logo
+├── fuzzel/          # Application launcher styled for Everforest
+├── greetd/          # TUI-based minimal login manager
+├── hypr/            # Hypridle configuration for lock/sleep management
+├── hyprlock/        # Beautiful lock screen configuration
+├── mako/            # Notification daemon configuration
+├── niri/            # Core Niri compositor settings and rules
+├── Wallpapers/      # Default curated wallpapers
+├── waybar/          # Comprehensive status bar + utility scripts
+├── wlogout/         # Aesthetic power menu configuration
+├── zsh/             # Shell config (.zshrc) and aliases
+├── install.sh       # Automated installation script
+├── pkglist.txt      # Master list of required packages
+└── *.md             # Documentation files
 ```
-├── alacritty/       # Terminal config
-├── fastfetch/       # System fetch + custom logo
-├── fuzzel/          # App launcher
-├── greetd/          # Login manager
-├── mako/            # Notifications
-├── niri/            # Compositor config
-├── Wallpapers/      # Default wallpapers
-├── waybar/          # Bar config, styles, scripts
-├── zsh/             # Shell config (.zshrc)
-├── install.sh       # Automated installer
-├── pkglist.txt      # Package list
-└── keybindings.md   # Key reference
-```
 
-## Docs
+<br/>
 
-- [Keybindings](keybindings.md)
-- [Aliases](alias.md)
-- [Install Guide](INSTALL.md)
+## 📖 Documentation
+
+Get to know the ecosystem:
+- ⌨️ **[Keybindings Reference](keybindings.md)** - Learn how to navigate and manage windows
+- 💻 **[Zsh Aliases](alias.md)** - Boost your terminal productivity
+- ⚙️ **[Installation Guide](INSTALL.md)** - Detailed setup instructions
