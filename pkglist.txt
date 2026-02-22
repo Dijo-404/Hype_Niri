@@ -112,8 +112,8 @@ ttf-jetbrains-mono-nerd
 terminus-font
 papirus-folders-catppuccin-git
 
-# ── Containers ────────────────────────────────────
-docker
-miniconda3
+# ── Containers (Optional) ─────────────────────────
+# docker
+# miniconda3
 
 # ── Package Management ───────────────────────────

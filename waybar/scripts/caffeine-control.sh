@@ -23,7 +23,13 @@ stop_inhibitor() {
     fi
 }
 
-if [ "$1" == "toggle" ]; then
+if [ "$1" == "stop" ]; then
+    if [ -f "$STATE_FILE" ]; then
+        rm "$STATE_FILE"
+    fi
+    stop_inhibitor
+    pkill -RTMIN+15 waybar
+elif [ "$1" == "toggle" ]; then
     if [ -f "$STATE_FILE" ]; then
         rm "$STATE_FILE"
         stop_inhibitor

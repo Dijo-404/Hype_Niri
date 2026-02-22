@@ -215,8 +215,8 @@ copy_configs() {
 
     # Wallpapers
     mkdir -p "$HOME/Pictures/Wallpapers"
-    if [ -d "$SCRIPT_DIR/Wallpapers" ]; then
-        cp -r "$SCRIPT_DIR/Wallpapers/"* "$HOME/Pictures/Wallpapers/" 2>/dev/null
+    if [ -d "$SCRIPT_DIR/Wallpapers" ] && [ "$(ls -A "$SCRIPT_DIR/Wallpapers" 2>/dev/null)" ]; then
+        cp -r "$SCRIPT_DIR/Wallpapers/"* "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
         print_done "Copied wallpapers → ~/Pictures/Wallpapers"
     fi
 }
@@ -276,7 +276,7 @@ setup_system() {
 
     # Polkit Rules
     print_step "Installing Polkit rules (NetworkManager)..."
-    if [ -d "$SCRIPT_DIR/polkit" ]; then
+    if [ -d "$SCRIPT_DIR/polkit" ] && [ "$(ls -A "$SCRIPT_DIR/polkit" 2>/dev/null)" ]; then
         sudo cp -r "$SCRIPT_DIR/polkit/"*.rules /etc/polkit-1/rules.d/ 2>/dev/null || true
         print_done "Polkit rules applied"
     fi
@@ -315,9 +315,10 @@ setup_gtk() {
 
     # Set GTK theme via gsettings if available
     if command -v gsettings &>/dev/null; then
-        gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface font-name "JetBrainsMono Nerd Font 10" 2>/dev/null || true
+        print_step "Applying GTK settings via gsettings..."
+        gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || print_warn "Failed to set icon-theme via gsettings (ignoring)"
+        gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || print_warn "Failed to set cursor-size via gsettings (ignoring)"
+        gsettings set org.gnome.desktop.interface font-name "JetBrainsMono Nerd Font 10" 2>/dev/null || print_warn "Failed to set font-name via gsettings (ignoring)"
         print_done "GTK settings applied via gsettings"
     fi
 
