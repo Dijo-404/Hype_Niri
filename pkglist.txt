@@ -39,7 +39,7 @@ vim
 waybar
 fuzzel
 mako
-swaylock
+hyprlock
 swayidle
 swww
 hyprpicker

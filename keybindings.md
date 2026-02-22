@@ -13,7 +13,7 @@
 | `Super + W` | `toggle-column-tabbed` | Toggle tabbed column |
 | `Super + Shift + F` | `fullscreen-window` | Toggle fullscreen |
 | `Super + F` | `maximize-column` | Maximize column |
-| `Super + L` | `swaylock` | Lock screen |
+| `Super + L` | `hyprlock` | Lock screen |
 | `Super + O` | `toggle-overview` | Overview |
 
 ## Focus & Navigation

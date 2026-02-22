@@ -142,7 +142,7 @@ backup_configs() {
         "fuzzel"
         "mako"
         "fastfetch"
-        "swaylock"
+        "hyprlock"
         "wlogout"
     )
 
@@ -191,7 +191,7 @@ copy_configs() {
         "fuzzel"
         "mako"
         "fastfetch"
-        "swaylock"
+        "hyprlock"
         "wlogout"
     )
 
@@ -364,7 +364,7 @@ validate() {
         "$HOME/.config/fuzzel/fuzzel.ini"
         "$HOME/.config/mako/config"
         "$HOME/.config/fastfetch/config.jsonc"
-        "$HOME/.config/swaylock/config"
+        "$HOME/.config/hyprlock/hyprlock.conf"
         "$HOME/.config/wlogout/layout"
         "$HOME/.zshrc"
     )

@@ -20,7 +20,7 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 | Shell | [Zsh](https://www.zsh.org/) + [Powerlevel10k](https://github.com/romkatv/powerlevel10k) |
 | Launcher | [Fuzzel](https://codeberg.org/dnkl/fuzzel) |
 | Notifications | [Mako](https://github.com/emersion/mako) |
-| Lock Screen | [Swaylock](https://github.com/swaywm/swaylock) |
+| Lock Screen | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | Idle Daemon | [Swayidle](https://github.com/swaywm/swayidle) |
 | Wallpaper | [Swww](https://github.com/LGFae/swww) |
 | Login | [Greetd](https://sr.ht/~kennylevinsen/greetd/) + [TuiGreet](https://github.com/apognu/tuigreet) |
