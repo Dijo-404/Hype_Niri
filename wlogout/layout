@@ -25,7 +25,7 @@
 }
 {
     "label": "sleep",
-    "action": "systemctl suspend",
+    "action": "rm -f /tmp/caffeine_state; kill $(cat /tmp/caffeine_pid) 2>/dev/null; rm -f /tmp/caffeine_pid; pkill -RTMIN+15 waybar; systemctl suspend",
     "text": "Sleep",
     "keybind": "s"
 }

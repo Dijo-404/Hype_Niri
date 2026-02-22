@@ -11,8 +11,8 @@ output "eDP-1" {
 
 // External monitor (left of laptop)
 // Niri auto-ignores this when disconnected
-output "HDMI-A-1" {
-    mode "2560x1440@180"
+output "DP-3" {
+    mode "2560x1440@179.999"
     scale 1.0
     position x=0 y=0
 }
@@ -158,7 +158,7 @@ spawn-at-startup "alacritty"
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
 // Idle + lock
-spawn-sh-at-startup "swayidle -w timeout 60 'hyprlock' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'hyprlock'"
+spawn-sh-at-startup "swayidle -w timeout 60 'hyprlock' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'pidof hyprlock || hyprlock --immediate-render --no-fade-in; sleep 0.5; niri msg action power-off-monitors; sleep 1' after-resume 'niri msg action power-on-monitors'"
 
 // Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"

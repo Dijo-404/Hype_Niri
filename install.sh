@@ -191,7 +191,6 @@ copy_configs() {
         "fuzzel"
         "mako"
         "fastfetch"
-        "hyprlock"
         "wlogout"
     )
 
@@ -202,6 +201,13 @@ copy_configs() {
             print_done "Copied $config → ~/.config/$config"
         fi
     done
+
+    # Hyprlock config goes in ~/.config/hypr/
+    if [ -d "$SCRIPT_DIR/hyprlock" ]; then
+        mkdir -p "$HOME/.config/hypr"
+        cp -r "$SCRIPT_DIR/hyprlock/"* "$HOME/.config/hypr/"
+        print_done "Copied hyprlock → ~/.config/hypr/"
+    fi
 
     # Ensure scripts are executable
     chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null
@@ -364,7 +370,7 @@ validate() {
         "$HOME/.config/fuzzel/fuzzel.ini"
         "$HOME/.config/mako/config"
         "$HOME/.config/fastfetch/config.jsonc"
-        "$HOME/.config/hyprlock/hyprlock.conf"
+        "$HOME/.config/hypr/hyprlock.conf"
         "$HOME/.config/wlogout/layout"
         "$HOME/.zshrc"
     )
