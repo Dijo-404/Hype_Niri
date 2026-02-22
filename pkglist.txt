@@ -40,7 +40,7 @@ waybar
 fuzzel
 mako
 hyprlock
-swayidle
+hypridle
 swww
 hyprpicker
 polkit-gnome

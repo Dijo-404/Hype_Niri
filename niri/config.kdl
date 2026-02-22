@@ -158,7 +158,7 @@ spawn-at-startup "alacritty"
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
 // Idle + lock
-spawn-sh-at-startup "swayidle -w timeout 60 'hyprlock' timeout 90 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' before-sleep 'pidof hyprlock || hyprlock --immediate-render --no-fade-in; sleep 0.5; niri msg action power-off-monitors; sleep 1' after-resume 'niri msg action power-on-monitors'"
+spawn-sh-at-startup "hypridle"
 
 // Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
