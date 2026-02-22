@@ -25,7 +25,7 @@
 }
 {
     "label": "sleep",
-    "action": "loginctl suspend",
+    "action": "systemctl suspend",
     "text": "Sleep",
     "keybind": "s"
 }
