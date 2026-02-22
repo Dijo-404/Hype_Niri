@@ -1,11 +1,11 @@
-# ⌨️ Niri Keybindings
+# Niri Keybindings
 
 These are the primary default keybindings for the Hype Niri environment.
 
 > [!NOTE]  
 > The "Super" key refers to the Windows, Command, or Meta key on your keyboard.
 
-## 🪟 Window Management
+## Window Management
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -21,7 +21,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + Shift + Space` | `switch-focus` | Switch focus between floating/tiling |
 | `Super + L` | `hyprlock` | Lock the screen |
 
-## 🎯 Focus & Navigation
+## Focus & Navigation
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -29,7 +29,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + ↑` / `↓` | `focus-window` | Focus up/down window within a column |
 | `Alt + Tab` | `focus-window-down` | Cycle focus down |
 
-## 📐 Resize
+## Resize
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -38,14 +38,14 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + -` / `=` | `set-column-width ±10%` | Adjust column width precisely |
 | `Super + Shift + -` / `=`| `set-window-height ±10%` | Adjust window height precisely |
 
-## 🚚 Move Window / Column
+## Move Window / Column
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
 | `Alt + Shift + ←` / `→` | `move-column` | Move entire column left/right |
 | `Alt + Shift + ↑` / `↓` | `move-window` | Move window up/down within column |
 
-## 🏗️ Column Management
+## Column Management
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -58,7 +58,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + ]` | `consume/expel-right` | Consume or expel window to the right |
 | `Super + ,` | `consume-window` | Consume window into current column |
 
-## 🚀 Applications & Launchers
+## Applications & Launchers
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -72,7 +72,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + .` | `bemoji` | Open Emoji Picker |
 | `Super + V` | `cliphist` | Open Clipboard History List |
 
-## 🔊 Audio & Brightness
+## Audio & Brightness
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -84,7 +84,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `F6` / `Bright Up` | `brightness up` | Increase Screen Brightness |
 | `Play/Pause/Next/Prev`| `playerctl` | Control Media Playback |
 
-## 🖥️ Workspaces & Monitors
+## Workspaces & Monitors
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -95,7 +95,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + Shift + ←/→` | `focus-monitor` | Focus left/right monitor |
 | `Super + Shift + Alt + ←/→`| `move-to-monitor` | Move column to left/right monitor |
 
-## 📸 Screenshots & Pickers
+## Screenshots & Pickers
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |
@@ -104,7 +104,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Alt + Print` | `screenshot-window` | Screenshot active window |
 | `Super + Shift + P` | `hyprpicker` | Interactive color picker |
 
-## 🎨 Miscellaneous
+## Miscellaneous
 
 | Keybinding | Action | Description |
 | :--- | :--- | :--- |

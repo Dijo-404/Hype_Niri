@@ -1,6 +1,6 @@
-# Hype Niri 🍃
+# Hype Niri
 
-> A hyper-aesthetic, highly functional Wayland setup based on the Niri scrollable-tiling compositor and the Everforest dark scheme.
+> A clean, professional, highly functional Wayland setup based on the Niri scrollable-tiling compositor and the Everforest dark scheme.
 
 ![Niri](https://img.shields.io/badge/Niri-Wayland-7fbbb3?style=for-the-badge&logo=wayland&logoColor=white)
 ![Arch Linux](https://img.shields.io/badge/Arch_Linux-a7c080?style=for-the-badge&logo=archlinux&logoColor=white)
@@ -8,11 +8,11 @@
 
 <br/>
 
-## ✨ Overview
+## Overview
 
 Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable tiling Wayland compositor. Focused on delivering a premium, smooth, and full-featured desktop experience using native Wayland tools—no X11 dependencies.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component | Tool / Link |
 | :--- | :--- |
@@ -31,9 +31,9 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 
 <br/>
 
-## 🚀 Installation
+## Installation
 
-For a fully automated installation, just clone the repository and run the setup script:
+For a fully automated installation, clone the repository and run the setup script:
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -46,7 +46,7 @@ cd Hype_Niri
 
 <br/>
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 .
@@ -55,12 +55,12 @@ cd Hype_Niri
 ├── fuzzel/          # Application launcher styled for Everforest
 ├── greetd/          # TUI-based minimal login manager
 ├── hypr/            # Hypridle configuration for lock/sleep management
-├── hyprlock/        # Beautiful lock screen configuration
+├── hyprlock/        # Lock screen configuration
 ├── mako/            # Notification daemon configuration
 ├── niri/            # Core Niri compositor settings and rules
 ├── Wallpapers/      # Default curated wallpapers
 ├── waybar/          # Comprehensive status bar + utility scripts
-├── wlogout/         # Aesthetic power menu configuration
+├── wlogout/         # Power menu configuration
 ├── zsh/             # Shell config (.zshrc) and aliases
 ├── install.sh       # Automated installation script
 ├── pkglist.txt      # Master list of required packages
@@ -69,9 +69,8 @@ cd Hype_Niri
 
 <br/>
 
-## 📖 Documentation
+## Documentation
 
-Get to know the ecosystem:
-- ⌨️ **[Keybindings Reference](keybindings.md)** - Learn how to navigate and manage windows
-- 💻 **[Zsh Aliases](alias.md)** - Boost your terminal productivity
-- ⚙️ **[Installation Guide](INSTALL.md)** - Detailed setup instructions
+- **[Keybindings Reference](keybindings.md)** - Learn how to navigate and manage windows
+- **[Zsh Aliases](alias.md)** - Shell aliases
+- **[Installation Guide](INSTALL.md)** - Detailed setup instructions

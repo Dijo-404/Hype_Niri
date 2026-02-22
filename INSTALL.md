@@ -1,6 +1,6 @@
-# ⚙️ Hype Niri — Installation Guide
+# Hype Niri — Installation Guide
 
-## 🚀 Quick Install (Recommended)
+## Quick Install (Recommended)
 
 The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, and enabling necessary system services.
 
@@ -16,7 +16,7 @@ chmod +x install.sh
 
 ---
 
-## 🛠️ Manual Install
+## Manual Install
 
 If you prefer to understand what is happening under the hood or selectively apply configurations, follow these manual steps.
 
@@ -78,13 +78,13 @@ reboot
 
 ---
 
-## 📌 Post-Install Steps
+## Post-Install Steps
 
 - **Powerlevel10k Prompt**: Open your terminal (`Mod+T`). It will automatically prompt you to run `p10k configure` to customize your prompt.
-- **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor—it operates differently than standard window managers!
+- **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
 - **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`.
 
-## 📖 Documentation Links
+## Documentation Links
 
-- ⌨️ [Keybindings Reference](keybindings.md)
-- 💻 [Zsh Aliases](alias.md)
+- [Keybindings Reference](keybindings.md)
+- [Zsh Aliases](alias.md)
