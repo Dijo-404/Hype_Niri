@@ -13,13 +13,13 @@
 }
 {
     "label": "shutdown",
-    "action": "systemctl poweroff",
+    "action": "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
     "text": "Shutdown",
-    "keybind": "s"
+    "keybind": "p"
 }
 {
     "label": "reboot",
-    "action": "systemctl reboot",
+    "action": "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
     "text": "Reboot",
     "keybind": "r"
 }
