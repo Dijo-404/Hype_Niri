@@ -1,16 +1,7 @@
 #!/bin/bash
 
-# File to store notification ID
-ID_FILE="/tmp/notify-volume-id"
-
-send_notification() {
-    if [ -f "$ID_FILE" ]; then
-        ID=$(cat "$ID_FILE")
-        notify-send -p -r "$ID" "$@" > "$ID_FILE"
-    else
-        notify-send -p "$@" > "$ID_FILE"
-    fi
-}
+# Notification replacement ID (fixed, like mic-control.sh uses 2003)
+ID=2001
 
 case "$1" in
     up)
@@ -30,8 +21,8 @@ vol=$(echo "$vol_info" | awk '{print int($2 * 100)}')
 mute=$(echo "$vol_info" | grep "MUTED")
 
 if [ -n "$mute" ]; then
-    # Muted state
-    send_notification \
+    notify-send -r "$ID" \
+        -h string:x-canonical-private-synchronous:volume \
         "󰝟  Muted"
 else
     # Select icon based on volume level
@@ -42,8 +33,9 @@ else
     else
         icon="󰕾"
     fi
-    
-    send_notification \
+
+    notify-send -r "$ID" \
+        -h string:x-canonical-private-synchronous:volume \
         -h int:value:"$vol" \
         "$icon  Volume: ${vol}%"
 fi

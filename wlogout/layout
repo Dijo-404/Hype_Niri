@@ -1,31 +1,31 @@
 {
     "label": "lock",
-    "action": "hyprlock",
+    "action": "pkill -x wlogout; hyprlock",
     "text": "Lock",
     "keybind": "l"
 }
 
 {
     "label": "logout",
-    "action": "niri msg action quit",
+    "action": "pkill -x wlogout; niri msg action quit",
     "text": "Logout",
     "keybind": "e"
 }
 {
     "label": "shutdown",
-    "action": "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
     "text": "Shutdown",
     "keybind": "p"
 }
 {
     "label": "reboot",
-    "action": "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
     "text": "Reboot",
     "keybind": "r"
 }
 {
     "label": "sleep",
-    "action": "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend",
     "text": "Sleep",
     "keybind": "s"
 }

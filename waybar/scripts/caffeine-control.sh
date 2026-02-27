@@ -33,7 +33,7 @@ elif [ "$1" == "toggle" ]; then
     if [ -f "$STATE_FILE" ]; then
         rm "$STATE_FILE"
         stop_inhibitor
-        notify-send -r "$ID" "󰾪  Caffeine Mode Deactive" "System will auto-suspend"
+        notify-send -r "$ID" "󰾪  Caffeine Mode Deactivated" "System will auto-suspend"
         echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
     else
         touch "$STATE_FILE"

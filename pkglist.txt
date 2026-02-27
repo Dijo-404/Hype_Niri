@@ -80,6 +80,8 @@ playerctl
 # ── Networking ────────────────────────────────────
 networkmanager
 network-manager-applet
+gnome-keyring
+libsecret
 iwd
 wireless_tools
 wpa_supplicant
@@ -115,5 +117,3 @@ papirus-folders-catppuccin-git
 # ── Containers (Optional) ─────────────────────────
 # docker
 # miniconda3
-
-# ── Package Management ───────────────────────────
