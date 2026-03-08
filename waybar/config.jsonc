@@ -2,6 +2,9 @@
     "layer": "top",
     "position": "top",
     "height": 40,
+    "margin-top": 2,
+    "margin-left": 2,
+    "margin-right": 2,
     "spacing": 5,
     "modules-left": [
         "cpu",
