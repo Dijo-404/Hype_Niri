@@ -46,7 +46,7 @@ input {
 // ── Layout ───────────────────────────────────────
 
 layout {
-    gaps 0
+    gaps 2
 
     preset-column-widths {
         proportion 0.33333
