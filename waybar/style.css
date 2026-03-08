@@ -16,7 +16,7 @@ window#waybar {
     color: @fg;
     transition-property: background-color;
     transition-duration: 0.5s;
-    border-radius: 6px;
+    border-radius: 2px;
     padding-left: 1px;
     padding-right: 1px;
     margin-left: 4px;
@@ -52,7 +52,7 @@ window#waybar {
     padding-bottom: 0px;
     margin-top: 3px;
     margin-bottom: 3px;
-    border-radius: 10px;
+    border-radius: 2px;
 
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
@@ -72,7 +72,7 @@ window#waybar {
     margin-bottom: 3px;
     margin-left: 3px;
     margin-right: 3px;
-    border-radius: 8px;
+    border-radius: 2px;
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
     border-bottom-style: solid;
@@ -86,7 +86,7 @@ window#waybar {
 #workspaces button.focused {
     background-color: @accent;
     color: @bg0;
-    border-radius: 8px;
+    border-radius: 2px;
     margin-bottom: 3px;
 
     border-bottom-width: 2px;
