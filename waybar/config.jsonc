@@ -144,7 +144,7 @@
         "format": "⏻",
         "tooltip": true,
         "tooltip-format": "Power Menu",
-        "on-click": "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
-        "on-click-right": "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
+        "on-click": "wlogout -b 6 -c 0 -r 0 -m 0 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
+        "on-click-right": "wlogout -b 6 -c 0 -r 0 -m 0 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
     }
 }

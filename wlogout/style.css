@@ -1,7 +1,7 @@
 * {
     background-image: none;
     font-family: "JetBrainsMono Nerd Font";
-    font-size: 12px;
+    font-size: 14px;
 }
 
 window {
@@ -13,38 +13,44 @@ box {
 }
 
 button {
-    background-color: rgba(20, 20, 20, 0.55);
+    background-color: rgba(35, 35, 35, 0.85);
     background-repeat: no-repeat;
     background-position: center 38%;
     background-size: 22%;
 
     color: rgba(212, 212, 212, 0.85);
-    border: 1px solid rgba(176, 176, 176, 0.18);
-    border-radius: 18px;
+    border: none;
+    border-radius: 0px;
     outline: none;
     box-shadow: none;
     text-shadow: none;
 
-    /* Portrait cards in a horizontal strip */
-    min-width: 110px;
+    min-width: 150px;
     min-height: 180px;
 
-    /* Large top/bottom margins center the row vertically */
-    margin-top: 200px;
-    margin-bottom: 200px;
-    margin-left: 6px;
-    margin-right: 6px;
+    /* Base margins */
+    margin-top: 360px;
+    margin-bottom: 360px;
+    margin-left: 0px;
+    margin-right: 0px;
+    
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
 }
 
 button:focus,
 button:active,
 button:hover {
-    background-color: rgba(176, 176, 176, 0.15);
-    border-color: rgba(176, 176, 176, 0.55);
-    color: #d4d4d4;
+    background-color: rgba(80, 80, 80, 0.95);
+    color: #ffffff;
+    /* Grow on hover */
+    margin-top: 310px;
+    margin-bottom: 310px;
+    border-radius: 30px;
+    z-index: 10;
 }
 
 #lock {
+    border-radius: 30px 0 0 30px;
     background-image: image(url("/usr/share/wlogout/icons/lock.png"));
 }
 
@@ -65,5 +71,10 @@ button:hover {
 }
 
 #reboot {
+    border-radius: 0 30px 30px 0;
     background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+}
+
+#lock:hover, #logout:hover, #suspend:hover, #shutdown:hover, #hibernate:hover, #reboot:hover {
+    border-radius: 30px;
 }

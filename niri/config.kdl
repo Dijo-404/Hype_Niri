@@ -175,7 +175,7 @@ binds {
     Ctrl+Q repeat=false { close-window; }
     Alt+F4 repeat=false { close-window; }
     Mod+Delete { quit; }
-    Mod+Shift+Delete { spawn-sh "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
+    Mod+Shift+Delete { spawn-sh "wlogout -b 6 -c 0 -r 0 -m 0 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
     Mod+Shift+F { fullscreen-window; }
