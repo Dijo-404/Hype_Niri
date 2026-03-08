@@ -46,7 +46,7 @@ input {
 // ── Layout ───────────────────────────────────────
 
 layout {
-    gaps 2
+    gaps 4
 
     preset-column-widths {
         proportion 0.33333
@@ -63,7 +63,7 @@ layout {
     border {
         on
         width 2
-        active-color "#7fbbbc"
+        active-color "#7fbbb3"
         inactive-color "#e67e80"
     }
 

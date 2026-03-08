@@ -2,9 +2,9 @@
     "layer": "top",
     "position": "top",
     "height": 40,
-    "margin-top": 2,
-    "margin-left": 2,
-    "margin-right": 2,
+    "margin-top": 4,
+    "margin-left": 4,
+    "margin-right": 4,
     "spacing": 5,
     "modules-left": [
         "cpu",
@@ -40,7 +40,8 @@
         "exec": "~/.config/waybar/scripts/power-profile.sh",
         "return-type": "json",
         "interval": 5,
-        "on-click": "~/.config/waybar/scripts/power-profile.sh menu"
+        "on-click": "~/.config/waybar/scripts/power-profile.sh menu",
+        "signal": 16
     },
     "tray": {
         "icon-size": 16,

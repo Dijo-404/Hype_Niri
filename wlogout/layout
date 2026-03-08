@@ -11,21 +11,31 @@
     "text": "Logout",
     "keybind": "e"
 }
+
+{
+    "label": "suspend",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend",
+    "text": "Suspend",
+    "keybind": "s"
+}
+
 {
     "label": "shutdown",
     "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
     "text": "Shutdown",
     "keybind": "p"
 }
+
+{
+    "label": "hibernate",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl hibernate",
+    "text": "Hibernate",
+    "keybind": "h"
+}
+
 {
     "label": "reboot",
     "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
     "text": "Reboot",
     "keybind": "r"
-}
-{
-    "label": "sleep",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend",
-    "text": "Sleep",
-    "keybind": "s"
 }

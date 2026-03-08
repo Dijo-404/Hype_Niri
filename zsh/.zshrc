@@ -18,7 +18,7 @@ alias ll='ls -lh'
 alias lsa='ls -lah'
 alias lt='ls -lhtr'
 alias lS='ls -lhS'
-alias lsd='ls -lhd */'
+alias ldir='ls -lhd */'
 
 # Navigation
 alias ..='cd ..'
@@ -200,4 +200,11 @@ fastfetch
 
 # Make autosuggestions more visible
 export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
+
+# ── Additional Paths ─────────────────────────────
+
+[[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
+
+# Google Cloud SDK
+if [ -f '/home/dj/google-cloud-sdk/path.zsh.inc' ]; then . '/home/dj/google-cloud-sdk/path.zsh.inc'; fi
 

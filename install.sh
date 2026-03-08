@@ -143,6 +143,7 @@ backup_configs() {
         "mako"
         "fastfetch"
         "wlogout"
+        "hypr"
     )
 
     has_existing=false
@@ -286,23 +287,34 @@ setup_system() {
     # Enable essential services
     print_step "Enabling system services..."
 
-    local services=(
+    # System services (require sudo)
+    local system_services=(
         "NetworkManager"
         "bluetooth"
+    )
+
+    for service in "${system_services[@]}"; do
+        if systemctl list-unit-files "$service.service" &>/dev/null; then
+            sudo systemctl enable "$service" 2>/dev/null || true
+            print_step "Enabled system service: $service"
+        else
+            print_warn "Service $service not found"
+        fi
+    done
+
+    # User services (pipewire stack — enable globally so they start for all users)
+    local user_services=(
         "pipewire"
         "pipewire-pulse"
         "wireplumber"
     )
 
-    for service in "${services[@]}"; do
-        if systemctl list-unit-files "$service.service" &>/dev/null; then
-            sudo systemctl enable "$service" 2>/dev/null || true
-            print_step "Enabled system service: $service"
-        elif systemctl --global list-unit-files "$service.service" &>/dev/null; then
-            systemctl --user enable "$service" 2>/dev/null || systemctl --global enable "$service" 2>/dev/null || true
+    for service in "${user_services[@]}"; do
+        if systemctl --global list-unit-files "$service.service" &>/dev/null 2>&1; then
+            sudo systemctl --global enable "$service" 2>/dev/null || true
             print_step "Enabled user service: $service"
         else
-            print_warn "Service $service not found"
+            print_warn "User service $service not found (may use socket activation)"
         fi
     done
     print_done "System services configured"

@@ -9,7 +9,7 @@ Aliases to speed up your terminal workflow in Hype Niri.
 - `la`, `lsa`: List all files (including hidden)
 - `lt`: Sort by modification time
 - `lS`: Sort by file size
-- `lsd`: List directories only
+- `ld`: List directories only
 - `tree`: Tree view hierarchy (`eza --tree`)
 - `..`, `...`, `....`: Go up one, two, or three directories
 - `~`: Go to home directory
