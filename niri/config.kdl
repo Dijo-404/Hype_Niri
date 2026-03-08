@@ -1,5 +1,5 @@
 // ╔═══════════════════════════════════════════════╗
-// ║  Niri Configuration — Everforest Dark Theme   ║
+// ║    Niri Configuration — Monochrome Theme      ║
 // ╚═══════════════════════════════════════════════╝
 
 // ── Outputs ──────────────────────────────────────
@@ -63,8 +63,8 @@ layout {
     border {
         on
         width 2
-        active-color "#7fbbb3"
-        inactive-color "#e67e80"
+        active-color "#b0b0b0"
+        inactive-color "#404040"
     }
 
     shadow {

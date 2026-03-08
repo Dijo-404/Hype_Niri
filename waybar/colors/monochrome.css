@@ -1,0 +1,26 @@
+/* Monochrome Palette */
+
+@define-color bg_dim #0e0e0e;
+@define-color bg0 #141414;
+@define-color bg1 #1c1c1c;
+@define-color bg2 #262626;
+@define-color bg3 #333333;
+@define-color bg4 #404040;
+@define-color bg5 #4d4d4d;
+@define-color fg #d4d4d4;
+@define-color fg_dim #999999;
+@define-color accent #b0b0b0;
+@define-color warn #cccccc;
+@define-color crit #ffffff;
+
+/* Semantic aliases (keep waybar style.css references working) */
+@define-color red #ffffff;
+@define-color orange #e0e0e0;
+@define-color yellow #cccccc;
+@define-color green #b0b0b0;
+@define-color aqua #999999;
+@define-color blue #b0b0b0;
+@define-color purple #c0c0c0;
+@define-color grey0 #666666;
+@define-color grey1 #777777;
+@define-color grey2 #888888;
