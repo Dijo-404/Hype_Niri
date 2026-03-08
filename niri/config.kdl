@@ -80,7 +80,7 @@ layout {
 
 animations {
     workspace-switch {
-        spring damping-ratio=1.0 stiffness=1000 epsilon=0.0001
+        spring damping-ratio=0.90 stiffness=900 epsilon=0.0001
     }
 
     window-open {
@@ -90,23 +90,23 @@ animations {
 
     window-close {
         duration-ms 150
-        curve "ease-out-quad"
+        curve "ease-out-expo"
     }
 
     horizontal-view-movement {
-        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+        spring damping-ratio=0.90 stiffness=900 epsilon=0.0001
     }
 
     window-movement {
-        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+        spring damping-ratio=0.90 stiffness=900 epsilon=0.0001
     }
 
     window-resize {
-        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+        spring damping-ratio=0.9 stiffness=800 epsilon=0.0001
     }
 
     config-notification-open-close {
-        spring damping-ratio=0.6 stiffness=1000 epsilon=0.001
+        spring damping-ratio=0.6 stiffness=800 epsilon=0.001
     }
 }
 
@@ -279,7 +279,7 @@ binds {
     // ── Waybar ───────────────────────────────────
 
     Mod+Alt+Up { spawn-sh "pkill waybar; waybar &"; }
-    Mod+Alt+Down { spawn-sh "pkill waybar; waybar &"; }
+    Mod+Alt+Down { spawn-sh "pkill waybar"; }
 
     // ── Workspaces ───────────────────────────────
 

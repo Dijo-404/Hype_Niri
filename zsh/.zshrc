@@ -18,7 +18,7 @@ alias ll='ls -lh'
 alias lsa='ls -lah'
 alias lt='ls -lhtr'
 alias lS='ls -lhS'
-alias ld='ls -lhd */'
+alias lsd='ls -lhd */'
 
 # Navigation
 alias ..='cd ..'
@@ -168,8 +168,15 @@ setopt SHARE_HISTORY
 
 # Tab completion
 autoload -Uz compinit && compinit
-zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+# fzf-tab setup
+source ~/.zsh/fzf-tab/fzf-tab.plugin.zsh
+zstyle ':completion:*:git-checkout:*' sort false
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' menu no
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'eza -1 --color=always $realpath'
 
 # Colors
 autoload -Uz colors && colors
@@ -190,3 +197,7 @@ fastfetch
 
 # p10k config (run `p10k configure` to customize)
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Make autosuggestions more visible
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
+

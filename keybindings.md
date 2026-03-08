@@ -13,7 +13,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Ctrl + Q` | `close-window` | Close active window |
 | `Alt + F4` | `close-window` | Close active window |
 | `Super + Delete` | `quit` | Exit Niri completely |
-| `Super + W` | `toggle-column-tabbed` | Toggle tabbed column view |
+| `Super + W` | `toggle-column-tabbed-display` | Toggle tabbed column view |
 | `Super + Shift + F` | `fullscreen-window` | Toggle fullscreen mode |
 | `Super + F` | `maximize-column` | Maximize the current column |
 | `Super + O` | `toggle-overview` | Toggle window overview |
@@ -110,6 +110,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | :--- | :--- | :--- |
 | `Super + Alt + ←` / `→` | `wallpaper random` | Cycle random wallpaper next/prev |
 | `Super + Shift + W` | `wallpaper select` | Open wallpaper selector menu |
-| `Super + Alt + ↑` / `↓` | `waybar restart` | Restart Waybar process |
+| `Super + Alt + ↑` | `waybar show` | Show/restart Waybar |
+| `Super + Alt + ↓` | `waybar hide` | Hide Waybar |
 | `Super + Esc` | `inhibit-shortcuts` | Toggle Niri keyboard shortcut override |
-| `Power Button` | `wlogout` | Open power/logout menu |
+| `Power Button` | `suspend` | Suspend the system (bypasses caffeine) |

@@ -66,6 +66,7 @@ fastfetch
 lazygit
 lazydocker
 imagemagick
+uv
 
 # ── Audio & Media ─────────────────────────────────
 pipewire
@@ -112,7 +113,7 @@ bemoji
 # ── Fonts & Theming ──────────────────────────────
 ttf-jetbrains-mono-nerd
 terminus-font
-papirus-folders-catppuccin-git
+papirus-icon-theme
 
 # ── Containers (Optional) ─────────────────────────
 # docker

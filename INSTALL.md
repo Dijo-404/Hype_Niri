@@ -39,7 +39,10 @@ Move the dotfiles to their respective locations in your home directory.
 mkdir -p ~/.config
 
 # Copy Wayland/UI configurations
-cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hyprlock hypr ~/.config/
+cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
+
+# Copy Hyprlock config into hypr directory
+cp hyprlock/hyprlock.conf ~/.config/hypr/
 
 # Copy Shell configuration
 cp zsh/.zshrc ~/

@@ -142,7 +142,6 @@ backup_configs() {
         "fuzzel"
         "mako"
         "fastfetch"
-        "hyprlock"
         "wlogout"
     )
 
@@ -192,6 +191,7 @@ copy_configs() {
         "mako"
         "fastfetch"
         "wlogout"
+        "hypr"
     )
 
     for config in "${configs[@]}"; do
@@ -201,13 +201,6 @@ copy_configs() {
             print_done "Copied $config → ~/.config/$config"
         fi
     done
-
-    # Hyprlock config goes in ~/.config/hypr/
-    if [ -d "$SCRIPT_DIR/hyprlock" ]; then
-        mkdir -p "$HOME/.config/hypr"
-        cp -r "$SCRIPT_DIR/hyprlock/"* "$HOME/.config/hypr/"
-        print_done "Copied hyprlock → ~/.config/hypr/"
-    fi
 
     # Ensure scripts are executable
     chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null
@@ -227,6 +220,15 @@ copy_configs() {
 
 setup_shell() {
     print_header "Setting Up Zsh"
+
+    print_step "Installing fzf-tab plugin..."
+    if [ ! -d "$HOME/.zsh/fzf-tab" ]; then
+        mkdir -p "$HOME/.zsh"
+        git clone https://github.com/Aloxaf/fzf-tab "$HOME/.zsh/fzf-tab"
+        print_done "fzf-tab installed"
+    else
+        print_done "fzf-tab already installed"
+    fi
 
     # Copy .zshrc
     if [ -f "$SCRIPT_DIR/zsh/.zshrc" ]; then
@@ -399,11 +401,12 @@ validate() {
 cleanup_hyprland() {
     print_header "Clean Up Old Hyprland Configs (Optional)"
 
-    if [ -d "$HOME/.config/hypr" ]; then
-        print_warn "Found existing Hyprland config at ~/.config/hypr"
-        if confirm "Remove old Hyprland config?"; then
-            rm -rf "$HOME/.config/hypr"
-            print_done "Removed ~/.config/hypr"
+    # Only remove Hyprland-specific config (not hypridle/hyprlock which we just installed)
+    if [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
+        print_warn "Found old Hyprland config at ~/.config/hypr/hyprland.conf"
+        if confirm "Remove old hyprland.conf?"; then
+            rm -f "$HOME/.config/hypr/hyprland.conf"
+            print_done "Removed hyprland.conf"
         fi
     fi
 
