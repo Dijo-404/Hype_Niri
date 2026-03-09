@@ -1,10 +1,10 @@
 # Hype Niri
 
-> A clean, professional, highly functional Wayland setup based on the Niri scrollable-tiling compositor and the Everforest dark scheme.
+> A clean, professional, highly functional Wayland setup based on the Niri scrollable-tiling compositor and a minimalist Monochrome theme.
 
-![Niri](https://img.shields.io/badge/Niri-Wayland-7fbbb3?style=for-the-badge&logo=wayland&logoColor=white)
-![Arch Linux](https://img.shields.io/badge/Arch_Linux-a7c080?style=for-the-badge&logo=archlinux&logoColor=white)
-![Everforest Theme](https://img.shields.io/badge/Theme-Everforest-2d353b?style=for-the-badge)
+![Niri](https://img.shields.io/badge/Niri-Wayland-b0b0b0?style=for-the-badge&logo=wayland&logoColor=white)
+![Arch Linux](https://img.shields.io/badge/Arch_Linux-888888?style=for-the-badge&logo=archlinux&logoColor=white)
+![Monochrome Theme](https://img.shields.io/badge/Theme-Monochrome-141414?style=for-the-badge)
 
 <br/>
 
@@ -52,7 +52,7 @@ cd Hype_Niri
 .
 ├── alacritty/       # Fast, GPU-accelerated terminal configuration
 ├── fastfetch/       # System information fetch utility with custom logo
-├── fuzzel/          # Application launcher styled for Everforest
+├── fuzzel/          # Application launcher styled for Monochrome
 ├── greetd/          # TUI-based minimal login manager
 ├── hypr/            # Hypridle configuration for lock/sleep management
 ├── hyprlock/        # Lock screen configuration

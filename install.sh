@@ -482,7 +482,7 @@ main() {
     echo "  ╩ ╩ ╩ ╩  ╚═╝  ╝╚╝╩╩╚═╩"
     echo -e "${NC}"
     echo -e "  ${BOLD}Arch Linux + Niri Wayland Setup${NC}"
-    echo -e "  ${BLUE}Everforest Dark Theme${NC}"
+    echo -e "  ${BLUE}Monochrome Theme${NC}"
     echo ""
 
     if ! confirm "Start installation?"; then
