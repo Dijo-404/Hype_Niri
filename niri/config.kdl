@@ -325,7 +325,7 @@ binds {
     // ── Power ────────────────────────────────────
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
-    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
-    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
+    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
 }

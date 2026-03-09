@@ -18,9 +18,12 @@ start_inhibitor() {
 
 stop_inhibitor() {
     if [ -f "$PID_FILE" ]; then
-        kill $(cat "$PID_FILE") 2>/dev/null
-        rm "$PID_FILE"
+        kill -9 $(cat "$PID_FILE") 2>/dev/null
+        rm -f "$PID_FILE"
     fi
+    # Kill any orphaned caffeine inhibitors as a fallback
+    pkill -9 -f "systemd-inhibit.*Caffeine Mode" 2>/dev/null
+    sleep 0.2
 }
 
 if [ "$1" == "stop" ]; then

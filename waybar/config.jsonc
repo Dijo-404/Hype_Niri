@@ -144,7 +144,7 @@
         "format": "⏻",
         "tooltip": true,
         "tooltip-format": "Power Menu",
-        "on-click": "wlogout -b 6 -c 0 -r 0 --margin-top 300 --margin-bottom 300 --margin-left 350 --margin-right 350 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
-        "on-click-right": "wlogout -b 6 -c 0 -r 0 --margin-top 300 --margin-bottom 300 --margin-left 350 --margin-right 350 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
+        "on-click": "wlogout --protocol layer-shell -b 5 --margin-top 300 --margin-bottom 300 --margin-left 400 --margin-right 400 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
+        "on-click-right": "wlogout --protocol layer-shell -b 5 --margin-top 300 --margin-bottom 300 --margin-left 400 --margin-right 400 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
     }
 }

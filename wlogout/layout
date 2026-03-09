@@ -6,6 +6,13 @@
 }
 
 {
+    "label": "suspend",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend",
+    "text": "Sleep",
+    "keybind": "s"
+}
+
+{
     "label": "logout",
     "action": "pkill -x wlogout; niri msg action quit",
     "text": "Logout",
@@ -13,29 +20,15 @@
 }
 
 {
-    "label": "suspend",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend",
-    "text": "Suspend",
-    "keybind": "s"
-}
-
-{
     "label": "shutdown",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl poweroff",
     "text": "Shutdown",
     "keybind": "p"
 }
 
 {
-    "label": "hibernate",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl hibernate",
-    "text": "Hibernate",
-    "keybind": "h"
-}
-
-{
     "label": "reboot",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl reboot",
     "text": "Reboot",
     "keybind": "r"
 }

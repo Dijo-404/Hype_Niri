@@ -1,77 +1,63 @@
 * {
-    background-image: none;
     font-family: "JetBrainsMono Nerd Font";
     font-size: 14px;
 }
 
 window {
-    background-color: rgba(10, 10, 10, 0.75);
+    background-color: rgba(10, 10, 10, 0.7);
 }
 
 box {
     background-color: transparent;
+    margin: auto;
+    padding: 0;
 }
 
 button {
-    background-color: rgba(25, 25, 25, 0.95);
+    background-color: rgba(28, 28, 28, 0.85); /* @bg1 #1c1c1c with alpha */
     background-repeat: no-repeat;
-    background-position: center 38%;
-    background-size: 20%;
+    background-position: center 25%;
+    background-size: 35%;
 
-    color: rgba(212, 212, 212, 0.85);
-    border: none;
-    border-radius: 0px;
+    color: #d4d4d4; /* @fg */
+    border: 2px solid rgba(176, 176, 176, 0.2); /* @accent with alpha */
+    border-radius: 32px; /* Increased rounded corners */
     outline: none;
     box-shadow: none;
     text-shadow: none;
 
-    min-width: 150px;
-    min-height: 180px;
+    min-width: 140px;
+    min-height: 140px;
 
-    /* Dynamic scaling limits */
-    margin-top: 100px;
-    margin-bottom: 100px;
-    margin-left: 0px;
-    margin-right: 0px;
-    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+    margin: 20px; /* 4x gap (was 5px) */
+    padding: 0;
+    transition: all 0.2s ease;
 }
 
 button:focus,
 button:active,
 button:hover {
-    background-color: rgba(60, 60, 60, 0.95);
-    color: #ffffff;
-    /* Expand vertically */
-    margin-top: 30px;
-    margin-bottom: 30px;
-    border-radius: 20px;
-    z-index: 10;
+    background-color: rgba(45, 45, 45, 0.95); /* @bg3 approx with alpha */
+    color: #ffffff; /* @crit */
+    border-color: rgba(176, 176, 176, 0.6); /* @accent more opaque */
 }
 
 #lock {
-    border-radius: 20px 0 0 20px;
-    background-image: image(url("/usr/share/wlogout/icons/lock.png"));
-}
-#lock:hover { border-radius: 20px; }
-
-#logout {
-    background-image: image(url("/usr/share/wlogout/icons/logout.png"));
+    background-image: url("/usr/share/wlogout/icons/lock.png");
 }
 
 #suspend {
-    background-image: image(url("/usr/share/wlogout/icons/suspend.png"));
+    background-image: url("/usr/share/wlogout/icons/suspend.png");
+}
+
+#logout {
+    background-image: url("/usr/share/wlogout/icons/logout.png");
 }
 
 #shutdown {
-    background-image: image(url("/usr/share/wlogout/icons/shutdown.png"));
-}
-
-#hibernate {
-    background-image: image(url("/usr/share/wlogout/icons/hibernate.png"));
+    background-image: url("/usr/share/wlogout/icons/shutdown.png");
 }
 
 #reboot {
-    border-radius: 0 20px 20px 0;
-    background-image: image(url("/usr/share/wlogout/icons/reboot.png"));
+    background-image: url("/usr/share/wlogout/icons/reboot.png");
 }
-#reboot:hover { border-radius: 20px; }
