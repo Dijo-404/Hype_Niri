@@ -175,7 +175,7 @@ binds {
     Ctrl+Q repeat=false { close-window; }
     Alt+F4 repeat=false { close-window; }
     Mod+Delete { quit; }
-    Mod+Shift+Delete { spawn-sh "wlogout -b 6 -c 0 -r 0 --margin-top 300 --margin-bottom 300 --margin-left 350 --margin-right 350 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
+    Mod+Shift+Delete { spawn-sh "wlogout -b 5 -c 0 -r 0 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 200 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
     Mod+Shift+F { fullscreen-window; }
