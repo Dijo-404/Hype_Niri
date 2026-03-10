@@ -90,7 +90,7 @@ preflight() {
     fi
 
     # Check internet
-    if ! ping -c 1 archlinux.org &>/dev/null; then
+    if ! curl --connect-timeout 5 -s https://archlinux.org > /dev/null; then
         print_error "No internet connection"
         exit 1
     fi

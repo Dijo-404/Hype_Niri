@@ -83,9 +83,6 @@ networkmanager
 network-manager-applet
 gnome-keyring
 libsecret
-iwd
-wireless_tools
-wpa_supplicant
 
 # ── Bluetooth ─────────────────────────────────────
 bluez
@@ -99,6 +96,7 @@ system-config-printer
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl
 power-profiles-daemon
+# Intel-specific (remove/replace for AMD/NVIDIA)
 intel-media-driver
 intel-ucode
 libva-intel-driver
