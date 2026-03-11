@@ -260,8 +260,6 @@ binds {
 
     XF86MonBrightnessUp allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
-    F6 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
-    F5 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
 
     // ── Screenshots ──────────────────────────────
 

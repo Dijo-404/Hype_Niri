@@ -29,6 +29,7 @@ case "$1" in
         current=$(brightnessctl get)
         max=$(brightnessctl max)
         step=$((max / 100))  # 1% step
+        [ "$step" -lt 1 ] && step=1
         target=$((current + step))
         if [ "$target" -gt "$max" ]; then
             target=$max
@@ -39,8 +40,10 @@ case "$1" in
         current=$(brightnessctl get)
         max=$(brightnessctl max)
         step=$((max / 100))  # 1% step
+        [ "$step" -lt 1 ] && step=1
         target=$((current - step))
         min=$((max / 100))  # minimum 1%
+        [ "$min" -lt 1 ] && min=1
         if [ "$target" -lt "$min" ]; then
             target=$min
         fi
@@ -51,7 +54,8 @@ esac
 # Get current brightness percentage for notification
 current=$(brightnessctl get)
 max=$(brightnessctl max)
-percent=$((current * 100 / max))
+# Round to nearest integer so notification matches waybar's displayed percent.
+percent=$(((current * 100 + max / 2) / max))
 
 # Select icon
 if [ "$percent" -lt 30 ]; then
