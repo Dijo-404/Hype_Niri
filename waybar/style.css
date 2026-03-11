@@ -18,6 +18,8 @@ window#waybar {
     transition-duration: 0.38s;
     transition-timing-function: cubic-bezier(0.25, 0.9, 0.25, 1);
     border-radius: 4px;
+    padding-top: 1px;
+    padding-bottom: 1px;
     padding-left: 1px;
     padding-right: 1px;
     margin-left: 4px;
@@ -25,7 +27,7 @@ window#waybar {
     margin-top: 4px;
     margin-bottom: 4px;
     border-width: 2px;
-    border-color: rgba(176, 176, 176, 0.3);
+    border-color: #b0b0b0;
     border-style: solid;
 }
 
@@ -58,7 +60,7 @@ window#waybar.hidden {
     padding-bottom: 0px;
     margin-top: 3px;
     margin-bottom: 3px;
-    border-radius: 4px;
+    border-radius: 10px;
 
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
@@ -78,7 +80,7 @@ window#waybar.hidden {
     margin-bottom: 3px;
     margin-left: 3px;
     margin-right: 3px;
-    border-radius: 4px;
+    border-radius: 6px;
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
     border-bottom-style: solid;
@@ -92,7 +94,7 @@ window#waybar.hidden {
 #workspaces button.focused {
     background-color: @accent;
     color: @bg0;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-top: 3px;
     margin-bottom: 3px;
 
@@ -118,7 +120,7 @@ window#waybar.hidden {
     color: @bg0;
     border-bottom-color: #999999;
 
-    margin-right: 5px;
+    margin-right: 8px;
     padding-left: 12px;
     padding-right: 15px;
 }
@@ -177,5 +179,5 @@ window#waybar.hidden {
 }
 
 #cpu {
-    margin-left: 5px;
+    margin-left: 8px;
 }
