@@ -15,7 +15,7 @@ window#waybar {
     background-color: rgba(14, 14, 14, 0.75); /* Darker main bar bg (bg_dim #0e0e0e) */
     color: @fg;
     transition-property: background-color, margin-top, opacity;
-    transition-duration: 0.38s;
+    transition-duration: 0.25s;
     transition-timing-function: cubic-bezier(0.25, 0.9, 0.25, 1);
     border-radius: 4px;
     padding-top: 1px;

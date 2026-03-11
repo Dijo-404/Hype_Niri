@@ -10,12 +10,10 @@ fi
 
 if [ -f "$STATE_FILE" ]; then
     niri msg action fullscreen-window
-    sleep 0.11
     pkill -USR1 waybar
     rm -f "$STATE_FILE"
 else
-    pkill -USR1 waybar
-    sleep 0.11
     niri msg action fullscreen-window
+    pkill -USR1 waybar
     touch "$STATE_FILE"
 fi
