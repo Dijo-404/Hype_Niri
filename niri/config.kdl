@@ -178,7 +178,7 @@ binds {
     Mod+Shift+Delete { spawn-sh "wlogout -b 5 -c 0 -r 0 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 200 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
-    Mod+Shift+F { fullscreen-window; }
+    Mod+Shift+F { spawn-sh "~/.config/waybar/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
     Mod+L { spawn-sh "hyprlock"; }

@@ -14,8 +14,9 @@
 window#waybar {
     background-color: rgba(14, 14, 14, 0.75); /* Darker main bar bg (bg_dim #0e0e0e) */
     color: @fg;
-    transition-property: background-color;
-    transition-duration: 0.5s;
+    transition-property: background-color, margin-top, opacity;
+    transition-duration: 0.42s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     border-radius: 4px;
     padding-left: 1px;
     padding-right: 1px;
@@ -26,6 +27,11 @@ window#waybar {
     border-width: 2px;
     border-color: rgba(176, 176, 176, 0.3);
     border-style: solid;
+}
+
+window#waybar.hidden {
+    opacity: 0;
+    margin-top: -68px;
 }
 
 #clock,
@@ -52,7 +58,7 @@ window#waybar {
     padding-bottom: 0px;
     margin-top: 3px;
     margin-bottom: 3px;
-    border-radius: 4px;
+    border-radius: 6px;
 
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
@@ -72,7 +78,7 @@ window#waybar {
     margin-bottom: 3px;
     margin-left: 3px;
     margin-right: 3px;
-    border-radius: 4px;
+    border-radius: 6px;
     border-bottom-width: 2px;
     border-bottom-color: #0e0e0e;
     border-bottom-style: solid;
@@ -86,7 +92,7 @@ window#waybar {
 #workspaces button.focused {
     background-color: @accent;
     color: @bg0;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-top: 3px;
     margin-bottom: 3px;
 

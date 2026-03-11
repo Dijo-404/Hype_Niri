@@ -5,7 +5,7 @@
 # ║     Arch Linux + Niri Wayland Compositor Setup        ║
 # ╚═══════════════════════════════════════════════════════╝
 
-set -e
+set -euo pipefail
 
 # Colors
 RED='\033[0;31m'
@@ -104,6 +104,11 @@ preflight() {
 install_packages() {
     print_header "Installing Packages"
 
+    if [ ! -f "$SCRIPT_DIR/pkglist.txt" ]; then
+        print_error "pkglist.txt not found at $SCRIPT_DIR/pkglist.txt"
+        exit 1
+    fi
+
     # Read package list, strip versions
     mapfile -t packages < <(
         grep -v '^#' "$SCRIPT_DIR/pkglist.txt" | \
@@ -115,13 +120,23 @@ install_packages() {
     print_step "Installing $total packages..."
     echo ""
 
-    # Install all at once for efficiency
-    yay -S --needed --noconfirm "${packages[@]}" 2>&1 | while read -r line; do
-        # Show only important lines
-        if [[ "$line" == *"installing"* ]] || [[ "$line" == *"warning"* ]]; then
-            echo "    $line"
-        fi
-    done
+    if [ "$total" -eq 0 ]; then
+        print_error "No packages found in pkglist.txt"
+        exit 1
+    fi
+
+    # Install all at once for efficiency and fail loudly if yay fails.
+    install_log="$(mktemp)"
+    if ! yay -S --needed --noconfirm "${packages[@]}" >"$install_log" 2>&1; then
+        print_error "Package installation failed. Last 40 log lines:"
+        tail -n 40 "$install_log" | sed 's/^/    /'
+        rm -f "$install_log"
+        exit 1
+    fi
+
+    # Show only important lines from successful install output.
+    grep -Ei "(installing|warning|error:)" "$install_log" | sed 's/^/    /' || true
+    rm -f "$install_log"
 
     print_done "All packages installed"
 }
