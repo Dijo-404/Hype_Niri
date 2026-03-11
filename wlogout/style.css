@@ -33,7 +33,7 @@ button:focus,
 button:active,
 button:hover {
     background-color: rgba(45, 45, 45, 0.97);
-    border-color: rgba(70, 185, 255, 0.95);
+    border-color: rgba(176, 176, 176, 0.95);
     background-size: 46%;
 }
 
