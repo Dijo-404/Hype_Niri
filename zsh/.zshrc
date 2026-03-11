@@ -138,20 +138,20 @@ if command -v bat &> /dev/null; then
     export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 fi
 
-# ── Conda ────────────────────────────────────────
+# ── Conda (uncomment if you use conda/miniconda) ─
 
 # >>> conda initialize >>>
-__conda_setup="$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/opt/miniconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/opt/miniconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
+# __conda_setup="$('/opt/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+# if [ $? -eq 0 ]; then
+#     eval "$__conda_setup"
+# else
+#     if [ -f "/opt/miniconda3/etc/profile.d/conda.sh" ]; then
+#         . "/opt/miniconda3/etc/profile.d/conda.sh"
+#     else
+#         export PATH="/opt/miniconda3/bin:$PATH"
+#     fi
+# fi
+# unset __conda_setup
 # <<< conda initialize <<<
 
 # ── Zsh Options ──────────────────────────────────
@@ -204,7 +204,4 @@ export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
 # ── Additional Paths ─────────────────────────────
 
 [[ -f "$HOME/.local/bin/env" ]] && . "$HOME/.local/bin/env"
-
-# Google Cloud SDK
-if [ -f '/home/dj/google-cloud-sdk/path.zsh.inc' ]; then . '/home/dj/google-cloud-sdk/path.zsh.inc'; fi
 

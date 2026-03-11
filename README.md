@@ -54,8 +54,7 @@ cd Hype_Niri
 ├── fastfetch/       # System information fetch utility with custom logo
 ├── fuzzel/          # Application launcher styled for Monochrome
 ├── greetd/          # TUI-based minimal login manager
-├── hypr/            # Hypridle configuration for lock/sleep management
-├── hyprlock/        # Lock screen configuration
+├── hypr/            # Hypridle + Hyprlock configuration
 ├── mako/            # Notification daemon configuration
 ├── niri/            # Core Niri compositor settings and rules
 ├── Wallpapers/      # Default curated wallpapers

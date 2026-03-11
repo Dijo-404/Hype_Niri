@@ -252,6 +252,12 @@ setup_shell() {
         print_done "Copied .zshrc → ~/.zshrc"
     fi
 
+    # Copy p10k config as default (user can reconfigure with p10k configure)
+    if [ -f "$SCRIPT_DIR/zsh/.p10k.zsh" ]; then
+        cp "$SCRIPT_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+        print_done "Copied .p10k.zsh → ~/.p10k.zsh"
+    fi
+
     # Change default shell to zsh
     current_shell=$(basename "$SHELL")
     if [ "$current_shell" != "zsh" ]; then
@@ -472,7 +478,7 @@ print_summary() {
     echo -e "  ${CYAN}Next steps:${NC}"
     echo -e "    1. Log out or reboot"
     echo -e "    2. Select ${BOLD}Niri${NC} from the greetd login"
-    echo -e "    3. Run ${BOLD}p10k configure${NC} on first zsh launch"
+    echo -e "    3. Powerlevel10k theme is pre-configured (run ${BOLD}p10k configure${NC} to customize)"
     echo -e "    4. Press ${BOLD}Super+A${NC} for app launcher"
     echo -e "    5. Press ${BOLD}Super+T${NC} for terminal"
     echo ""
