@@ -32,19 +32,19 @@ print_header() {
 }
 
 print_step() {
-    echo -e "  ${GREEN}→${NC} $1"
+    echo -e "  ${GREEN}>>${NC} $1"
 }
 
 print_warn() {
-    echo -e "  ${YELLOW}⚠${NC} $1"
+    echo -e "  ${YELLOW}!!${NC} $1"
 }
 
 print_error() {
-    echo -e "  ${RED}✗${NC} $1"
+    echo -e "  ${RED}x${NC} $1"
 }
 
 print_done() {
-    echo -e "  ${GREEN}✓${NC} $1"
+    echo -e "  ${GREEN}+${NC} $1"
 }
 
 confirm() {
@@ -214,7 +214,7 @@ copy_configs() {
         if [ -d "$SCRIPT_DIR/$config" ]; then
             rm -rf "$HOME/.config/$config"
             cp -r "$SCRIPT_DIR/$config" "$HOME/.config/$config"
-            print_done "Copied $config → ~/.config/$config"
+            print_done "Copied $config -> ~/.config/$config"
         fi
     done
 
@@ -226,7 +226,7 @@ copy_configs() {
     mkdir -p "$HOME/Pictures/Wallpapers"
     if [ -d "$SCRIPT_DIR/Wallpapers" ] && [ "$(ls -A "$SCRIPT_DIR/Wallpapers" 2>/dev/null)" ]; then
         cp -r "$SCRIPT_DIR/Wallpapers/"* "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
-        print_done "Copied wallpapers → ~/Pictures/Wallpapers"
+        print_done "Copied wallpapers -> ~/Pictures/Wallpapers"
     fi
 }
 
@@ -249,13 +249,13 @@ setup_shell() {
     # Copy .zshrc
     if [ -f "$SCRIPT_DIR/zsh/.zshrc" ]; then
         cp "$SCRIPT_DIR/zsh/.zshrc" "$HOME/.zshrc"
-        print_done "Copied .zshrc → ~/.zshrc"
+        print_done "Copied .zshrc -> ~/.zshrc"
     fi
 
     # Copy p10k config as default (user can reconfigure with p10k configure)
     if [ -f "$SCRIPT_DIR/zsh/.p10k.zsh" ]; then
         cp "$SCRIPT_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
-        print_done "Copied .p10k.zsh → ~/.p10k.zsh"
+        print_done "Copied .p10k.zsh -> ~/.p10k.zsh"
     fi
 
     # Change default shell to zsh
@@ -351,7 +351,10 @@ setup_gtk() {
     # Set GTK theme via gsettings if available
     if command -v gsettings &>/dev/null; then
         print_step "Applying GTK settings via gsettings..."
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || print_warn "Failed to set color-scheme via gsettings (ignoring)"
+        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || print_warn "Failed to set gtk-theme via gsettings (ignoring)"
         gsettings set org.gnome.desktop.interface icon-theme "Papirus-Dark" 2>/dev/null || print_warn "Failed to set icon-theme via gsettings (ignoring)"
+        gsettings set org.gnome.desktop.interface cursor-theme "Adwaita" 2>/dev/null || print_warn "Failed to set cursor-theme via gsettings (ignoring)"
         gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || print_warn "Failed to set cursor-size via gsettings (ignoring)"
         gsettings set org.gnome.desktop.interface font-name "JetBrainsMono Nerd Font 10" 2>/dev/null || print_warn "Failed to set font-name via gsettings (ignoring)"
         print_done "GTK settings applied via gsettings"
@@ -361,7 +364,9 @@ setup_gtk() {
     mkdir -p "$HOME/.config/gtk-3.0"
     cat > "$HOME/.config/gtk-3.0/settings.ini" << 'EOF'
 [Settings]
+gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
+gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
 gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=true
@@ -371,7 +376,9 @@ EOF
     mkdir -p "$HOME/.config/gtk-4.0"
     cat > "$HOME/.config/gtk-4.0/settings.ini" << 'EOF'
 [Settings]
+gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
+gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
 gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=true
@@ -414,7 +421,7 @@ validate() {
     all_ok=true
     for f in "${critical_files[@]}"; do
         if [ -f "$f" ]; then
-            print_done "$(basename "$f") ✓"
+            print_done "$(basename "$f")"
         else
             print_error "Missing: $f"
             all_ok=false
@@ -423,7 +430,7 @@ validate() {
 
     if $all_ok; then
         echo ""
-        echo -e "${GREEN}${BOLD}  ✓ All files in place!${NC}"
+        echo -e "${GREEN}${BOLD}  All files in place!${NC}"
     fi
 }
 
@@ -483,10 +490,10 @@ print_summary() {
     echo -e "    5. Press ${BOLD}Super+T${NC} for terminal"
     echo ""
     echo -e "  ${CYAN}Key files:${NC}"
-    echo -e "    Niri config  → ~/.config/niri/config.kdl"
-    echo -e "    Waybar       → ~/.config/waybar/"
-    echo -e "    Zsh config   → ~/.zshrc"
-    echo -e "    Keybindings  → $SCRIPT_DIR/keybindings.md"
+    echo -e "    Niri config  -> ~/.config/niri/config.kdl"
+    echo -e "    Waybar       -> ~/.config/waybar/"
+    echo -e "    Zsh config   -> ~/.zshrc"
+    echo -e "    Keybindings  -> $SCRIPT_DIR/keybindings.md"
     echo ""
 }
 

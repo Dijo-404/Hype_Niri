@@ -4,7 +4,7 @@
 # Handles both single and multi-monitor setups
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
-DEFAULT_WALLPAPER="$WALLPAPER_DIR/aurora_borealis.png"
+DEFAULT_WALLPAPER="$WALLPAPER_DIR/wallpaperflare.com_wallpaper.jpg"
 
 # Transition settings
 TRANSITION_TYPE="fade"
