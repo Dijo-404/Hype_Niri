@@ -12,7 +12,7 @@ chmod +x install.sh
 ```
 
 > [!TIP]  
-> After running the install script, standard users only need to configure Powerlevel10k upon their first terminal launch.
+> The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
 
 ---
 
@@ -40,9 +40,6 @@ mkdir -p ~/.config
 
 # Copy Wayland/UI configurations
 cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
-
-# Copy Hyprlock config into hypr directory
-cp hyprlock/hyprlock.conf ~/.config/hypr/
 
 # Copy Shell configuration
 cp zsh/.zshrc ~/
@@ -83,7 +80,7 @@ reboot
 
 ## Post-Install Steps
 
-- **Powerlevel10k Prompt**: Open your terminal (`Mod+T`). It will automatically prompt you to run `p10k configure` to customize your prompt.
+- **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal if you want to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
 - **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`.
 

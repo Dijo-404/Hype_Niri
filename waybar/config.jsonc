@@ -5,7 +5,7 @@
     "margin-top": 4,
     "margin-left": 4,
     "margin-right": 4,
-    "spacing": 5,
+    "spacing": 6,
     "modules-left": [
         "cpu",
         "memory",
@@ -144,7 +144,7 @@
         "format": "⏻",
         "tooltip": true,
         "tooltip-format": "Power Menu",
-        "on-click": "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
-        "on-click-right": "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
+        "on-click": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
+        "on-click-right": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
     }
 }

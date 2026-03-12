@@ -1,5 +1,5 @@
 // ╔═══════════════════════════════════════════════╗
-// ║  Niri Configuration — Everforest Dark Theme   ║
+// ║    Niri Configuration — Monochrome Theme      ║
 // ╚═══════════════════════════════════════════════╝
 
 // ── Outputs ──────────────────────────────────────
@@ -63,8 +63,8 @@ layout {
     border {
         on
         width 2
-        active-color "#7fbbb3"
-        inactive-color "#e67e80"
+        active-color "#b0b0b0"
+        inactive-color "#404040"
     }
 
     shadow {
@@ -175,10 +175,10 @@ binds {
     Ctrl+Q repeat=false { close-window; }
     Alt+F4 repeat=false { close-window; }
     Mod+Delete { quit; }
-    Mod+Shift+Delete { spawn-sh "wlogout -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
+    Mod+Shift+Delete { spawn-sh "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
-    Mod+Shift+F { fullscreen-window; }
+    Mod+Shift+F { spawn-sh "~/.config/waybar/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
     Mod+L { spawn-sh "hyprlock"; }
@@ -260,8 +260,6 @@ binds {
 
     XF86MonBrightnessUp allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
-    F6 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
-    F5 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
 
     // ── Screenshots ──────────────────────────────
 
@@ -325,7 +323,7 @@ binds {
     // ── Power ────────────────────────────────────
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
-    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
-    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop; systemctl suspend"; }
+    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
 }

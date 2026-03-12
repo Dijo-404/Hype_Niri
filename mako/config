@@ -1,12 +1,13 @@
 # Mako notification daemon config (Wayland-native)
-# Everforest theme
+# Monochrome theme
 
 font=JetBrainsMono Nerd Font 10
-background-color=#2d353bdd
-text-color=#d3c6aa
-border-color=#7fbbb3
+background-color=#141414dd
+text-color=#d4d4d4
+border-color=#ffffff
 border-size=2
-border-radius=8
+border-radius=4
+progress-color=#404040ff
 width=350
 height=120
 margin=4
@@ -18,14 +19,14 @@ anchor=top-right
 icon-path=/usr/share/icons/Papirus-Dark
 
 [urgency=low]
-background-color=#2d353bdd
-border-color=#83c092
+background-color=#141414dd
+border-color=#666666
 
 [urgency=normal]
-background-color=#2d353bdd
-border-color=#7fbbb3
+background-color=#141414dd
+border-color=#ffffff
 
 [urgency=critical]
-background-color=#2d353bdd
-border-color=#e67e80
+background-color=#141414dd
+border-color=#ffffff
 default-timeout=0

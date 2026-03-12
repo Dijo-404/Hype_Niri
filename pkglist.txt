@@ -1,14 +1,3 @@
-# ── Core System ───────────────────────────────────
-base
-base-devel
-linux
-linux-firmware
-linux-lts
-sudo
-efibootmgr
-btrfs-progs
-zram-generator
-
 # ── Niri + Wayland ────────────────────────────────
 niri
 uwsm
@@ -32,8 +21,6 @@ zsh-theme-powerlevel10k-git
 # ── Terminal & Editor ─────────────────────────────
 alacritty
 neovim
-nano
-vim
 
 # ── Desktop Components ────────────────────────────
 waybar
@@ -66,7 +53,8 @@ fastfetch
 lazygit
 lazydocker
 imagemagick
-uv
+cliphist
+bemoji
 
 # ── Audio & Media ─────────────────────────────────
 pipewire
@@ -83,38 +71,15 @@ networkmanager
 network-manager-applet
 gnome-keyring
 libsecret
-iwd
-wireless_tools
-wpa_supplicant
 
 # ── Bluetooth ─────────────────────────────────────
 bluez
 bluez-utils
 
-# ── Printing ──────────────────────────────────────
-cups
-cups-pk-helper
-system-config-printer
+# ── Fonts & Theming ───────────────────────────────
+ttf-jetbrains-mono-nerd
+papirus-icon-theme
 
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl
 power-profiles-daemon
-intel-media-driver
-intel-ucode
-libva-intel-driver
-vulkan-intel
-sof-firmware
-smartmontools
-
-# ── Clipboard & Emoji ────────────────────────────
-cliphist
-bemoji
-
-# ── Fonts & Theming ──────────────────────────────
-ttf-jetbrains-mono-nerd
-terminus-font
-papirus-icon-theme
-
-# ── Containers (Optional) ─────────────────────────
-# docker
-# miniconda3
