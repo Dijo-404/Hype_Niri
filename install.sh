@@ -278,6 +278,24 @@ setup_shell() {
 setup_system() {
     print_header "System Configuration (requires sudo)"
 
+    # Pacman output styling
+    if [ -f /etc/pacman.conf ]; then
+        print_step "Tuning pacman output..."
+        sudo sed -i 's/^#Color$/Color/' /etc/pacman.conf 2>/dev/null || true
+        sudo sed -i 's/^#VerbosePkgLists$/VerbosePkgLists/' /etc/pacman.conf 2>/dev/null || true
+        if grep -q '^#ParallelDownloads' /etc/pacman.conf; then
+            sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
+        elif grep -q '^ParallelDownloads' /etc/pacman.conf; then
+            sudo sed -i 's/^ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
+        elif ! grep -q '^ParallelDownloads' /etc/pacman.conf; then
+            printf '\nParallelDownloads = 6\n' | sudo tee -a /etc/pacman.conf >/dev/null
+        fi
+        if ! grep -q '^ILoveCandy$' /etc/pacman.conf; then
+            sudo sed -i '/^Color$/a ILoveCandy' /etc/pacman.conf 2>/dev/null || printf '\nILoveCandy\n' | sudo tee -a /etc/pacman.conf >/dev/null
+        fi
+        print_done "Pacman output tuned"
+    fi
+
     # Greetd
     if confirm "Set up greetd as login manager?"; then
         if [ -f "$SCRIPT_DIR/greetd/config.toml" ]; then
