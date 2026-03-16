@@ -125,17 +125,23 @@ install_packages() {
         exit 1
     fi
 
-    # Install all at once for efficiency and fail loudly if yay fails.
+    # Show the install queue so users can track high-level progress.
+    print_step "Package queue:"
+    for i in "${!packages[@]}"; do
+        printf "    [%3d/%3d] %s\n" "$((i + 1))" "$total" "${packages[$i]}"
+    done
+    echo ""
+
+    # Install all at once for dependency correctness while streaming live output.
+    print_step "Starting installation (live output):"
     install_log="$(mktemp)"
-    if ! yay -S --needed --noconfirm "${packages[@]}" >"$install_log" 2>&1; then
+    if ! stdbuf -oL -eL yay -S --needed --noconfirm "${packages[@]}" 2>&1 | tee "$install_log"; then
         print_error "Package installation failed. Last 40 log lines:"
         tail -n 40 "$install_log" | sed 's/^/    /'
-        rm -f "$install_log"
+        print_warn "Full install log kept at: $install_log"
         exit 1
     fi
 
-    # Show only important lines from successful install output.
-    grep -Ei "(installing|warning|error:)" "$install_log" | sed 's/^/    /' || true
     rm -f "$install_log"
 
     print_done "All packages installed"
