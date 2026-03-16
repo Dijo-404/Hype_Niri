@@ -1,15 +1,19 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 # Notification replacement ID (fixed)
 ID=2000
 
 # Smooth brightness transition
 smooth_set() {
-    target=$1
-    current=$(brightnessctl get)
+    current=$1
+    target=$2
 
     # Calculate step direction
-    if [ "$target" -gt "$current" ]; then
+    if [ "$target" -eq "$current" ]; then
+        return
+    elif [ "$target" -gt "$current" ]; then
         step=1
     else
         step=-1
@@ -23,30 +27,41 @@ smooth_set() {
     done
 }
 
-case "$1" in
+case "${1:-}" in
     up)
         current=$(brightnessctl get)
         max=$(brightnessctl max)
+        min=$((max / 100))  # minimum 1%
+        [ "$min" -lt 1 ] && min=1
         step=$((max / 100))  # 1% step
         [ "$step" -lt 1 ] && step=1
         target=$((current + step))
         if [ "$target" -gt "$max" ]; then
             target=$max
         fi
-        smooth_set "$target"
+        smooth_set "$current" "$target"
         ;;
     down)
         current=$(brightnessctl get)
         max=$(brightnessctl max)
-        step=$((max / 100))  # 1% step
-        [ "$step" -lt 1 ] && step=1
-        target=$((current - step))
         min=$((max / 100))  # minimum 1%
         [ "$min" -lt 1 ] && min=1
+        step=$((max / 100))  # 1% step
+        [ "$step" -lt 1 ] && step=1
+        if [ "$current" -le "$min" ]; then
+            # Do not increase brightness on a down action if we're already below floor.
+            target=$current
+        else
+            target=$((current - step))
+        fi
         if [ "$target" -lt "$min" ]; then
             target=$min
         fi
-        smooth_set "$target"
+        smooth_set "$current" "$target"
+        ;;
+    *)
+        echo "Usage: brightness-control.sh {up|down}" >&2
+        exit 1
         ;;
 esac
 
@@ -54,7 +69,11 @@ esac
 current=$(brightnessctl get)
 max=$(brightnessctl max)
 # Round to nearest integer so notification matches waybar's displayed percent.
-percent=$(((current * 100 + max / 2) / max))
+if [ "$max" -gt 0 ]; then
+    percent=$(((current * 100 + max / 2) / max))
+else
+    percent=0
+fi
 
 # Select icon
 if [ "$percent" -lt 30 ]; then

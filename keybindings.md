@@ -113,4 +113,4 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + Alt + ↑` | `waybar show` | Show/restart Waybar |
 | `Super + Alt + ↓` | `waybar hide` | Hide Waybar |
 | `Super + Esc` | `inhibit-shortcuts` | Toggle Niri keyboard shortcut override |
-| `Power Button` | `suspend` | Suspend the system (bypasses caffeine) |
+| `Power Button` | `suspend` | Stop caffeine mode, then suspend the system |

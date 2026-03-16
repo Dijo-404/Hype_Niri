@@ -333,9 +333,12 @@ setup_system() {
     )
 
     for service in "${system_services[@]}"; do
-        if systemctl list-unit-files "$service.service" &>/dev/null; then
-            sudo systemctl enable "$service" 2>/dev/null || true
-            print_step "Enabled system service: $service"
+        if systemctl list-unit-files --type=service --all "$service.service" 2>/dev/null | grep -q "^$service\\.service"; then
+            if sudo systemctl enable "$service" >/dev/null 2>&1; then
+                print_done "Enabled system service: $service"
+            else
+                print_warn "Failed to enable system service: $service"
+            fi
         else
             print_warn "Service $service not found"
         fi
@@ -349,9 +352,12 @@ setup_system() {
     )
 
     for service in "${user_services[@]}"; do
-        if systemctl --global list-unit-files "$service.service" &>/dev/null 2>&1; then
-            sudo systemctl --global enable "$service" 2>/dev/null || true
-            print_step "Enabled user service: $service"
+        if systemctl --global list-unit-files --type=service --all "$service.service" 2>/dev/null | grep -q "^$service\\.service"; then
+            if sudo systemctl --global enable "$service" >/dev/null 2>&1; then
+                print_done "Enabled user service: $service"
+            else
+                print_warn "Failed to enable user service: $service"
+            fi
         else
             print_warn "User service $service not found (may use socket activation)"
         fi
