@@ -417,6 +417,22 @@ EOF
 }
 
 # ─────────────────────────────────────────────────────────
+# Desktop Integration Setup
+# ─────────────────────────────────────────────────────────
+
+setup_desktop_integrations() {
+    print_header "Desktop Integration Setup"
+
+    # Ensure standard XDG folders exist (Downloads, Pictures, etc.)
+    if command -v xdg-user-dirs-update &>/dev/null; then
+        xdg-user-dirs-update
+        print_done "XDG user directories initialized"
+    else
+        print_warn "xdg-user-dirs-update not found"
+    fi
+}
+
+# ─────────────────────────────────────────────────────────
 # Post-Install Validation
 # ─────────────────────────────────────────────────────────
 
@@ -462,6 +478,23 @@ validate() {
         echo ""
         echo -e "${GREEN}${BOLD}  All files in place!${NC}"
     fi
+
+    # Optional integrations sanity check
+    local optional_tools=(
+        "file-roller"
+        "pavucontrol"
+        "blueman-applet"
+        "rg"
+        "gh"
+    )
+
+    for tool in "${optional_tools[@]}"; do
+        if command -v "$tool" &>/dev/null; then
+            print_done "Found optional tool: $tool"
+        else
+            print_warn "Optional tool not found in PATH: $tool"
+        fi
+    done
 }
 
 # ─────────────────────────────────────────────────────────
@@ -554,6 +587,7 @@ main() {
     copy_configs
     setup_shell
     setup_gtk
+    setup_desktop_integrations
     setup_system
     cleanup_hyprland
     validate

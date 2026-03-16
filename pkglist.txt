@@ -36,9 +36,14 @@ greetd-tuigreet
 
 # ── GTK Apps ──────────────────────────────────────
 nautilus
+file-roller
 gnome-text-editor
 firefox
 brave-bin
+discord
+visual-studio-code-bin
+antigravity
+vlc
 
 # ── CLI Tools ─────────────────────────────────────
 bat
@@ -47,6 +52,7 @@ fd
 fzf
 zoxide
 git
+github-cli
 htop
 wget
 fastfetch
@@ -55,6 +61,7 @@ lazydocker
 imagemagick
 cliphist
 bemoji
+ripgrep
 
 # ── Audio & Media ─────────────────────────────────
 pipewire
@@ -65,16 +72,20 @@ wireplumber
 libpulse
 gst-plugin-pipewire
 playerctl
+pavucontrol
+ffmpegthumbnailer
 
 # ── Networking ────────────────────────────────────
 networkmanager
 network-manager-applet
 gnome-keyring
 libsecret
+xdg-user-dirs
 
 # ── Bluetooth ─────────────────────────────────────
 bluez
 bluez-utils
+blueman
 
 # ── Fonts & Theming ───────────────────────────────
 ttf-jetbrains-mono-nerd
