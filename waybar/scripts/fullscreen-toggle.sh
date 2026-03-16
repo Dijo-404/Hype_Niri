@@ -1,19 +1,18 @@
 #!/bin/bash
 
 # Keep fullscreen transitions deterministic with smoother timing.
-STATE_FILE="/tmp/waybar_hidden_by_fullscreen"
+STATE_FILE="${XDG_RUNTIME_DIR:-/tmp}/waybar_hidden_by_fullscreen"
+
+niri msg action fullscreen-window
 
 if ! pgrep -x waybar >/dev/null 2>&1; then
-    niri msg action fullscreen-window
     exit 0
 fi
 
+pkill -USR1 waybar
+
 if [ -f "$STATE_FILE" ]; then
-    niri msg action fullscreen-window
-    pkill -USR1 waybar
     rm -f "$STATE_FILE"
 else
-    niri msg action fullscreen-window
-    pkill -USR1 waybar
     touch "$STATE_FILE"
 fi

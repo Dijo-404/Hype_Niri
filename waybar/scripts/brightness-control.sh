@@ -7,8 +7,7 @@ ID=2000
 smooth_set() {
     target=$1
     current=$(brightnessctl get)
-    max=$(brightnessctl max)
-    
+
     # Calculate step direction
     if [ "$target" -gt "$current" ]; then
         step=1

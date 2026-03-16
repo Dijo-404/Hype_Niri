@@ -90,7 +90,7 @@ preflight() {
     fi
 
     # Check internet
-    if ! curl --connect-timeout 5 -s https://archlinux.org > /dev/null; then
+    if ! curl --connect-timeout 5 -fsS https://archlinux.org > /dev/null 2>&1; then
         print_error "No internet connection"
         exit 1
     fi
@@ -287,7 +287,7 @@ setup_system() {
             sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
         elif grep -q '^ParallelDownloads' /etc/pacman.conf; then
             sudo sed -i 's/^ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
-        elif ! grep -q '^ParallelDownloads' /etc/pacman.conf; then
+        else
             printf '\nParallelDownloads = 6\n' | sudo tee -a /etc/pacman.conf >/dev/null
         fi
         if ! grep -q '^ILoveCandy$' /etc/pacman.conf; then

@@ -1,14 +1,15 @@
 #!/bin/bash
 
-STATE_FILE="/tmp/caffeine_state"
-PID_FILE="/tmp/caffeine_pid"
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+STATE_FILE="$RUNTIME_DIR/caffeine_state"
+PID_FILE="$RUNTIME_DIR/caffeine_pid"
 ID=2002
 
 start_inhibitor() {
     # Kill existing inhibitor if any
     if [ -f "$PID_FILE" ]; then
-        kill $(cat "$PID_FILE") 2>/dev/null
-        rm "$PID_FILE"
+        kill "$(cat "$PID_FILE")" 2>/dev/null
+        rm -f "$PID_FILE"
     fi
     
     # Start new inhibitor (prevents idle, sleep, and screen lock)
@@ -18,18 +19,15 @@ start_inhibitor() {
 
 stop_inhibitor() {
     if [ -f "$PID_FILE" ]; then
-        kill -9 $(cat "$PID_FILE") 2>/dev/null
+        kill "$(cat "$PID_FILE")" 2>/dev/null
         rm -f "$PID_FILE"
     fi
     # Kill any orphaned caffeine inhibitors as a fallback
-    pkill -9 -f "systemd-inhibit.*Caffeine Mode" 2>/dev/null
-    sleep 0.2
+    pkill -f "systemd-inhibit.*Caffeine Mode" 2>/dev/null
 }
 
 if [ "$1" == "stop" ]; then
-    if [ -f "$STATE_FILE" ]; then
-        rm "$STATE_FILE"
-    fi
+    rm -f "$STATE_FILE"
     stop_inhibitor
     pkill -RTMIN+15 waybar
 elif [ "$1" == "toggle" ]; then
@@ -48,7 +46,7 @@ elif [ "$1" == "toggle" ]; then
 else
     if [ -f "$STATE_FILE" ]; then
         # Ensure inhibitor is running
-        if [ ! -f "$PID_FILE" ] || ! kill -0 $(cat "$PID_FILE") 2>/dev/null; then
+        if [ ! -f "$PID_FILE" ] || ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
             start_inhibitor
         fi
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
