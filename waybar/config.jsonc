@@ -64,10 +64,12 @@
     "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used",
   },
   "temperature": {
+    "thermal-zone": 10,
     "interval": 2,
     "critical-threshold": 80,
     "format": " {temperatureC}°C",
     "format-critical": " {temperatureC}°C",
+    "format-icons": ["󰈐", "󰈐", "󰈐", "󰈐", "󰈐"],
   },
   "backlight": {
     "format": "{icon} {percent}%",
@@ -126,5 +128,6 @@
     "tooltip": true,
     "tooltip-format": "Power Menu",
     "on-click": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
+    "on-click-right": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
   },
 }
