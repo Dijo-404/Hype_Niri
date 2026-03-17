@@ -23,6 +23,7 @@ environment {
     XCURSOR_SIZE "24"
     XDG_SESSION_TYPE "wayland"
     DISPLAY null
+    GTK_THEME "Adwaita:dark"
 }
 
 // ── Input ────────────────────────────────────────

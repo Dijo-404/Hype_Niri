@@ -31,8 +31,7 @@ hypridle
 swww
 hyprpicker
 polkit-gnome
-greetd
-greetd-tuigreet
+ly
 
 # ── GTK Apps ──────────────────────────────────────
 nautilus
@@ -42,7 +41,6 @@ firefox
 brave-bin
 discord
 visual-studio-code-bin
-antigravity
 vlc
 
 # ── CLI Tools ─────────────────────────────────────

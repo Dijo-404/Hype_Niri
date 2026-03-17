@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Power Profile Menu Script for Waybar
 # Uses fuzzel for dropdown selection
 

@@ -1,5 +1,8 @@
 # Alacritty Configuration
 
+[terminal]
+osc52 = "CopyPaste"
+
 [terminal.shell]
 program = "/bin/zsh"
 
@@ -70,8 +73,3 @@ white = "#e8e8e8"
 
 [scrolling]
 history = 10000
-
-# ============ Performance ============
-
-[terminal]
-osc52 = "CopyPaste"

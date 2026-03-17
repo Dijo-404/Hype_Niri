@@ -1,11 +1,17 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Notification ID
 ID=2003
 
-case "$1" in
+case "${1:-}" in
     mute)
         wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+        ;;
+    *)
+        echo "Usage: mic-control.sh {mute}" >&2
+        exit 1
         ;;
 esac
 

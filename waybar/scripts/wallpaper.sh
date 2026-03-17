@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Wallpaper manager for swww
 # Handles both single and multi-monitor setups
 

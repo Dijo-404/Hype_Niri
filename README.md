@@ -10,7 +10,7 @@
 
 ## Overview
 
-Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable tiling Wayland compositor. Focused on delivering a premium, smooth, and full-featured desktop experience using native Wayland tools—no X11 dependencies.
+Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable tiling Wayland compositor. Focused on delivering a premium, smooth, and full-featured desktop experience using native Wayland tools.
 
 ## Tech Stack
 
@@ -25,7 +25,7 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 | **Lock Screen** | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | **Idle Daemon** | [Hypridle](https://github.com/hyprwm/hypridle) |
 | **Wallpaper** | [Swww](https://github.com/LGFae/swww) |
-| **Login Manager** | [Greetd](https://sr.ht/~kennylevinsen/greetd/) + [TuiGreet](https://github.com/apognu/tuigreet) |
+| **Login Manager** | [Ly](https://github.com/fairyglade/ly) |
 | **Fetch App** | [Fastfetch](https://github.com/fastfetch-cli/fastfetch) |
 | **Logout Menu** | [Wlogout](https://github.com/ArtsyMacaw/wlogout) |
 
@@ -41,8 +41,28 @@ cd Hype_Niri
 ./install.sh
 ```
 
-> [!NOTE]  
+> [!NOTE]
 > See [INSTALL.md](INSTALL.md) for manual setup instructions and post-installation steps.
+
+<br/>
+
+## Updating
+
+To pull the latest config changes and apply them:
+
+```bash
+cd Hype_Niri
+git pull
+./install.sh
+```
+
+The install script uses `--needed` for packages so only new packages are installed. Existing configs are backed up before overwriting.
+
+To update only packages without re-running the full script:
+
+```bash
+yay -Syu
+```
 
 <br/>
 
@@ -53,14 +73,14 @@ cd Hype_Niri
 ├── alacritty/       # Fast, GPU-accelerated terminal configuration
 ├── fastfetch/       # System information fetch utility with custom logo
 ├── fuzzel/          # Application launcher styled for Monochrome
-├── greetd/          # TUI-based minimal login manager
 ├── hypr/            # Hypridle + Hyprlock configuration
 ├── mako/            # Notification daemon configuration
 ├── niri/            # Core Niri compositor settings and rules
+├── polkit/          # Polkit rules for passwordless NetworkManager
 ├── Wallpapers/      # Default curated wallpapers
 ├── waybar/          # Comprehensive status bar + utility scripts
 ├── wlogout/         # Power menu configuration
-├── zsh/             # Shell config (.zshrc) and aliases
+├── zsh/             # Shell config (.zshrc) and Powerlevel10k theme
 ├── install.sh       # Automated installation script
 ├── pkglist.txt      # Master list of required packages
 └── *.md             # Documentation files

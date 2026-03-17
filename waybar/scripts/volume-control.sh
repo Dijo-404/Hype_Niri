@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 # Notification replacement ID (fixed, like mic-control.sh uses 2003)
 ID=2001
 

@@ -1,8 +1,8 @@
-# Hype Niri — Installation Guide
+# Hype Niri -- Installation Guide
 
 ## Quick Install (Recommended)
 
-The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, and enabling necessary system services.
+The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, applying the dark theme, and enabling necessary system services.
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -11,7 +11,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-> [!TIP]  
+> [!TIP]
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
 
 ---
@@ -24,11 +24,11 @@ If you prefer to understand what is happening under the hood or selectively appl
 
 The repository contains a `pkglist.txt` file listing all necessary dependencies.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > This assumes you have an AUR helper installed, such as `yay`.
 
 ```bash
-cat pkglist.txt | grep -v '^#' | grep -v '^$' | xargs yay -S --needed --noconfirm
+grep -v '^#' pkglist.txt | grep -v '^$' | xargs yay -S --needed --noconfirm
 ```
 
 ### 2. Copy Configurations
@@ -43,29 +43,63 @@ cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
 
 # Copy Shell configuration
 cp zsh/.zshrc ~/
-```
-
-### 3. System-Wide Setup
-
-These steps require elevated privileges (`sudo`).
-
-```bash
-# Set up Greetd (Login Manager)
-sudo cp greetd/config.toml /etc/greetd/config.toml
-sudo systemctl enable greetd
-
-# Change Default Shell to Zsh
-chsh -s /usr/bin/zsh
-
-# Setup Wallpapers
-mkdir -p ~/Pictures/Wallpapers
-cp -r Wallpapers/* ~/Pictures/Wallpapers/
+cp zsh/.p10k.zsh ~/
 
 # Make scripts executable
 chmod +x ~/.config/waybar/scripts/*.sh
 ```
 
-### 4. Reboot Your System
+### 3. Apply Dark Theme
+
+Set the dark theme for GTK apps (Nautilus, etc.):
+
+```bash
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
+
+cat > ~/.config/gtk-3.0/settings.ini << 'EOF'
+[Settings]
+gtk-theme-name=Adwaita-dark
+gtk-icon-theme-name=Papirus-Dark
+gtk-cursor-theme-name=Adwaita
+gtk-cursor-theme-size=24
+gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-application-prefer-dark-theme=true
+EOF
+
+cp ~/.config/gtk-3.0/settings.ini ~/.config/gtk-4.0/settings.ini
+
+# Apply via dconf (ensures Nautilus and other GNOME apps use dark theme)
+dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
+dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita-dark'"
+dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
+```
+
+### 4. System-Wide Setup
+
+These steps require elevated privileges (`sudo`).
+
+```bash
+# Enable Ly display manager
+sudo systemctl enable ly
+
+# Enable system services
+sudo systemctl enable NetworkManager bluetooth
+
+# Change default shell to Zsh
+chsh -s /usr/bin/zsh
+
+# Setup wallpapers
+mkdir -p ~/Pictures/Wallpapers
+cp -r Wallpapers/* ~/Pictures/Wallpapers/
+
+# Install fzf-tab zsh plugin
+git clone https://github.com/Aloxaf/fzf-tab ~/.zsh/fzf-tab
+
+# Copy polkit rules
+sudo cp polkit/*.rules /etc/polkit-1/rules.d/
+```
+
+### 5. Reboot Your System
 
 Reboot to initialize all changes and the new login manager:
 
@@ -73,14 +107,34 @@ Reboot to initialize all changes and the new login manager:
 reboot
 ```
 
-> [!NOTE]  
-> At the `greetd` login screen, make sure to select the **Niri** session before logging in.
+> [!NOTE]
+> At the Ly login screen, select **niri-session** before logging in.
+
+---
+
+## Updating
+
+To pull the latest changes from the repository and apply them:
+
+```bash
+cd Hype_Niri
+git pull
+./install.sh
+```
+
+The install script backs up existing configs before overwriting and only installs new packages (uses `--needed`).
+
+To update only system packages without re-running the script:
+
+```bash
+yay -Syu
+```
 
 ---
 
 ## Post-Install Steps
 
-- **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal if you want to customize it.
+- **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
 - **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`.
 
