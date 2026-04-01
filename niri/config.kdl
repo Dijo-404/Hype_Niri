@@ -20,10 +20,10 @@ output "DP-3" {
 // ── Environment ──────────────────────────────────
 
 environment {
+    XCURSOR_THEME "Adwaita"
     XCURSOR_SIZE "24"
     XDG_SESSION_TYPE "wayland"
     DISPLAY null
-    GTK_THEME "Adwaita:dark"
 }
 
 // ── Input ────────────────────────────────────────
@@ -69,11 +69,7 @@ layout {
     }
 
     shadow {
-        on
-        softness 8
-        spread 2
-        offset x=0 y=2
-        color "#1a1a1aee"
+        off
     }
 }
 
@@ -123,27 +119,24 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
-// Rounded corners + draw borders around (not behind) windows
+// Rounded corners for all windows
 window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
-    draw-border-with-background false
 }
 
-// Opacity: focused vs unfocused
+// Active window: slightly transparent, no border background bleed-through
 window-rule {
+    match is-active=true
+    draw-border-with-background false
     opacity 0.90
 }
 
+// Inactive windows: more transparent
 window-rule {
-    match is-focused=false
+    match is-active=false
+    draw-border-with-background false
     opacity 0.80
-}
-
-// Firefox PiP floating
-window-rule {
-    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
-    open-floating true
 }
 
 // ── Autostart ────────────────────────────────────
@@ -218,7 +211,7 @@ binds {
     // ── Applications ─────────────────────────────
 
     Mod+T hotkey-overlay-title="Terminal: alacritty" { spawn "alacritty"; }
-    Mod+E { spawn "nautilus"; }
+    Mod+E { spawn "nautilus" "-w"; }
     Mod+C { spawn-sh "alacritty -e nvim"; }
     Mod+B { spawn "firefox"; }
     Ctrl+Shift+Escape { spawn-sh "alacritty -e htop"; }

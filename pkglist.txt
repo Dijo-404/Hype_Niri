@@ -28,10 +28,12 @@ fuzzel
 mako
 hyprlock
 hypridle
-swww
+awww
 hyprpicker
 polkit-gnome
 ly
+dconf
+gnome-themes-extra
 
 # ── GTK Apps ──────────────────────────────────────
 nautilus

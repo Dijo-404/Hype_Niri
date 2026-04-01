@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Wallpaper manager for swww
+# Wallpaper manager for awww
 # Handles both single and multi-monitor setups
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
@@ -12,16 +12,16 @@ TRANSITION_STEP=90
 TRANSITION_FPS=120
 TRANSITION_DURATION=1
 
-# Ensure swww daemon is running
-if ! pgrep -x swww-daemon > /dev/null; then
-    swww-daemon &
+# Ensure awww daemon is running
+if ! pgrep -x awww-daemon > /dev/null; then
+    awww-daemon --format xrgb &
     sleep 0.3
 fi
 
 set_wallpaper() {
     local img="$1"
     if [[ -f "$img" ]]; then
-        swww img "$img" \
+        awww img "$img" \
             --transition-type "$TRANSITION_TYPE" \
             --transition-step "$TRANSITION_STEP" \
             --transition-fps "$TRANSITION_FPS" \
@@ -33,7 +33,7 @@ case "$1" in
     init)
         # Set default wallpaper on startup (no transition)
         if [[ -f "$DEFAULT_WALLPAPER" ]]; then
-            swww img "$DEFAULT_WALLPAPER" \
+            awww img "$DEFAULT_WALLPAPER" \
                 --transition-type none
         fi
         ;;

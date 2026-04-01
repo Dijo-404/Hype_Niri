@@ -1,8 +1,5 @@
 # Alacritty Configuration
 
-[terminal]
-osc52 = "CopyPaste"
-
 [terminal.shell]
 program = "/bin/zsh"
 
@@ -29,7 +26,7 @@ style = "Bold Italic"
 [window]
 decorations = "None"
 dynamic_padding = true
-opacity = 0.85
+opacity = 1.0
 
 [window.padding]
 x = 8
@@ -73,3 +70,8 @@ white = "#e8e8e8"
 
 [scrolling]
 history = 10000
+
+# ============ Performance ============
+
+[terminal]
+osc52 = "CopyPaste"
