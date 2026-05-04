@@ -215,13 +215,30 @@ copy_configs() {
         fi
     done
 
-    chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null
+    chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null || true
     print_done "Made waybar scripts executable"
 
+    # Ensure waybar colors directory exists and is readable
+    if [ -d "$HOME/.config/waybar/colors" ]; then
+        print_done "Waybar colors directory present"
+    else
+        print_warn "Waybar colors directory missing"
+    fi
+
+    mkdir -p "$HOME/Pictures/Screenshots"
     mkdir -p "$HOME/Pictures/Wallpapers"
     if [ -d "$SCRIPT_DIR/Wallpapers" ] && [ "$(ls -A "$SCRIPT_DIR/Wallpapers" 2>/dev/null)" ]; then
         cp -r "$SCRIPT_DIR/Wallpapers/"* "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
         print_done "Copied wallpapers -> ~/Pictures/Wallpapers"
+    else
+        print_warn "No wallpapers found in source directory"
+    fi
+
+    # Copy polkit config to user config
+    if [ -d "$SCRIPT_DIR/polkit" ]; then
+        mkdir -p "$HOME/.config/polkit"
+        cp -r "$SCRIPT_DIR/polkit/"* "$HOME/.config/polkit/" 2>/dev/null || true
+        print_done "Copied polkit config -> ~/.config/polkit"
     fi
 }
 
@@ -278,7 +295,7 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-font-name=JetBrains Mono 10
 gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 3 settings"
@@ -291,10 +308,21 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-font-name=JetBrains Mono 10
 gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 4 settings"
+
+    # Write Qt5/Qt6 platform theme settings
+    mkdir -p "$HOME/.config/qt5ct"
+    mkdir -p "$HOME/.config/qt6ct"
+    cat > "$HOME/.config/qt5ct/conf" << 'EOF'
+[General]
+icon_theme=Papirus-Dark
+standard_dialogs=default
+EOF
+    cp "$HOME/.config/qt5ct/conf" "$HOME/.config/qt6ct/conf"
+    print_done "Created Qt5/Qt6 theme settings"
 
     # Write dconf settings directly for GNOME apps (Nautilus, etc.)
     # gsettings requires a running dbus session; dconf write works from any context.
@@ -305,7 +333,7 @@ EOF
         dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" 2>/dev/null || true
         dconf write /org/gnome/desktop/interface/cursor-theme "'Adwaita'" 2>/dev/null || true
         dconf write /org/gnome/desktop/interface/cursor-size "24" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/font-name "'JetBrainsMono Nerd Font 10'" 2>/dev/null || true
+        dconf write /org/gnome/desktop/interface/font-name "'JetBrains Mono 10'" 2>/dev/null || true
         print_done "Dark theme applied via dconf"
     elif command -v gsettings &>/dev/null; then
         print_step "Applying dark theme via gsettings..."
@@ -314,7 +342,7 @@ EOF
         gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null || true
         gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita' 2>/dev/null || true
         gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface font-name 'JetBrains Mono 10' 2>/dev/null || true
         print_done "Dark theme applied via gsettings"
     else
         print_warn "Neither dconf nor gsettings found; GTK settings.ini files will still apply"
@@ -438,6 +466,8 @@ validate() {
         "$HOME/.config/niri/config.kdl"
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
+        "$HOME/.config/waybar/colors/monochrome.css"
+        "$HOME/.config/waybar/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
         "$HOME/.config/fuzzel/fuzzel.ini"
         "$HOME/.config/mako/config"
@@ -445,9 +475,14 @@ validate() {
         "$HOME/.config/hypr/hyprlock.conf"
         "$HOME/.config/hypr/hypridle.conf"
         "$HOME/.config/wlogout/layout"
+        "$HOME/.config/wlogout/style.css"
         "$HOME/.config/gtk-3.0/settings.ini"
         "$HOME/.config/gtk-4.0/settings.ini"
+        "$HOME/.config/qt5ct/conf"
+        "$HOME/.config/qt6ct/conf"
         "$HOME/.zshrc"
+        "$HOME/.p10k.zsh"
+        "$HOME/.config/polkit/50-network-manager.rules"
     )
 
     all_ok=true

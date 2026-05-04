@@ -90,6 +90,7 @@ blueman
 # ── Fonts & Theming ───────────────────────────────
 ttf-jetbrains-mono-nerd
 papirus-icon-theme
+adwaita-dark
 
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl
