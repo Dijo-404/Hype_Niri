@@ -2,10 +2,24 @@
 
 set -euo pipefail
 
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+# Per-user runtime dir only -- refuse /tmp fallback (world-writable).
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+if [ ! -d "$RUNTIME_DIR" ] || [ ! -w "$RUNTIME_DIR" ]; then
+    echo '{"text": "", "tooltip": "runtime dir unavailable", "class": "deactivated"}'
+    exit 0
+fi
 STATE_FILE="$RUNTIME_DIR/caffeine_state"
 PID_FILE="$RUNTIME_DIR/caffeine_pid"
 ID=2002
+
+read_pid_file() {
+    local pid=""
+    if [ -f "$PID_FILE" ]; then
+        read -r pid < "$PID_FILE" 2>/dev/null || pid=""
+        [[ "$pid" =~ ^[0-9]+$ ]] || pid=""
+    fi
+    printf '%s' "$pid"
+}
 
 is_inhibitor_pid() {
     pid="$1"
@@ -18,27 +32,25 @@ is_inhibitor_pid() {
 
 start_inhibitor() {
     # Kill existing inhibitor if any
-    if [ -f "$PID_FILE" ]; then
-        existing_pid=$(cat "$PID_FILE")
-        if is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
-            kill "$existing_pid" 2>/dev/null || true
-        fi
-        rm -f "$PID_FILE"
+    local existing_pid
+    existing_pid=$(read_pid_file)
+    if [ -n "$existing_pid" ] && is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
+        kill "$existing_pid" 2>/dev/null || true
     fi
-    
+    rm -f "$PID_FILE"
+
     # Start new inhibitor (prevents idle, sleep, and screen lock)
     systemd-inhibit --what=idle:sleep --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 &
-    echo $! > "$PID_FILE"
+    echo "$!" > "$PID_FILE"
 }
 
 stop_inhibitor() {
-    if [ -f "$PID_FILE" ]; then
-        existing_pid=$(cat "$PID_FILE")
-        if is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
-            kill "$existing_pid" 2>/dev/null || true
-        fi
-        rm -f "$PID_FILE"
+    local existing_pid
+    existing_pid=$(read_pid_file)
+    if [ -n "$existing_pid" ] && is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
+        kill "$existing_pid" 2>/dev/null || true
     fi
+    rm -f "$PID_FILE"
 }
 
 action="${1:-status}"
@@ -63,13 +75,9 @@ elif [ "$action" == "toggle" ]; then
 else
     if [ -f "$STATE_FILE" ]; then
         # Ensure inhibitor is running
-        if [ ! -f "$PID_FILE" ]; then
+        existing_pid=$(read_pid_file)
+        if [ -z "$existing_pid" ] || ! is_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
             start_inhibitor
-        else
-            existing_pid=$(cat "$PID_FILE")
-            if ! is_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
-                start_inhibitor
-            fi
         fi
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
     else

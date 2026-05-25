@@ -3,6 +3,13 @@
 # Power Profile Menu Script for Waybar
 # Uses fuzzel for dropdown selection
 
+# If power-profiles-daemon is not installed, emit a benign JSON stub so
+# waybar doesn't show garbage, then exit.
+if ! command -v powerprofilesctl >/dev/null 2>&1; then
+    [[ "${1:-}" != "menu" ]] && echo '{"text": "", "tooltip": "power-profiles-daemon not installed", "class": "missing"}'
+    exit 0
+fi
+
 ID=2004
 
 get_current_profile() {
@@ -35,7 +42,8 @@ send_notification() {
         "$icon  Power Mode: $name"
 }
 
-if [[ "$1" == "menu" ]]; then
+if [[ "${1:-}" == "menu" ]]; then
+    command -v fuzzel >/dev/null 2>&1 || exit 0
     # Show fuzzel menu
     options="󰓅 Performance\n󰾅 Balanced\n󰾆 Power Saver"
     choice=$(echo -e "$options" | fuzzel --dmenu -p "Power Profile")

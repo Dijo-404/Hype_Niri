@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+command -v brightnessctl >/dev/null 2>&1 || exit 0
+
 # Notification replacement ID (fixed)
 ID=2000
 

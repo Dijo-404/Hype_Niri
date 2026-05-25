@@ -1,8 +1,23 @@
-// Allow users in wheel group to manage networking without password authentication
+// Allow members of `wheel` to manage day-to-day networking without a password,
+// but require admin authentication for system-wide settings, sleep, and reload.
 polkit.addRule(function(action, subject) {
-    if ((action.id.indexOf("org.freedesktop.NetworkManager.") == 0 ||
-         action.id == "org.freedesktop.NetworkManager.settings.modify.system") &&
-        subject.isInGroup("wheel")) {
+    if (!subject.isInGroup("wheel")) return;
+
+    var allow_unattended = [
+        "org.freedesktop.NetworkManager.network-control",
+        "org.freedesktop.NetworkManager.enable-disable-network",
+        "org.freedesktop.NetworkManager.enable-disable-wifi",
+        "org.freedesktop.NetworkManager.enable-disable-wwan",
+        "org.freedesktop.NetworkManager.wifi.scan",
+        "org.freedesktop.NetworkManager.wifi.share.open",
+        "org.freedesktop.NetworkManager.wifi.share.protected"
+    ];
+
+    if (allow_unattended.indexOf(action.id) !== -1) {
         return polkit.Result.YES;
+    }
+
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") === 0) {
+        return polkit.Result.AUTH_ADMIN_KEEP;
     }
 });

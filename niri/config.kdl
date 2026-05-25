@@ -149,7 +149,7 @@ spawn-at-startup "waybar"
 
 spawn-sh-at-startup "nm-applet --indicator"
 spawn-sh-at-startup "command -v blueman-applet >/dev/null && blueman-applet"
-spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-sh-at-startup "[ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ] && /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
 spawn-at-startup "alacritty"

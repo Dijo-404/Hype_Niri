@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Refuse to run if pipewire's wpctl is unavailable.
+command -v wpctl >/dev/null 2>&1 || exit 0
+
 # Notification replacement ID (fixed, like mic-control.sh uses 2003)
 ID=2001
 

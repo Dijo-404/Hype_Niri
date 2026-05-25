@@ -1,5 +1,7 @@
 #!/bin/bash
 
+command -v wpctl >/dev/null 2>&1 || exit 0
+
 # Notification ID
 ID=2003
 

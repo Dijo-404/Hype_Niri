@@ -82,6 +82,18 @@ gnome-keyring
 libsecret
 xdg-user-dirs
 
+# ── Filesystems & Mounting ────────────────────────
+ntfs-3g
+gvfs
+gvfs-mtp
+udisks2
+
+# ── Firewall ──────────────────────────────────────
+ufw
+
+# ── Cloudflare WARP (opt-in privacy DNS/VPN) ──────
+cloudflare-warp-bin
+
 # ── Bluetooth ─────────────────────────────────────
 bluez
 bluez-utils

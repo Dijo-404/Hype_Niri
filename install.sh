@@ -19,6 +19,16 @@ BOLD='\033[1m'
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+_tmp_resources=()
+cleanup_tmp() {
+    local r
+    for r in "${_tmp_resources[@]:-}"; do
+        [ -e "$r" ] && rm -rf -- "$r" 2>/dev/null || true
+    done
+}
+trap cleanup_tmp EXIT
+trap 'echo; printf "  \033[0;31mx\033[0m Installation interrupted\n"; exit 130' INT TERM
+
 # ─────────────────────────────────────────────────────────
 # Helper Functions
 # ─────────────────────────────────────────────────────────
@@ -74,10 +84,10 @@ preflight() {
         if confirm "Install yay?"; then
             print_step "Installing yay..."
             sudo pacman -S --needed --noconfirm git base-devel
-            tmpdir=$(mktemp -d)
+            tmpdir=$(mktemp -d) || { print_error "Failed to create temp directory"; exit 1; }
+            _tmp_resources+=("$tmpdir")
             git clone https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
             (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
-            rm -rf "$tmpdir"
             print_done "yay installed"
         else
             print_error "yay is required. Exiting."
@@ -128,15 +138,18 @@ install_packages() {
     echo ""
 
     print_step "Starting installation (live output):"
-    install_log="$(mktemp)"
+    install_log="$(mktemp)" || { print_error "Failed to create temp log"; exit 1; }
+    _tmp_resources+=("$install_log")
     if ! stdbuf -oL -eL yay -S --needed --noconfirm "${packages[@]}" 2>&1 | tee "$install_log"; then
         print_error "Package installation failed. Last 40 log lines:"
         tail -n 40 "$install_log" | sed 's/^/    /'
-        print_warn "Full install log kept at: $install_log"
+        # Survive the EXIT trap so the user can still inspect it.
+        persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
+        cp -- "$install_log" "$persisted" 2>/dev/null || true
+        print_warn "Full install log saved to: $persisted"
         exit 1
     fi
 
-    rm -f "$install_log"
     print_done "All packages installed"
 }
 
@@ -234,12 +247,9 @@ copy_configs() {
         print_warn "No wallpapers found in source directory"
     fi
 
-    # Copy polkit config to user config
-    if [ -d "$SCRIPT_DIR/polkit" ]; then
-        mkdir -p "$HOME/.config/polkit"
-        cp -r "$SCRIPT_DIR/polkit/"* "$HOME/.config/polkit/" 2>/dev/null || true
-        print_done "Copied polkit config -> ~/.config/polkit"
-    fi
+    # Polkit rules go to /etc/polkit-1/rules.d/ in setup_system; nothing user-side.
+
+    mkdir -p "$HOME/.cache/cliphist"
 }
 
 # ─────────────────────────────────────────────────────────
@@ -271,7 +281,7 @@ setup_shell() {
     current_shell=$(basename "$SHELL")
     if [ "$current_shell" != "zsh" ]; then
         if confirm "Change default shell to zsh?"; then
-            chsh -s /bin/zsh
+            chsh -s /usr/bin/zsh
             print_done "Default shell changed to zsh"
             print_warn "Log out and back in for this to take effect"
         fi
@@ -295,7 +305,7 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrains Mono 10
+gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 3 settings"
@@ -308,7 +318,7 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrains Mono 10
+gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 4 settings"
@@ -333,7 +343,7 @@ EOF
         dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" 2>/dev/null || true
         dconf write /org/gnome/desktop/interface/cursor-theme "'Adwaita'" 2>/dev/null || true
         dconf write /org/gnome/desktop/interface/cursor-size "24" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/font-name "'JetBrains Mono 10'" 2>/dev/null || true
+        dconf write /org/gnome/desktop/interface/font-name "'JetBrainsMono Nerd Font 10'" 2>/dev/null || true
         print_done "Dark theme applied via dconf"
     elif command -v gsettings &>/dev/null; then
         print_step "Applying dark theme via gsettings..."
@@ -342,7 +352,7 @@ EOF
         gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null || true
         gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita' 2>/dev/null || true
         gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface font-name 'JetBrains Mono 10' 2>/dev/null || true
+        gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null || true
         print_done "Dark theme applied via gsettings"
     else
         print_warn "Neither dconf nor gsettings found; GTK settings.ini files will still apply"
@@ -391,11 +401,13 @@ setup_system() {
 
     # Ly display manager
     if confirm "Set up ly as display manager?"; then
-        # Disable other display managers
+        local installed_dms
+        installed_dms=$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')
         for dm in sddm gdm lightdm greetd; do
-            if systemctl is-enabled "$dm" &>/dev/null; then
-                sudo systemctl disable "$dm"
-                print_step "Disabled $dm"
+            if echo "$installed_dms" | grep -q "^${dm}\.service$"; then
+                if systemctl is-enabled "$dm" &>/dev/null; then
+                    sudo systemctl disable "$dm" >/dev/null 2>&1 && print_step "Disabled $dm"
+                fi
             fi
         done
 
@@ -426,7 +438,7 @@ setup_system() {
         fi
     done
 
-    # User services (pipewire stack)
+    # Pipewire is socket-activated on modern Arch; explicit enable is best-effort.
     local user_services=(
         "pipewire"
         "pipewire-pulse"
@@ -434,13 +446,105 @@ setup_system() {
     )
 
     for service in "${user_services[@]}"; do
-        if sudo systemctl --global enable "$service" >/dev/null 2>&1; then
+        if systemctl --user --quiet is-enabled "$service" 2>/dev/null; then
+            print_done "User service already enabled: $service"
+        elif systemctl --user enable "$service" >/dev/null 2>&1; then
             print_done "Enabled user service: $service"
         else
-            print_warn "User service $service not found (may use socket activation)"
+            print_warn "User service $service not enabled (likely socket-activated, which is fine)"
         fi
     done
     print_done "System services configured"
+}
+
+# ─────────────────────────────────────────────────────────
+# Firewall Setup (ufw, opt-in)
+# ─────────────────────────────────────────────────────────
+
+setup_firewall() {
+    print_header "Firewall Setup (ufw)"
+
+    if ! command -v ufw &>/dev/null; then
+        print_warn "ufw not installed -- skipping firewall setup"
+        return 0
+    fi
+
+    if ! confirm "Configure ufw with desktop defaults (deny incoming, allow outgoing)?"; then
+        print_warn "Firewall setup skipped (you can run 'sudo ufw enable' later)"
+        return 0
+    fi
+
+    print_step "Setting default policies..."
+    sudo ufw --force reset >/dev/null 2>&1 || true
+    sudo ufw default deny incoming   >/dev/null
+    sudo ufw default allow outgoing  >/dev/null
+    sudo ufw default allow routed    >/dev/null
+
+    sudo ufw allow in on lo  >/dev/null
+    sudo ufw allow out on lo >/dev/null
+    sudo ufw logging low >/dev/null
+    sudo ufw --force enable >/dev/null
+    sudo systemctl enable ufw.service >/dev/null 2>&1 || true
+
+    print_done "ufw enabled with desktop defaults"
+    print_step "Current rules:"
+    sudo ufw status verbose | sed 's/^/    /'
+}
+
+# ─────────────────────────────────────────────────────────
+# Cloudflare WARP (opt-in privacy DNS / VPN)
+# ─────────────────────────────────────────────────────────
+
+setup_cloudflare() {
+    print_header "Cloudflare WARP (opt-in)"
+
+    if ! command -v warp-cli &>/dev/null; then
+        print_warn "warp-cli not installed -- skipping (install cloudflare-warp-bin if you want it)"
+        return 0
+    fi
+
+    if ! confirm "Set up Cloudflare WARP (DNS-over-HTTPS by default, full VPN optional)?"; then
+        print_warn "Cloudflare WARP setup skipped"
+        return 0
+    fi
+
+    if ! systemctl is-active --quiet warp-svc; then
+        sudo systemctl enable --now warp-svc >/dev/null 2>&1
+        print_done "warp-svc started + enabled"
+        sleep 1
+    else
+        print_done "warp-svc already running"
+    fi
+
+    if ! warp-cli --accept-tos status >/dev/null 2>&1; then
+        if ! warp-cli --accept-tos registration new >/dev/null 2>&1; then
+            print_warn "WARP registration failed (may need re-run after reboot)"
+            print_warn "Manually retry with: warp-cli --accept-tos registration new"
+            return 0
+        fi
+        print_done "Device registered with Cloudflare"
+    fi
+
+    echo ""
+    echo "  Choose WARP mode:"
+    echo "    1) DNS-over-HTTPS only (safest, no VPN tunnel)  [default]"
+    echo "    2) Full WARP VPN (encrypted tunnel)"
+    echo "    3) Skip for now (leave configured but disconnected)"
+    read -rp "  Mode [1/2/3]: " mode_choice || mode_choice=""
+    case "${mode_choice:-1}" in
+        2) warp-cli --accept-tos mode warp >/dev/null 2>&1 && print_done "Mode: WARP (VPN)" ;;
+        3) print_warn "WARP enabled but no mode set; run 'warp-cli mode doh' to switch later"; return 0 ;;
+        *) warp-cli --accept-tos mode doh  >/dev/null 2>&1 && print_done "Mode: DoH" ;;
+    esac
+
+    if warp-cli --accept-tos connect >/dev/null 2>&1; then
+        sleep 1
+        local status
+        status=$(warp-cli --accept-tos status 2>/dev/null || echo "unknown")
+        print_done "WARP: $status"
+    else
+        print_warn "warp-cli connect failed -- check 'warp-cli status' manually"
+    fi
 }
 
 # ─────────────────────────────────────────────────────────
@@ -482,7 +586,6 @@ validate() {
         "$HOME/.config/qt6ct/conf"
         "$HOME/.zshrc"
         "$HOME/.p10k.zsh"
-        "$HOME/.config/polkit/50-network-manager.rules"
     )
 
     all_ok=true
@@ -516,9 +619,8 @@ cleanup_old_configs() {
         fi
     fi
 
+    # qt5ct/qt6ct are managed by setup_gtk; do not list them here.
     local old_configs=(
-        "$HOME/.config/qt5ct"
-        "$HOME/.config/qt6ct"
         "$HOME/.config/Kvantum"
         "$HOME/.config/rofi"
         "$HOME/.config/dunst"
@@ -586,12 +688,14 @@ main() {
     preflight
     install_packages
     backup_configs
+    cleanup_old_configs
     copy_configs
     setup_shell
     setup_gtk
     setup_desktop_integrations
     setup_system
-    cleanup_old_configs
+    setup_firewall
+    setup_cloudflare
     validate
     print_summary
 }

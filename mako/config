@@ -1,7 +1,7 @@
 # Mako notification daemon config (Wayland-native)
 # Monochrome theme
 
-font=JetBrainsMono Nerd Font 10
+font=JetBrainsMono Nerd Font, monospace 10
 background-color=#141414dd
 text-color=#d4d4d4
 border-color=#ffffff
@@ -18,6 +18,7 @@ layer=overlay
 anchor=top-right
 icon-path=/usr/share/icons/Papirus-Dark
 
+# Low-urgency notifications use a softer gray border to visually de-emphasize them.
 [urgency=low]
 background-color=#141414dd
 border-color=#666666

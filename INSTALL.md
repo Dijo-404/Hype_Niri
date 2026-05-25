@@ -2,7 +2,7 @@
 
 ## Quick Install (Recommended)
 
-The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, applying the dark theme, and enabling necessary system services.
+The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services, and optionally configuring a firewall and Cloudflare WARP.
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -11,14 +11,19 @@ chmod +x install.sh
 ./install.sh
 ```
 
+The installer is interactive at every irreversible step — backup, display manager switch, firewall, WARP, and shell change all confirm before acting.
+
 > [!TIP]
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
+
+> [!NOTE]
+> If `yay -S` fails on `awww`, the AUR wallpaper daemon may be unavailable on your mirror. Replace `awww` with `swww` in `pkglist.txt` and replace `awww` / `awww-daemon` with `swww` / `swww-daemon` in `waybar/scripts/wallpaper.sh`.
 
 ---
 
 ## Manual Install
 
-If you prefer to understand what is happening under the hood or selectively apply configurations, follow these manual steps.
+If you prefer to understand what is happening under the hood or selectively apply configurations, follow these manual steps. The order matters — clean up stale configs before writing new ones.
 
 ### 1. Install Required Packages
 
@@ -31,15 +36,38 @@ The repository contains a `pkglist.txt` file listing all necessary dependencies.
 grep -v '^#' pkglist.txt | grep -v '^$' | xargs yay -S --needed --noconfirm
 ```
 
-### 2. Copy Configurations
+### 2. Back Up and Clean Up Existing Configs
+
+If you already have configs in `~/.config`, back them up before overwriting:
+
+```bash
+BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+for c in niri waybar alacritty fuzzel mako fastfetch wlogout hypr; do
+    [ -d "$HOME/.config/$c" ] && cp -r "$HOME/.config/$c" "$BACKUP_DIR/"
+done
+[ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
+```
+
+Remove any stale configs from previous setups that will conflict (`qt5ct` / `qt6ct` are written fresh in step 4 — do **not** delete them):
+
+```bash
+rm -rf ~/.config/Kvantum ~/.config/rofi ~/.config/dunst
+[ -f ~/.config/hypr/hyprland.conf ] && rm ~/.config/hypr/hyprland.conf
+```
+
+### 3. Copy Configurations
 
 Move the dotfiles to their respective locations in your home directory.
 
 ```bash
-mkdir -p ~/.config
+mkdir -p ~/.config ~/.cache/cliphist ~/Pictures/Screenshots ~/Pictures/Wallpapers
 
 # Copy Wayland/UI configurations
 cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
+
+# Copy wallpapers
+[ -d Wallpapers ] && cp -r Wallpapers/* ~/Pictures/Wallpapers/
 
 # Copy Shell configuration
 cp zsh/.zshrc ~/
@@ -49,12 +77,12 @@ cp zsh/.p10k.zsh ~/
 chmod +x ~/.config/waybar/scripts/*.sh
 ```
 
-### 3. Apply Dark Theme
+### 4. Apply Dark Theme (GTK + Qt + dconf)
 
-Set the dark theme for GTK apps (Nautilus, etc.):
+Set the dark theme for GTK and Qt apps. Apply via `dconf` so GNOME apps (Nautilus, etc.) pick it up immediately.
 
 ```bash
-mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0 ~/.config/qt5ct ~/.config/qt6ct
 
 cat > ~/.config/gtk-3.0/settings.ini << 'EOF'
 [Settings]
@@ -68,38 +96,105 @@ EOF
 
 cp ~/.config/gtk-3.0/settings.ini ~/.config/gtk-4.0/settings.ini
 
-# Apply via dconf (ensures Nautilus and other GNOME apps use dark theme)
-dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'"
-dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita-dark'"
-dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'"
+cat > ~/.config/qt5ct/conf << 'EOF'
+[General]
+icon_theme=Papirus-Dark
+standard_dialogs=default
+EOF
+cp ~/.config/qt5ct/conf ~/.config/qt6ct/conf
+
+# Apply via dconf (writes are persistent, no dbus session required).
+dconf write /org/gnome/desktop/interface/color-scheme   "'prefer-dark'"
+dconf write /org/gnome/desktop/interface/gtk-theme      "'Adwaita-dark'"
+dconf write /org/gnome/desktop/interface/icon-theme     "'Papirus-Dark'"
+dconf write /org/gnome/desktop/interface/cursor-theme   "'Adwaita'"
+dconf write /org/gnome/desktop/interface/cursor-size    "24"
+dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Font 10'"
 ```
 
-### 4. System-Wide Setup
+### 5. System-Wide Setup
 
 These steps require elevated privileges (`sudo`).
 
 ```bash
-# Enable Ly display manager
+# Tune pacman output (color, parallel downloads)
+sudo sed -i 's/^#Color$/Color/' /etc/pacman.conf
+sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf
+
+# Polkit rules (system-wide -- do NOT copy to ~/.config/polkit)
+sudo cp polkit/*.rules /etc/polkit-1/rules.d/
+
+# Enable Ly display manager and disable any others
+for dm in sddm gdm lightdm greetd; do
+    systemctl is-enabled "$dm" &>/dev/null && sudo systemctl disable "$dm"
+done
 sudo systemctl enable ly
 
 # Enable system services
 sudo systemctl enable NetworkManager bluetooth
 
-# Change default shell to Zsh
-chsh -s /usr/bin/zsh
+# Pipewire is socket-activated on modern Arch -- explicit enable is best-effort
+systemctl --user enable pipewire pipewire-pulse wireplumber 2>/dev/null || true
+```
 
-# Setup wallpapers
-mkdir -p ~/Pictures/Wallpapers
-cp -r Wallpapers/* ~/Pictures/Wallpapers/
+### 6. Shell Setup
 
+```bash
 # Install fzf-tab zsh plugin
 git clone https://github.com/Aloxaf/fzf-tab ~/.zsh/fzf-tab
 
-# Copy polkit rules
-sudo cp polkit/*.rules /etc/polkit-1/rules.d/
+# Change default shell to zsh
+chsh -s /usr/bin/zsh
 ```
 
-### 5. Reboot Your System
+### 7. Optional: Privacy Networking
+
+Both ufw and Cloudflare WARP are **opt-in** — skip this section if you don't want them.
+
+#### Firewall (ufw)
+
+Standard desktop defaults: deny incoming, allow outgoing, allow loopback.
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw default allow routed
+sudo ufw allow in on lo
+sudo ufw allow out on lo
+sudo ufw logging low
+sudo ufw --force enable
+sudo systemctl enable ufw.service
+```
+
+Verify:
+```bash
+sudo ufw status verbose
+```
+
+Disable later with `sudo ufw disable`. The installer never opens SSH or any other port — if you need SSH, add `sudo ufw allow ssh` yourself.
+
+#### Cloudflare WARP
+
+The `cloudflare-warp-bin` AUR package ships a system service (`warp-svc`) and a user CLI (`warp-cli`). DoH (DNS-over-HTTPS) is the safe default; full WARP is a VPN tunnel.
+
+```bash
+# Start + persist the service
+sudo systemctl enable --now warp-svc
+
+# Accept TOS and register (one-time)
+warp-cli --accept-tos registration new
+
+# Pick a mode -- DoH is the safest default
+warp-cli --accept-tos mode doh        # OR: warp-cli --accept-tos mode warp
+
+# Connect
+warp-cli --accept-tos connect
+warp-cli --accept-tos status
+```
+
+Disconnect anytime with `warp-cli disconnect`. Inspect logs with `journalctl -u warp-svc`.
+
+### 8. Reboot Your System
 
 Reboot to initialize all changes and the new login manager:
 
@@ -137,6 +232,64 @@ yay -Syu
 - **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
 - **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`.
+- **Lock Screen**: `Super+L` locks via hyprlock; passwords are hidden by default. The lock screen uses a solid dark background — to use a wallpaper, edit `~/.config/hypr/hyprlock.conf` and replace the `color = ...` line in the `background` block with `path = $HOME/Pictures/Wallpapers/your-wallpaper.jpg`.
+- **Firewall / WARP**: If you skipped step 7 and want them later, just run the relevant commands above — both are idempotent.
+
+## Troubleshooting
+
+### Can't access a Windows partition from Linux (dual-boot)
+
+If your Windows partition doesn't appear in Nautilus, or appears but won't open / mounts read-only:
+
+**1. Install the prerequisites** (already in `pkglist.txt`):
+
+```bash
+yay -S --needed ntfs-3g gvfs udisks2
+```
+
+- `ntfs-3g` — NTFS driver. Even though the kernel has `ntfs3` built-in, ntfs-3g handles Fast Startup detection cleanly.
+- `gvfs` — lets Nautilus mount partitions on click.
+- `udisks2` — the mount daemon Nautilus talks to.
+
+**2. Disable Windows Fast Startup** (this is the cause ~90% of the time).
+
+Fast Startup leaves the Windows NTFS partition hibernated on shutdown, and Linux refuses to mount it writable to protect the filesystem. In Windows:
+
+`Control Panel → Power Options → "Choose what the power buttons do" → "Change settings that are currently unavailable"` → **uncheck "Turn on fast startup"** → Save. Then shut Windows down fully (Shift+Restart → Power off) and boot back into Linux.
+
+**3. Mount it.**
+
+Open Nautilus, click "Other Locations", and click the Windows partition — it should mount and open. Or from the terminal:
+
+```bash
+# Find your Windows partition
+lsblk -f                                # look for the partition with fstype "ntfs" (usually the largest)
+
+# Mount read/write to a chosen location
+sudo mkdir -p /mnt/windows
+sudo mount -t ntfs3 /dev/nvme0n1pX /mnt/windows    # replace X with the right number
+```
+
+If `mount` reports `falling back to read-only`, Fast Startup is still on or Windows was not shut down cleanly — boot back into Windows, fully shut down, retry.
+
+### Want it auto-mounted on every boot?
+
+Add it to `/etc/fstab`. Get the UUID first:
+
+```bash
+sudo blkid /dev/nvme0n1pX
+# UUID="XXXXXXXX-XXXX" TYPE="ntfs"
+```
+
+Then append to `/etc/fstab`:
+
+```
+UUID=XXXXXXXX-XXXX  /mnt/windows  ntfs3  defaults,nofail,uid=1000,gid=1000,umask=022  0  0
+```
+
+`nofail` is critical — it keeps the system bootable if the Windows partition ever vanishes or is unmountable.
+
+---
 
 ## Documentation Links
 

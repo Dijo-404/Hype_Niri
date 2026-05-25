@@ -134,26 +134,24 @@ fi
 if command -v bat &> /dev/null; then
     alias cat='bat --style=auto'
     alias catp='bat --style=plain'
-    export BAT_THEME="Monokai Extended"
+    export BAT_THEME="ansi"
     export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 fi
 
-# ── Conda (uncomment if you use conda/miniconda) ─
-
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/dj/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/home/dj/miniconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/dj/miniconda3/etc/profile.d/conda.sh"
+# ── Conda (auto-loaded only if miniconda3 is present in $HOME) ─
+if [ -d "$HOME/miniconda3" ]; then
+    # >>> conda initialize >>>
+    __conda_setup="$("$HOME/miniconda3/bin/conda" 'shell.zsh' 'hook' 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        eval "$__conda_setup"
+    elif [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "$HOME/miniconda3/etc/profile.d/conda.sh"
     else
-        export PATH="/home/dj/miniconda3/bin:$PATH"
+        export PATH="$HOME/miniconda3/bin:$PATH"
     fi
+    unset __conda_setup
+    # <<< conda initialize <<<
 fi
-unset __conda_setup
-# <<< conda initialize <<<
 
 # ── Zsh Options ──────────────────────────────────
 
@@ -172,7 +170,7 @@ autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
 # fzf-tab setup
-source ~/.zsh/fzf-tab/fzf-tab.plugin.zsh
+[[ -f ~/.zsh/fzf-tab/fzf-tab.plugin.zsh ]] && source ~/.zsh/fzf-tab/fzf-tab.plugin.zsh
 zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*' menu no
@@ -184,9 +182,10 @@ autoload -Uz colors && colors
 
 # ── Prompt ───────────────────────────────────────
 
-source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
+[[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]] && \
+    source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
-fastfetch
+command -v fastfetch >/dev/null && fastfetch
 
 # ── Plugins (must be last) ───────────────────────
 
@@ -208,12 +207,12 @@ export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=245"
 
 
 # opencode
-export PATH=/home/dj/.opencode/bin:$PATH
-export PATH="$HOME/.npm-global/bin:$PATH"
-
-# bun completions
-[ -s "/home/dj/.bun/_bun" ] && source "/home/dj/.bun/_bun"
+[[ -d "$HOME/.opencode/bin" ]] && export PATH="$HOME/.opencode/bin:$PATH"
+[[ -d "$HOME/.npm-global/bin" ]] && export PATH="$HOME/.npm-global/bin:$PATH"
 
 # bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+if [[ -d "$HOME/.bun" ]]; then
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+    [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+fi

@@ -12,6 +12,10 @@ TRANSITION_STEP=90
 TRANSITION_FPS=120
 TRANSITION_DURATION=1
 
+# Refuse to run if awww is not installed -- silently, since this gets called
+# on niri startup and we don't want to spam errors.
+command -v awww >/dev/null 2>&1 || exit 0
+
 # Ensure awww daemon is running
 if ! pgrep -x awww-daemon > /dev/null; then
     awww-daemon --format xrgb &
