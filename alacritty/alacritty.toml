@@ -1,9 +1,5 @@
-# Alacritty Configuration
-
 [terminal.shell]
 program = "/bin/zsh"
-
-# ============ Font Configuration ============
 
 [font]
 size = 10.0
@@ -21,8 +17,6 @@ style = "Italic"
 [font.bold_italic]
 style = "Bold Italic"
 
-# ============ Window Appearance ============
-
 [window]
 decorations = "None"
 dynamic_padding = true
@@ -31,8 +25,6 @@ opacity = 1.0
 [window.padding]
 x = 8
 y = 8
-
-# ============ Monochrome Color Scheme ============
 
 [colors.primary]
 background = "#141414"
@@ -66,12 +58,8 @@ magenta = "#b0b0b0"
 cyan = "#888888"
 white = "#e8e8e8"
 
-# ============ Scrolling ============
-
 [scrolling]
 history = 10000
-
-# ============ Performance ============
 
 [terminal]
 osc52 = "CopyPaste"

@@ -1,16 +1,12 @@
-// ╔═══════════════════════════════════════════════╗
-// ║    Niri Configuration — Monochrome Theme      ║
-// ╚═══════════════════════════════════════════════╝
+// Niri -- Monochrome Theme
 
 // ── Outputs ──────────────────────────────────────
-// Laptop display (always present)
+
 output "eDP-1" {
     mode "2880x1800@120"
     scale 2.0
 }
 
-// External monitor (left of laptop)
-// Niri auto-ignores this when disconnected
 output "DP-3" {
     mode "2560x1440@179.999"
     scale 1.0
@@ -123,20 +119,17 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
-// Rounded corners for all windows
 window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
 }
 
-// Active window: slightly transparent, no border background bleed-through
 window-rule {
     match is-active=true
     draw-border-with-background false
     opacity 0.90
 }
 
-// Inactive windows: more transparent
 window-rule {
     match is-active=false
     draw-border-with-background false
@@ -146,20 +139,13 @@ window-rule {
 // ── Autostart ────────────────────────────────────
 
 spawn-at-startup "waybar"
-
 spawn-sh-at-startup "nm-applet --indicator"
 spawn-sh-at-startup "[ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ] && /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
 spawn-at-startup "alacritty"
-
-// Wallpaper (uses wallpaper.sh script for proper init)
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
-
-// Idle + lock
 spawn-sh-at-startup "hypridle"
-
-// Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
 
@@ -181,7 +167,6 @@ binds {
     Mod+O repeat=false { toggle-overview; }
     Mod+L { spawn-sh "hyprlock"; }
 
-    // Float toggle
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
 

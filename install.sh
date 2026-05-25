@@ -1,9 +1,5 @@
 #!/bin/bash
-
-# ╔═══════════════════════════════════════════════════════╗
-# ║          Hype Niri - Automated Installer              ║
-# ║     Arch Linux + Niri Wayland Compositor Setup        ║
-# ╚═══════════════════════════════════════════════════════╝
+# Hype Niri -- automated installer for Arch + Niri.
 
 set -euo pipefail
 

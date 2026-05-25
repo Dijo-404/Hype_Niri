@@ -1,5 +1,4 @@
-// Allow members of `wheel` to manage day-to-day networking without a password,
-// but require admin authentication for system-wide settings, sleep, and reload.
+// Wheel: passwordless wifi/VPN, but admin auth required for system settings/sleep/reload.
 polkit.addRule(function(action, subject) {
     if (!subject.isInGroup("wheel")) return;
 
