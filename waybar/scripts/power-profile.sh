@@ -1,10 +1,6 @@
 #!/bin/bash
 
-# Power Profile Menu Script for Waybar
-# Uses fuzzel for dropdown selection
-
-# If power-profiles-daemon is not installed, emit a benign JSON stub so
-# waybar doesn't show garbage, then exit.
+# Emit a benign JSON stub if power-profiles-daemon is missing -- waybar polls this.
 if ! command -v powerprofilesctl >/dev/null 2>&1; then
     [[ "${1:-}" != "menu" ]] && echo '{"text": "", "tooltip": "power-profiles-daemon not installed", "class": "missing"}'
     exit 0
@@ -44,7 +40,6 @@ send_notification() {
 
 if [[ "${1:-}" == "menu" ]]; then
     command -v fuzzel >/dev/null 2>&1 || exit 0
-    # Show fuzzel menu
     options="󰓅 Performance\n󰾅 Balanced\n󰾆 Power Saver"
     choice=$(echo -e "$options" | fuzzel --dmenu -p "Power Profile")
     
@@ -62,14 +57,9 @@ if [[ "${1:-}" == "menu" ]]; then
             send_notification "power-saver"
             ;;
     esac
-    
-    # Signal waybar to update
     pkill -RTMIN+16 waybar
 else
-    # Output for waybar
     current=$(get_current_profile)
     icon=$(get_icon "$current")
-    
-    # JSON output for waybar custom module
     echo "{\"text\": \"$icon\", \"tooltip\": \"Power Profile: $current\", \"class\": \"$current\"}"
 fi

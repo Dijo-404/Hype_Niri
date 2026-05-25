@@ -7,7 +7,6 @@
 
 set -euo pipefail
 
-# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -16,7 +15,6 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 _tmp_resources=()
@@ -193,6 +191,8 @@ backup_configs() {
             done
             [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
             [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/.bashrc"
+            [ -d "$HOME/.local/share/nautilus" ] && \
+                cp -r "$HOME/.local/share/nautilus" "$BACKUP_DIR/nautilus-share"
             print_done "Backup saved to $BACKUP_DIR"
         fi
     else
@@ -231,7 +231,6 @@ copy_configs() {
     chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null || true
     print_done "Made waybar scripts executable"
 
-    # Ensure waybar colors directory exists and is readable
     if [ -d "$HOME/.config/waybar/colors" ]; then
         print_done "Waybar colors directory present"
     else
@@ -246,8 +245,6 @@ copy_configs() {
     else
         print_warn "No wallpapers found in source directory"
     fi
-
-    # Polkit rules go to /etc/polkit-1/rules.d/ in setup_system; nothing user-side.
 
     mkdir -p "$HOME/.cache/cliphist"
 }
@@ -297,7 +294,6 @@ setup_shell() {
 setup_gtk() {
     print_header "GTK Theme Setup"
 
-    # Write GTK 3 settings
     mkdir -p "$HOME/.config/gtk-3.0"
     cat > "$HOME/.config/gtk-3.0/settings.ini" << 'EOF'
 [Settings]
@@ -310,7 +306,6 @@ gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 3 settings"
 
-    # Write GTK 4 settings
     mkdir -p "$HOME/.config/gtk-4.0"
     cat > "$HOME/.config/gtk-4.0/settings.ini" << 'EOF'
 [Settings]
@@ -323,7 +318,6 @@ gtk-application-prefer-dark-theme=true
 EOF
     print_done "Created GTK 4 settings"
 
-    # Write Qt5/Qt6 platform theme settings
     mkdir -p "$HOME/.config/qt5ct"
     mkdir -p "$HOME/.config/qt6ct"
     cat > "$HOME/.config/qt5ct/conf" << 'EOF'
@@ -334,8 +328,7 @@ EOF
     cp "$HOME/.config/qt5ct/conf" "$HOME/.config/qt6ct/conf"
     print_done "Created Qt5/Qt6 theme settings"
 
-    # Write dconf settings directly for GNOME apps (Nautilus, etc.)
-    # gsettings requires a running dbus session; dconf write works from any context.
+    # dconf write works from any context; gsettings needs a running dbus session.
     if command -v dconf &>/dev/null; then
         print_step "Applying dark theme via dconf..."
         dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null || true
@@ -381,7 +374,6 @@ setup_desktop_integrations() {
 setup_system() {
     print_header "System Configuration (requires sudo)"
 
-    # Pacman output styling
     if [ -f /etc/pacman.conf ]; then
         print_step "Tuning pacman output..."
         sudo sed -i 's/^#Color$/Color/' /etc/pacman.conf 2>/dev/null || true
@@ -399,7 +391,6 @@ setup_system() {
         print_done "Pacman output tuned"
     fi
 
-    # Ly display manager
     if confirm "Set up ly as display manager?"; then
         local installed_dms
         installed_dms=$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')
@@ -415,14 +406,12 @@ setup_system() {
         print_done "Enabled ly display manager"
     fi
 
-    # Polkit Rules
     print_step "Installing Polkit rules (NetworkManager)..."
     if [ -d "$SCRIPT_DIR/polkit" ] && [ "$(ls -A "$SCRIPT_DIR/polkit" 2>/dev/null)" ]; then
         sudo cp -r "$SCRIPT_DIR/polkit/"*.rules /etc/polkit-1/rules.d/ 2>/dev/null || true
         print_done "Polkit rules applied"
     fi
 
-    # Enable essential services
     print_step "Enabling system services..."
 
     local system_services=(
@@ -554,7 +543,6 @@ setup_cloudflare() {
 validate() {
     print_header "Validating Installation"
 
-    # Check niri config
     if command -v niri &>/dev/null; then
         if niri validate 2>/dev/null; then
             print_done "Niri config is valid"
@@ -565,7 +553,6 @@ validate() {
         print_warn "niri not found in PATH (may need a reboot)"
     fi
 
-    # Check critical files
     local critical_files=(
         "$HOME/.config/niri/config.kdl"
         "$HOME/.config/waybar/config.jsonc"
@@ -635,6 +622,17 @@ cleanup_old_configs() {
             fi
         fi
     done
+
+    if [ -d "$HOME/.config/nautilus" ] || [ -d "$HOME/.local/share/nautilus" ]; then
+        print_warn "Found existing Nautilus state (view prefs, bookmarks, tags)"
+        if confirm "Reset Nautilus so the new dark theme applies cleanly?"; then
+            rm -rf "$HOME/.config/nautilus" "$HOME/.local/share/nautilus"
+            if command -v dconf &>/dev/null; then
+                dconf reset -f /org/gnome/nautilus/ 2>/dev/null || true
+            fi
+            print_done "Nautilus state cleared"
+        fi
+    fi
 }
 
 # ─────────────────────────────────────────────────────────

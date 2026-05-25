@@ -31,7 +31,6 @@ is_inhibitor_pid() {
 }
 
 start_inhibitor() {
-    # Kill existing inhibitor if any
     local existing_pid
     existing_pid=$(read_pid_file)
     if [ -n "$existing_pid" ] && is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
@@ -39,7 +38,6 @@ start_inhibitor() {
     fi
     rm -f "$PID_FILE"
 
-    # Start new inhibitor (prevents idle, sleep, and screen lock)
     systemd-inhibit --what=idle:sleep --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 &
     echo "$!" > "$PID_FILE"
 }
@@ -74,7 +72,6 @@ elif [ "$action" == "toggle" ]; then
     pkill -RTMIN+15 waybar || true
 else
     if [ -f "$STATE_FILE" ]; then
-        # Ensure inhibitor is running
         existing_pid=$(read_pid_file)
         if [ -z "$existing_pid" ] || ! is_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
             start_inhibitor

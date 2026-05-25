@@ -2,7 +2,6 @@
 
 command -v wpctl >/dev/null 2>&1 || exit 0
 
-# Notification ID
 ID=2003
 
 case "$1" in
@@ -11,7 +10,6 @@ case "$1" in
         ;;
 esac
 
-# Get current mic mute status
 mic_info=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@)
 mute=$(echo "$mic_info" | grep "MUTED")
 

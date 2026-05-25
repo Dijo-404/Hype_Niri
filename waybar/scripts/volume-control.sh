@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# Refuse to run if pipewire's wpctl is unavailable.
 command -v wpctl >/dev/null 2>&1 || exit 0
 
-# Notification replacement ID (fixed, like mic-control.sh uses 2003)
 ID=2001
 
 case "$1" in
@@ -18,7 +16,6 @@ case "$1" in
         ;;
 esac
 
-# Get current volume and mute status
 vol_info=$(wpctl get-volume @DEFAULT_AUDIO_SINK@)
 vol=$(echo "$vol_info" | awk '{print int($2 * 100)}')
 mute=$(echo "$vol_info" | grep "MUTED")
@@ -28,7 +25,6 @@ if [ -n "$mute" ]; then
         -h string:x-canonical-private-synchronous:volume \
         "󰝟  Muted"
 else
-    # Select icon based on volume level
     if [ "$vol" -lt 30 ]; then
         icon="󰕿"
     elif [ "$vol" -lt 70 ]; then

@@ -1,22 +1,16 @@
 #!/bin/bash
 
-# Wallpaper manager for awww
-# Handles both single and multi-monitor setups
-
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 DEFAULT_WALLPAPER="$WALLPAPER_DIR/wallpaperflare.com_wallpaper.jpg"
 
-# Transition settings
 TRANSITION_TYPE="fade"
 TRANSITION_STEP=90
 TRANSITION_FPS=120
 TRANSITION_DURATION=1
 
-# Refuse to run if awww is not installed -- silently, since this gets called
-# on niri startup and we don't want to spam errors.
+# Silent exit if awww missing -- called on niri startup, must not spam errors.
 command -v awww >/dev/null 2>&1 || exit 0
 
-# Ensure awww daemon is running
 if ! pgrep -x awww-daemon > /dev/null; then
     awww-daemon --format xrgb &
     sleep 0.3
@@ -35,24 +29,19 @@ set_wallpaper() {
 
 case "$1" in
     init)
-        # Set default wallpaper on startup (no transition)
         if [[ -f "$DEFAULT_WALLPAPER" ]]; then
-            awww img "$DEFAULT_WALLPAPER" \
-                --transition-type none
+            awww img "$DEFAULT_WALLPAPER" --transition-type none
         fi
         ;;
     random)
-        # Pick a random wallpaper
         img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | shuf -n1)
         set_wallpaper "$img"
         ;;
     select)
-        # Let user pick via fuzzel
         img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | fuzzel --dmenu -p "Wallpaper: ")
         set_wallpaper "$img"
         ;;
     *)
-        # Direct path provided
         if [[ -f "$1" ]]; then
             set_wallpaper "$1"
         else

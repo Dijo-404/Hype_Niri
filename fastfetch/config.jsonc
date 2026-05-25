@@ -1,6 +1,15 @@
 {
     "logo": {
-        "type": "none"
+        "source": "~/.config/fastfetch/logo.txt",
+        "type": "file",
+        "color": {
+            "1": "white"
+        },
+        "padding": {
+            "top": 1,
+            "left": 2,
+            "right": 2
+        }
     },
     "display": {
         "separator": "   "

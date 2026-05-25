@@ -2,11 +2,7 @@
 
 set -euo pipefail
 
-# Toggle fullscreen first; then notify waybar so its hidden state tracks this action.
+# Toggle, then signal waybar so its hidden state tracks this action.
 niri msg action fullscreen-window
-
-if ! pgrep -x waybar >/dev/null 2>&1; then
-    exit 0
-fi
-
+pgrep -x waybar >/dev/null 2>&1 || exit 0
 pkill -USR1 -x waybar || true

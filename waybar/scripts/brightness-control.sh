@@ -4,15 +4,12 @@ set -euo pipefail
 
 command -v brightnessctl >/dev/null 2>&1 || exit 0
 
-# Notification replacement ID (fixed)
 ID=2000
 
-# Smooth brightness transition
 smooth_set() {
     current=$1
     target=$2
 
-    # Calculate step direction
     if [ "$target" -eq "$current" ]; then
         return
     elif [ "$target" -gt "$current" ]; then
@@ -20,8 +17,7 @@ smooth_set() {
     else
         step=-1
     fi
-    
-    # Gradually change brightness
+
     while [ "$current" -ne "$target" ]; do
         current=$((current + step))
         brightnessctl -q set "$current"
@@ -33,32 +29,24 @@ case "${1:-}" in
     up)
         current=$(brightnessctl get)
         max=$(brightnessctl max)
-        min=$((max / 100))  # minimum 1%
-        [ "$min" -lt 1 ] && min=1
-        step=$((max / 100))  # 1% step
-        [ "$step" -lt 1 ] && step=1
+        min=$((max / 100)); [ "$min" -lt 1 ] && min=1
+        step=$((max / 100)); [ "$step" -lt 1 ] && step=1
         target=$((current + step))
-        if [ "$target" -gt "$max" ]; then
-            target=$max
-        fi
+        [ "$target" -gt "$max" ] && target=$max
         smooth_set "$current" "$target"
         ;;
     down)
         current=$(brightnessctl get)
         max=$(brightnessctl max)
-        min=$((max / 100))  # minimum 1%
-        [ "$min" -lt 1 ] && min=1
-        step=$((max / 100))  # 1% step
-        [ "$step" -lt 1 ] && step=1
+        min=$((max / 100)); [ "$min" -lt 1 ] && min=1
+        step=$((max / 100)); [ "$step" -lt 1 ] && step=1
+        # Don't bump up when already at or below the floor.
         if [ "$current" -le "$min" ]; then
-            # Do not increase brightness on a down action if we're already below floor.
             target=$current
         else
             target=$((current - step))
         fi
-        if [ "$target" -lt "$min" ]; then
-            target=$min
-        fi
+        [ "$target" -lt "$min" ] && target=$min
         smooth_set "$current" "$target"
         ;;
     *)
@@ -67,17 +55,15 @@ case "${1:-}" in
         ;;
 esac
 
-# Get current brightness percentage for notification
 current=$(brightnessctl get)
 max=$(brightnessctl max)
-# Round to nearest integer so notification matches waybar's displayed percent.
+# Round to match waybar's displayed percent.
 if [ "$max" -gt 0 ]; then
     percent=$(((current * 100 + max / 2) / max))
 else
     percent=0
 fi
 
-# Select icon
 if [ "$percent" -lt 30 ]; then
     icon="󰃞"
 elif [ "$percent" -lt 70 ]; then
@@ -86,7 +72,6 @@ else
     icon="󰃠"
 fi
 
-# Send notification with progress bar
 notify-send -r "$ID" \
     -h string:x-canonical-private-synchronous:brightness \
     -h int:value:"$percent" \
