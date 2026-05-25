@@ -247,6 +247,15 @@ copy_configs() {
     fi
 
     mkdir -p "$HOME/.cache/cliphist"
+
+    # Suppress blueman xdg-autostart -- the waybar bluetooth module handles it.
+    mkdir -p "$HOME/.config/autostart"
+    cat > "$HOME/.config/autostart/blueman.desktop" << 'EOF'
+[Desktop Entry]
+Type=Application
+Hidden=true
+EOF
+    print_done "Suppressed blueman tray autostart"
 }
 
 # ─────────────────────────────────────────────────────────
@@ -392,18 +401,28 @@ setup_system() {
     fi
 
     if confirm "Set up ly as display manager?"; then
-        local installed_dms
-        installed_dms=$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')
-        for dm in sddm gdm lightdm greetd; do
-            if echo "$installed_dms" | grep -q "^${dm}\.service$"; then
-                if systemctl is-enabled "$dm" &>/dev/null; then
-                    sudo systemctl disable "$dm" >/dev/null 2>&1 && print_step "Disabled $dm"
-                fi
-            fi
-        done
+        sudo systemctl daemon-reload >/dev/null 2>&1 || true
+        local installed_units
+        installed_units=$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')
 
-        sudo systemctl enable ly
-        print_done "Enabled ly display manager"
+        if ! echo "$installed_units" | grep -q '^ly\.service$'; then
+            print_warn "ly.service not found -- ly may not be installed correctly"
+            print_warn "Try: sudo pacman -S ly && sudo systemctl daemon-reload"
+        else
+            for dm in sddm gdm lightdm greetd; do
+                if echo "$installed_units" | grep -q "^${dm}\.service$"; then
+                    if systemctl is-enabled "$dm" &>/dev/null; then
+                        sudo systemctl disable "$dm" >/dev/null 2>&1 && print_step "Disabled $dm"
+                    fi
+                fi
+            done
+
+            if sudo systemctl enable ly >/dev/null 2>&1; then
+                print_done "Enabled ly display manager"
+            else
+                print_warn "Failed to enable ly -- run 'sudo systemctl enable ly' manually"
+            fi
+        fi
     fi
 
     print_step "Installing Polkit rules (NetworkManager)..."
