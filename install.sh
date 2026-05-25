@@ -23,9 +23,7 @@ cleanup_tmp() {
 trap cleanup_tmp EXIT
 trap 'echo; printf "  \033[0;31mx\033[0m Installation interrupted\n"; exit 130' INT TERM
 
-# ─────────────────────────────────────────────────────────
-# Helper Functions
-# ─────────────────────────────────────────────────────────
+# ── Helpers ──
 
 print_header() {
     echo ""
@@ -60,9 +58,7 @@ confirm() {
     esac
 }
 
-# ─────────────────────────────────────────────────────────
-# Preflight Checks
-# ─────────────────────────────────────────────────────────
+# ── Preflight ──
 
 preflight() {
     print_header "Preflight Checks"
@@ -98,9 +94,7 @@ preflight() {
     print_done "Internet connection OK"
 }
 
-# ─────────────────────────────────────────────────────────
-# Install Packages
-# ─────────────────────────────────────────────────────────
+# ── Packages ──
 
 install_packages() {
     print_header "Installing Packages"
@@ -147,9 +141,7 @@ install_packages() {
     print_done "All packages installed"
 }
 
-# ─────────────────────────────────────────────────────────
-# Backup Existing Configs
-# ─────────────────────────────────────────────────────────
+# ── Backup ──
 
 backup_configs() {
     print_header "Backing Up Existing Configs"
@@ -196,9 +188,7 @@ backup_configs() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# Copy Configurations
-# ─────────────────────────────────────────────────────────
+# ── Copy configs ──
 
 copy_configs() {
     print_header "Copying Configurations"
@@ -254,9 +244,7 @@ EOF
     print_done "Suppressed blueman tray autostart"
 }
 
-# ─────────────────────────────────────────────────────────
-# Shell Setup (Zsh + Powerlevel10k)
-# ─────────────────────────────────────────────────────────
+# ── Shell ──
 
 setup_shell() {
     print_header "Setting Up Zsh"
@@ -292,9 +280,7 @@ setup_shell() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# GTK Theme Setup
-# ─────────────────────────────────────────────────────────
+# ── GTK theme ──
 
 setup_gtk() {
     print_header "GTK Theme Setup"
@@ -357,9 +343,7 @@ EOF
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# Desktop Integration Setup
-# ─────────────────────────────────────────────────────────
+# ── Desktop integrations ──
 
 setup_desktop_integrations() {
     print_header "Desktop Integration Setup"
@@ -372,9 +356,7 @@ setup_desktop_integrations() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# System Configuration (requires root)
-# ─────────────────────────────────────────────────────────
+# ── System (sudo) ──
 
 setup_system() {
     print_header "System Configuration (requires sudo)"
@@ -427,6 +409,14 @@ setup_system() {
         print_done "Polkit rules applied"
     fi
 
+    # Ensure hyprlock has a PAM config -- missing => "invalid key down event"
+    if [ ! -f /etc/pam.d/hyprlock ]; then
+        printf '#%%PAM-1.0\nauth include login\n' | sudo tee /etc/pam.d/hyprlock >/dev/null
+        print_done "Created /etc/pam.d/hyprlock"
+    else
+        print_done "hyprlock PAM config present"
+    fi
+
     print_step "Enabling system services..."
 
     local system_services=(
@@ -461,9 +451,7 @@ setup_system() {
     print_done "System services configured"
 }
 
-# ─────────────────────────────────────────────────────────
-# Firewall Setup (ufw, opt-in)
-# ─────────────────────────────────────────────────────────
+# ── Firewall (ufw, opt-in) ──
 
 setup_firewall() {
     print_header "Firewall Setup (ufw)"
@@ -495,9 +483,7 @@ setup_firewall() {
     sudo ufw status verbose | sed 's/^/    /'
 }
 
-# ─────────────────────────────────────────────────────────
-# Cloudflare WARP (opt-in privacy DNS / VPN)
-# ─────────────────────────────────────────────────────────
+# ── Cloudflare WARP (opt-in) ──
 
 setup_cloudflare() {
     print_header "Cloudflare WARP (opt-in)"
@@ -551,9 +537,7 @@ setup_cloudflare() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# Post-Install Validation
-# ─────────────────────────────────────────────────────────
+# ── Validate ──
 
 validate() {
     print_header "Validating Installation"
@@ -606,9 +590,7 @@ validate() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# Cleanup Old Configs
-# ─────────────────────────────────────────────────────────
+# ── Cleanup old configs ──
 
 cleanup_old_configs() {
     print_header "Clean Up Old Configs (Optional)"
@@ -650,9 +632,7 @@ cleanup_old_configs() {
     fi
 }
 
-# ─────────────────────────────────────────────────────────
-# Summary
-# ─────────────────────────────────────────────────────────
+# ── Summary ──
 
 print_summary() {
     echo ""
@@ -677,9 +657,7 @@ print_summary() {
     echo ""
 }
 
-# ─────────────────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────────────────
+# ── Main ──
 
 main() {
     clear
