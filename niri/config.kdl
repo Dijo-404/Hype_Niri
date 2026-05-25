@@ -148,6 +148,7 @@ spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 spawn-sh-at-startup "hypridle"
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
+spawn-sh-at-startup "command -v warp-cli >/dev/null 2>&1 && warp-cli --accept-tos connect >/dev/null 2>&1 || true"
 
 // ── Keybindings ──────────────────────────────────
 

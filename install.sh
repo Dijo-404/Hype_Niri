@@ -319,6 +319,14 @@ EOF
     cp "$HOME/.config/qt5ct/conf" "$HOME/.config/qt6ct/conf"
     print_done "Created Qt5/Qt6 theme settings"
 
+    if command -v papirus-folders &>/dev/null; then
+        papirus-folders -C grey --theme Papirus-Dark >/dev/null 2>&1 \
+            && print_done "Set Papirus-Dark folder color to grey" \
+            || print_warn "papirus-folders failed -- folder color unchanged"
+    else
+        print_warn "papirus-folders not found -- install 'papirus-folders' from AUR to recolor folders"
+    fi
+
     # dconf write works from any context; gsettings needs a running dbus session.
     if command -v dconf &>/dev/null; then
         print_step "Applying dark theme via dconf..."
@@ -449,6 +457,30 @@ setup_system() {
         fi
     done
     print_done "System services configured"
+}
+
+# ── Logind (lid switch) ──
+
+setup_logind() {
+    print_header "Lid Switch Behavior (suspend on close)"
+
+    local conf_dir=/etc/systemd/logind.conf.d
+    local conf_file="$conf_dir/10-hype-niri-lid.conf"
+
+    sudo mkdir -p "$conf_dir"
+    sudo tee "$conf_file" >/dev/null << 'EOF'
+[Login]
+HandleLidSwitch=suspend
+HandleLidSwitchExternalPower=suspend
+HandleLidSwitchDocked=ignore
+EOF
+    print_done "Wrote $conf_file"
+
+    if sudo systemctl restart systemd-logind.service >/dev/null 2>&1; then
+        print_done "Reloaded systemd-logind"
+    else
+        print_warn "Could not reload systemd-logind -- reboot to apply"
+    fi
 }
 
 # ── Firewall (ufw, opt-in) ──
@@ -685,6 +717,7 @@ main() {
     setup_gtk
     setup_desktop_integrations
     setup_system
+    setup_logind
     setup_firewall
     setup_cloudflare
     validate
