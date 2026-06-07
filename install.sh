@@ -232,6 +232,15 @@ copy_configs() {
         print_warn "No wallpapers found in source directory"
     fi
 
+    # Seed the wallpaper pointer so hyprlock has a background before first init.
+    mkdir -p "$HOME/.local/state/hypr"
+    if [ ! -e "$HOME/.local/state/hypr/current_wallpaper" ] && \
+       [ -f "$HOME/Pictures/Wallpapers/wallpaperflare.com_wallpaper.jpg" ]; then
+        ln -sfn "$HOME/Pictures/Wallpapers/wallpaperflare.com_wallpaper.jpg" \
+                "$HOME/.local/state/hypr/current_wallpaper"
+        print_done "Seeded wallpaper pointer -> ~/.local/state/hypr/current_wallpaper"
+    fi
+
     mkdir -p "$HOME/.cache/cliphist"
 
     # Suppress blueman xdg-autostart -- the waybar bluetooth module handles it.

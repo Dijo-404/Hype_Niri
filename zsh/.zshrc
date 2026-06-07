@@ -61,11 +61,15 @@ alias psg='ps aux | grep -v grep | grep -i -e VSZ -e'
 alias ports='netstat -tulanp'
 
 # Package management (yay)
-alias syu='yay -Syu'
 alias install='yay -S'
 alias remove='yay -Rns'
 alias search='yay -Ss'
 alias pkginfo='yay -Qi'
+
+# syu: full system update -- official repos first, then AUR.
+syu() {
+    sudo pacman -Syu && yay -Syu
+}
 
 # Editor
 alias v='nvim'
