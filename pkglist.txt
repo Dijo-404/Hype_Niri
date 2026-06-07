@@ -44,6 +44,7 @@ brave-bin
 discord
 visual-studio-code-bin
 vlc
+obsidian
 
 # ── CLI Tools ─────────────────────────────────────
 bat
