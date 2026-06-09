@@ -20,6 +20,7 @@
 @define-color state_press    rgba(255, 255, 255, 0.13);
 @define-color on_surface     #d4d4d4;
 @define-color on_surface_var #9a9a9a;
+@define-color outline        #b0b0b0;
 
 /* Semantic aliases (keep waybar style.css references working) */
 @define-color red #ffffff;
