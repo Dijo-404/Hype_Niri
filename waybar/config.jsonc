@@ -1,32 +1,49 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 40,
-  "margin-top": 4,
-  "margin-left": 4,
-  "margin-right": 4,
-  "spacing": 6,
+  "height": 42,
+  "margin-top": 6,
+  "margin-left": 8,
+  "margin-right": 8,
+  "spacing": 0,
+  "reload_style_on_change": true,
+
   "modules-left": [
-    "cpu",
-    "memory",
-    "temperature",
-    "custom/caffeine",
-    "custom/power-profile",
+    "group/sysmon",
+    "group/toggles",
   ],
   "modules-center": ["niri/workspaces"],
   "modules-right": [
     "clock",
-    "pulseaudio#microphone",
-    "pulseaudio",
-    "backlight",
-    "bluetooth",
+    "group/connect",
+    "group/media",
     "battery",
     "tray",
     "custom/power",
   ],
+
+  // Islands (grouped modules)
+  "group/sysmon": {
+    "orientation": "horizontal",
+    "modules": ["cpu", "memory", "temperature"],
+  },
+  "group/toggles": {
+    "orientation": "horizontal",
+    "modules": ["custom/caffeine", "custom/power-profile"],
+  },
+  "group/connect": {
+    "orientation": "horizontal",
+    "modules": ["network", "bluetooth"],
+  },
+  "group/media": {
+    "orientation": "horizontal",
+    "modules": ["pulseaudio#microphone", "pulseaudio", "backlight"],
+  },
+
   "niri/workspaces": {
     "format": "{index}",
   },
+
   "custom/caffeine": {
     "exec": "~/.config/waybar/scripts/caffeine-control.sh",
     "return-type": "json",
@@ -42,50 +59,64 @@
     "on-click": "~/.config/waybar/scripts/power-profile.sh menu",
     "signal": 16,
   },
+
   "tray": {
-    "icon-size": 16,
-    "spacing": 10,
+    "icon-size": 15,
+    "spacing": 8,
   },
+
   "clock": {
     "interval": 30,
     "format": "󰥔 {:%H:%M}",
-    "format-alt": "󰃭 {:%A, %B %d, %Y}",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format-alt": "󰃭 {:%a %d %b}",
+    "tooltip-format": "<big>{:%A, %B %d}</big>\n<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#d4d4d4'><b>{}</b></span>",
+        "days": "<span color='#999999'>{}</span>",
+        "weekdays": "<span color='#888888'><b>{}</b></span>",
+        "today": "<span color='#ffffff'><b><u>{}</u></b></span>",
+      },
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down",
+    },
   },
+
   "cpu": {
-    "format": "󰻠 {usage}%",
-    "tooltip": true,
     "interval": 3,
+    "format": "󰻠 {usage}%",
+    "tooltip-format": "CPU load: {usage}%",
   },
   "memory": {
     "interval": 5,
-    "format": "󰍛 {used:0.1f}GB",
-    "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used",
+    "format": "󰍛 {used:0.1f}G",
+    "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used ({percentage}%)",
   },
   "temperature": {
-    // Override per-host if your CPU sensor isn't on thermal_zone0.
     "thermal-zone": 0,
     "interval": 5,
     "critical-threshold": 80,
-    "format": "󰈐 {temperatureC}°C",
-    "format-critical": "󰈐 {temperatureC}°C",
-    "format-icons": ["󰈐", "󰈐", "󰈐", "󰈐", "󰈐"],
+    "format": "󰈐 {temperatureC}°",
+    "format-critical": "󰈐 {temperatureC}°",
+    "tooltip-format": "Temperature: {temperatureC}°C",
   },
-  "backlight": {
-    "format": "{icon} {percent}%",
-    "format-icons": ["󰃞", "󰃟", "󰃠"],
-  },
-  "battery": {
-    "interval": 10,
-    "states": {
-      "warning": 30,
-      "critical": 15,
-    },
-    "format": "{icon} {capacity}%",
-    "format-charging": "󰂄 {capacity}%",
-    "format-plugged": "󰚥 {capacity}%",
-    "format-alt": "{icon} {time}",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+
+  "network": {
+    "interval": 5,
+    "format-wifi": "󰤨 {signalStrength}%",
+    "format-ethernet": "󰈁",
+    "format-linked": "󰈁",
+    "format-disconnected": "󰤭",
+    "tooltip-format-wifi": "{essid}\n{signalStrength}% · {frequency} MHz\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "nm-connection-editor",
   },
   "bluetooth": {
     "format-on": "󰂯",
@@ -97,6 +128,7 @@
     "tooltip-format-enumerate-connected": "{device_alias}",
     "on-click": "blueman-manager",
   },
+
   "pulseaudio": {
     "format": "{icon}",
     "format-bluetooth": "󰂯",
@@ -114,6 +146,9 @@
     "tooltip": true,
     "tooltip-format": "Volume: {volume}%",
     "on-click": "~/.config/waybar/scripts/volume-control.sh mute",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "~/.config/waybar/scripts/volume-control.sh up",
+    "on-scroll-down": "~/.config/waybar/scripts/volume-control.sh down",
   },
   "pulseaudio#microphone": {
     "format": "{format_source}",
@@ -123,6 +158,28 @@
     "tooltip": true,
     "tooltip-format": "{source_desc} | Volume: {source_volume}%",
   },
+  "backlight": {
+    "format": "{icon} {percent}%",
+    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "tooltip-format": "Brightness: {percent}%",
+    "on-scroll-up": "~/.config/waybar/scripts/brightness-control.sh up",
+    "on-scroll-down": "~/.config/waybar/scripts/brightness-control.sh down",
+  },
+
+  "battery": {
+    "interval": 10,
+    "states": {
+      "warning": 30,
+      "critical": 15,
+    },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
+    "format-alt": "{icon} {time}",
+    "tooltip-format": "{capacity}% · {timeTo}",
+    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+  },
+
   "custom/power": {
     "format": "⏻",
     "tooltip": true,

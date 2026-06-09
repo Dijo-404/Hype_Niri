@@ -13,6 +13,14 @@
 @define-color warn #cccccc;
 @define-color crit #ffffff;
 
+/* Material tonal surfaces (elevation) + state layers */
+@define-color surface        rgba(22, 22, 22, 0.78);
+@define-color surface_high   rgba(40, 40, 40, 0.55);
+@define-color state_hover    rgba(255, 255, 255, 0.07);
+@define-color state_press    rgba(255, 255, 255, 0.13);
+@define-color on_surface     #d4d4d4;
+@define-color on_surface_var #9a9a9a;
+
 /* Semantic aliases (keep waybar style.css references working) */
 @define-color red #ffffff;
 @define-color orange #e0e0e0;

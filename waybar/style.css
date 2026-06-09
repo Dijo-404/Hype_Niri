@@ -1,189 +1,196 @@
 @import "colors/monochrome.css";
 
-/* Monochrome Theme */
-/* margin: top right bottom left */
-/* padding: top right bottom left */
+/* Material monochrome — floating islands + pills */
 
 * {
   font-family:
     JetBrainsMono Nerd Font,
     FontAwesome;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: bold;
   min-height: 0;
 }
 
+/* Transparent bar — islands float on top */
 window#waybar {
-  background-color: rgba(14, 14, 14, 0.75); /* Darker main bar bg (bg_dim #0e0e0e) */
-  color: @fg;
-  transition-property: background-color, margin-top, opacity;
-  transition-duration: 0.25s;
-  transition-timing-function: cubic-bezier(0.25, 0.9, 0.25, 1);
-  border-radius: 4px;
-  padding-top: 1px;
-  padding-bottom: 1px;
-  padding-left: 1px;
-  padding-right: 1px;
-  margin-left: 4px;
-  margin-right: 4px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  border-width: 2px;
-  border-color: #b0b0b0;
-  border-style: solid;
+  background-color: transparent;
+  color: @on_surface;
+  transition-property: background-color, opacity, margin-top;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
 window#waybar.hidden {
   opacity: 0;
-  margin-top: -62px;
+  margin-top: -52px;
 }
 
+/* Island surface — a grouped container with elevation */
+#sysmon,
+#toggles,
+#connect,
+#media {
+  background-color: @surface;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
+  margin: 3px 4px;
+  padding: 0 2px;
+}
+
+/* Standalone pills */
 #clock,
-#workspaces,
-#pulseaudio,
-#pulseaudio\.microphone,
 #battery,
+#custom-power,
+#tray {
+  background-color: @surface;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
+  margin: 3px 4px;
+  padding: 0 14px;
+  color: @on_surface;
+}
+
+/* Modules inside islands: flat chips with hover state layer */
 #cpu,
 #memory,
 #temperature,
-#backlight,
-#bluetooth,
 #custom-caffeine,
 #custom-power-profile,
-#tray,
-#custom-power {
-  background-color: rgba(45, 45, 45, 0.85); /* Lighter module bg */
-  color: @fg;
-
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  border-radius: 10px;
-
-  border-bottom-width: 2px;
-  border-bottom-color: #0e0e0e;
-  border-bottom-style: solid;
+#network,
+#bluetooth,
+#pulseaudio,
+#pulseaudio\.microphone,
+#backlight {
+  background-color: transparent;
+  color: @on_surface;
+  padding: 0 10px;
+  margin: 3px 2px;
+  border-radius: 12px;
+  transition: background-color 0.18s ease, color 0.18s ease;
 }
 
+#cpu:hover,
+#memory:hover,
+#temperature:hover,
+#custom-caffeine:hover,
+#custom-power-profile:hover,
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#pulseaudio\.microphone:hover,
+#backlight:hover,
+#clock:hover,
+#battery:hover {
+  background-color: @state_hover;
+}
+
+#clock:hover,
+#battery:hover {
+  box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.55);
+}
+
+/* Workspaces — its own island of chips */
 #workspaces {
-  padding: 0px;
+  background-color: @surface;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
+  margin: 3px 4px;
+  padding: 0 3px;
 }
 
 #workspaces button {
-  background-color: @bg1;
-  color: @fg;
-  padding: 0 5px;
-  min-width: 20px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  margin-left: 3px;
-  margin-right: 3px;
-  border-radius: 6px;
-  border-bottom-width: 2px;
-  border-bottom-color: #0e0e0e;
-  border-bottom-style: solid;
+  background-color: transparent;
+  color: @on_surface_var;
+  min-width: 22px;
+  margin: 3px 2px;
+  padding: 0 6px;
+  border-radius: 11px;
+  transition:
+    background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
+    color 0.2s ease,
+    min-width 0.2s ease;
 }
 
 #workspaces button:hover {
-  background-color: @bg3;
+  background-color: @state_hover;
+  color: @on_surface;
+  box-shadow: none;
 }
 
 #workspaces button.active,
 #workspaces button.focused {
-  background-color: @accent;
-  color: @bg0;
-  border-radius: 6px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-
-  border-bottom-width: 2px;
-  border-bottom-color: @accent;
-  border-bottom-style: solid;
+  background-color: @on_surface;
+  color: #141414;
+  min-width: 30px;
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.5);
 }
 
-#custom-power-profile {
-  padding-left: 9px;
-  padding-right: 12px;
-}
-
-#custom-caffeine {
-  padding-left: 10px;
-  padding-right: 12px;
-}
-
+/* Power — high-emphasis filled pill */
 #custom-power {
   background-color: @crit;
-  color: @bg0;
-  border-bottom-color: #999999;
-
-  margin-right: 8px;
-  padding-left: 12px;
-  padding-right: 15px;
+  color: #141414;
+  box-shadow: 0 2px 7px 1px rgba(255, 255, 255, 0.1), 0 2px 6px 1px rgba(0, 0, 0, 0.5);
+  padding: 0 13px;
 }
 
-/* Battery states */
-#battery.charging {
-  background-color: @green;
-  color: @bg0;
-}
-
-#battery.warning:not(.charging) {
-  background-color: @warn;
-  color: @bg0;
-}
-
-#battery.critical:not(.charging) {
-  background-color: @crit;
-  color: @bg0;
-}
-
-/* Volume muted (exclude microphone) */
-#pulseaudio.muted:not(.microphone),
-#pulseaudio.bluetooth.muted:not(.microphone) {
-  background-color: @warn;
-  color: @bg0;
-}
-
-/* Microphone muted */
-#pulseaudio.microphone.source-muted {
-  background-color: @warn;
-  color: @bg0;
+#custom-power:hover {
+  background-color: #e8e8e8;
 }
 
 /* Caffeine active */
 #custom-caffeine.activated {
-  background-color: @warn;
-  color: @bg0;
+  background-color: @on_surface;
+  color: #141414;
+}
+
+/* Battery states */
+#battery.charging {
+  color: @on_surface;
+}
+
+#battery.warning:not(.charging) {
+  background-color: @surface_high;
+  color: #e0e0e0;
+}
+
+#battery.critical:not(.charging) {
+  background-color: @crit;
+  color: #141414;
+}
+
+/* Volume / mic muted */
+#pulseaudio.muted:not(.microphone),
+#pulseaudio.bluetooth.muted:not(.microphone),
+#pulseaudio.microphone.source-muted {
+  background-color: @surface_high;
+  color: @on_surface_var;
 }
 
 /* Temperature critical */
 #temperature.critical {
   background-color: @crit;
-  color: @bg0;
+  color: #141414;
+}
+
+/* Network / bluetooth disconnected — de-emphasized */
+#network.disconnected,
+#bluetooth.off,
+#bluetooth.disabled {
+  color: @on_surface_var;
 }
 
 /* Tray */
+#tray {
+  padding: 0 10px;
+}
+
 #tray > .passive {
   -gtk-icon-effect: dim;
 }
 
 #tray > .needs-attention {
   -gtk-icon-effect: highlight;
-  background-color: @crit;
 }
-
-#cpu {
-  margin-left: 8px;
-}
-
-/* Bluetooth off/disabled */
-#bluetooth.off,
-#bluetooth.disabled {
-  color: @fg_dim;
-}
-
