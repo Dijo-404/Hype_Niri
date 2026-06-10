@@ -1,23 +1,16 @@
-@import "colors/monochrome.css";
-
-/* Material monochrome — floating islands + pills */
-
 * {
-  font-family:
-    JetBrainsMono Nerd Font,
-    FontAwesome;
+  border: none;
+  border-radius: 0;
+  font-family: 'Roboto', 'Material Design Icons', 'JetBrainsMono Nerd Font', 'Font Awesome 6 Free', sans-serif;
   font-size: 13px;
-  font-weight: bold;
   min-height: 0;
+  color: #ffffff;
 }
 
-/* Transparent bar — islands float on top */
 window#waybar {
-  background-color: transparent;
-  color: @on_surface;
-  transition-property: background-color, opacity, margin-top;
-  transition-duration: 0.3s;
-  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  background-color: #000000;
+  border: 2px solid #b0b0b0;
+  border-radius: 6px;
 }
 
 window#waybar.hidden {
@@ -25,172 +18,244 @@ window#waybar.hidden {
   margin-top: -52px;
 }
 
-/* Island surface — a grouped container with elevation */
-#sysmon,
-#toggles,
-#connect,
-#media {
-  background-color: @surface;
-  border: 2px solid @outline;
-  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
-  border-radius: 16px;
-  margin: 3px 4px;
-  padding: 0 2px;
+/* Module containers spacing */
+.modules-left {
+  padding-left: 8px;
+}
+.modules-right {
+  padding-right: 8px;
+}
+.modules-center {
+  padding: 0;
 }
 
-/* Standalone pills */
+/* ─── Base style for ALL modules (like .mod in HTML) ─── */
+#custom-launcher,
+#cpu-group,
+#mem-group,
+#temp-group,
+#custom-caffeine,
+#custom-power-profile,
 #clock,
+#pulseaudio,
+#backlight,
 #battery,
-#custom-power,
-#tray {
-  background-color: @surface;
-  border: 2px solid @outline;
-  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
-  border-radius: 16px;
-  margin: 3px 4px;
-  padding: 0 14px;
-  color: @on_surface;
+#network,
+#tray,
+#custom-power {
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0 12px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  margin-left: 3px;
+  margin-right: 3px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
-/* Modules inside islands: flat chips with hover state layer */
-#cpu,
-#memory,
-#temperature,
+/* ─── Wrap Containers for CPU and RAM ─── */
+#cpu-group,
+#mem-group,
+#temp-group {
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  padding: 0 12px 0 0; /* Remove left padding so the circle sits flush against the curve */
+}
+
+/* ─── Icon-only modules ─── */
+#custom-launcher,
+#custom-caffeine,
+#custom-power-profile,
+#pulseaudio,
+#network,
+#custom-power {
+  padding: 0 11px;
+}
+
+/* Power button square alignment and optical centering */
+#custom-power {
+  padding: 0 16px 0 12px; /* Shift icon left to compensate for font bearing */
+}
+
+/* Balance font sizes to match visually */
+#pulseaudio {
+  font-size: 17px;
+}
+
+#custom-launcher,
 #custom-caffeine,
 #custom-power-profile,
 #network,
-#bluetooth,
-#pulseaudio,
-#pulseaudio\.microphone,
-#backlight {
-  background-color: transparent;
-  color: @on_surface;
-  padding: 0 10px;
-  margin: 3px 2px;
-  border-radius: 12px;
-  transition: background-color 0.18s ease, color 0.18s ease;
+#custom-power {
+  font-size: 15px;
 }
 
-#cpu:hover,
-#memory:hover,
-#temperature:hover,
+/* Clock - vertical text */
+#clock {
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+/* Hover effects (using surface-2 color #404040) */
+#custom-launcher:hover,
+#cpu-group:hover,
+#mem-group:hover,
+#temp-group:hover,
 #custom-caffeine:hover,
 #custom-power-profile:hover,
-#network:hover,
-#bluetooth:hover,
+#clock:hover,
 #pulseaudio:hover,
-#pulseaudio\.microphone:hover,
 #backlight:hover,
-#clock:hover,
-#battery:hover {
-  background-color: @state_hover;
+#battery:hover,
+#network:hover,
+#tray:hover,
+#custom-power:hover {
+  background-color: #404040;
 }
 
-#clock:hover,
-#battery:hover {
-  box-shadow: 0 3px 9px 1px rgba(0, 0, 0, 0.55);
-}
-
-/* Workspaces — its own island of chips */
+/* ─── Workspaces ─── */
 #workspaces {
-  background-color: @surface;
-  border: 2px solid @outline;
-  box-shadow: 0 2px 6px 1px rgba(0, 0, 0, 0.45);
-  border-radius: 16px;
-  margin: 3px 4px;
-  padding: 0 3px;
+  background-color: #2d2d2d;
+  border-radius: 12px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  margin-left: 3px;
+  margin-right: 3px;
+  padding: 0 4px;
 }
 
 #workspaces button {
-  background-color: transparent;
-  color: @on_surface_var;
-  min-width: 22px;
-  margin: 3px 2px;
-  padding: 0 6px;
-  border-radius: 11px;
-  transition:
-    background-color 0.2s cubic-bezier(0.2, 0, 0, 1),
-    color 0.2s ease,
-    min-width 0.2s ease;
+  color: #ffffff;
+  background: transparent;
+  border-radius: 50px;
+  padding: 0 8px;
+  margin: 2px 2px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+#workspaces button label {
+  color: inherit;
+}
+
+#workspaces button.active {
+  color: #1a1b26;
+  background: #ffffff;
+  border: 2px solid #b0b0b0;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0 6px 0 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 #workspaces button:hover {
-  background-color: @state_hover;
-  color: @on_surface;
+  background: #404040;
+  color: #ffffff;
   box-shadow: none;
+  text-shadow: none;
+}
+#workspaces button:hover label {
+  color: #ffffff;
 }
 
-#workspaces button.active,
-#workspaces button.focused {
-  background-color: @on_surface;
-  color: #141414;
-  min-width: 30px;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.5);
+#custom-caffeine.activated,
+#pulseaudio.microphone.source-muted,
+#pulseaudio.muted:not(.microphone) {
+  background: #b0b0b0;
+  color: #121212;
 }
 
-/* Power — high-emphasis filled pill */
-#custom-power {
-  background-color: @crit;
-  color: #141414;
-  box-shadow: 0 2px 7px 1px rgba(255, 255, 255, 0.1), 0 2px 6px 1px rgba(0, 0, 0, 0.5);
-  padding: 0 13px;
+#custom-caffeine.activated:hover,
+#pulseaudio.microphone.source-muted:hover,
+#pulseaudio.muted:not(.microphone):hover {
+  background: #ffffff;
+  color: #121212;
 }
 
-#custom-power:hover {
-  background-color: #e8e8e8;
-}
-
-/* Caffeine active */
-#custom-caffeine.activated {
-  background-color: @on_surface;
-  color: #141414;
-}
-
-/* Battery states */
 #battery.charging {
-  color: @on_surface;
+  color: #ffffff;
 }
-
 #battery.warning:not(.charging) {
-  background-color: @surface_high;
-  color: #e0e0e0;
+  color: #e5c07b;
 }
-
 #battery.critical:not(.charging) {
-  background-color: @crit;
-  color: #141414;
+  background-color: #e06c75;
+  color: #ffffff;
 }
 
-/* Volume / mic muted */
-#pulseaudio.muted:not(.microphone),
-#pulseaudio.bluetooth.muted:not(.microphone),
-#pulseaudio.microphone.source-muted {
-  background-color: @surface_high;
-  color: @on_surface_var;
-}
-
-/* Temperature critical */
 #temperature.critical {
-  background-color: @crit;
-  color: #141414;
+  color: #e06c75;
+  border-color: #e06c75;
 }
 
-/* Network / bluetooth disconnected — de-emphasized */
-#network.disconnected,
-#bluetooth.off,
-#bluetooth.disabled {
-  color: @on_surface_var;
+#network.disconnected {
+  color: #aaaaaa;
 }
 
-/* Tray */
-#tray {
-  padding: 0 10px;
+#cpu,
+#memory,
+#temperature {
+  background-color: transparent;
+  color: #b0b0b0;
+  border: 2px solid #b0b0b0;
+  border-radius: 50%;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0 6px 0 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
 }
 
-#tray > .passive {
-  -gtk-icon-effect: dim;
+#custom-cpu-label,
+#custom-mem-label,
+#custom-temp-label {
+  background-color: transparent;
+  color: #b0b0b0;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
 }
 
-#tray > .needs-attention {
-  -gtk-icon-effect: highlight;
+#backlight {
+  color: #ffffff;
+}
+
+/* ─── GTK Menus (Tray Popups) ─── */
+menu {
+  border-radius: 12px;
+  background-color: #222222;
+  border: 1px solid #404040;
+  padding: 6px;
+}
+
+menu menuitem {
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: background 0.2s ease;
+}
+
+menu menuitem:hover {
+  background: #404040;
+}
+
+window.popup {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  margin-top: 34px;
+}
+
+window.popup decoration {
+  box-shadow: none;
 }

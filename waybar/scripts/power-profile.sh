@@ -60,6 +60,11 @@ if [[ "${1:-}" == "menu" ]]; then
     pkill -RTMIN+16 waybar
 else
     current=$(get_current_profile)
-    icon=$(get_icon "$current")
-    echo "{\"text\": \"$icon\", \"tooltip\": \"Power Profile: $current\", \"class\": \"$current\"}"
+    case "$current" in
+        "performance") pct=100 ;;
+        "balanced")    pct=50 ;;
+        "power-saver") pct=0 ;;
+        *)             pct=50 ;;
+    esac
+    echo "{\"text\": \"\", \"tooltip\": \"Power Profile: $current\", \"class\": \"$current\", \"percentage\": $pct}"
 fi
