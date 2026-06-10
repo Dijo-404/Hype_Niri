@@ -1,189 +1,262 @@
-@import "colors/monochrome.css";
-
-/* Monochrome Theme */
-/* margin: top right bottom left */
-/* padding: top right bottom left */
-
 * {
-  font-family:
-    JetBrainsMono Nerd Font,
-    FontAwesome;
-  font-size: 12px;
-  font-weight: bold;
+  border: none;
+  border-radius: 0;
+  font-family: 'Roboto', 'Material Design Icons', 'JetBrainsMono Nerd Font', 'Font Awesome 6 Free', sans-serif;
+  font-size: 13px;
   min-height: 0;
+  color: #ffffff;
 }
 
 window#waybar {
-  background-color: rgba(14, 14, 14, 0.75); /* Darker main bar bg (bg_dim #0e0e0e) */
-  color: @fg;
-  transition-property: background-color, margin-top, opacity;
-  transition-duration: 0.25s;
-  transition-timing-function: cubic-bezier(0.25, 0.9, 0.25, 1);
-  border-radius: 4px;
-  padding-top: 1px;
-  padding-bottom: 1px;
-  padding-left: 1px;
-  padding-right: 1px;
-  margin-left: 4px;
-  margin-right: 4px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  border-width: 2px;
-  border-color: #b0b0b0;
-  border-style: solid;
+  background-color: #000000;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
 }
 
 window#waybar.hidden {
   opacity: 0;
-  margin-top: -62px;
+  margin-top: -52px;
 }
 
-#clock,
-#workspaces,
-#pulseaudio,
-#pulseaudio\.microphone,
-#battery,
-#cpu,
-#memory,
-#temperature,
-#backlight,
-#bluetooth,
+/* Module containers spacing */
+.modules-left {
+  padding-left: 8px;
+}
+.modules-right {
+  padding-right: 8px;
+}
+.modules-center {
+  padding: 0;
+}
+
+/* ─── Base style for ALL modules (like .mod in HTML) ─── */
+#custom-launcher,
+#cpu-group,
+#mem-group,
+#temp-group,
 #custom-caffeine,
 #custom-power-profile,
+#clock,
+#pulseaudio,
+#backlight,
+#battery,
+#network,
 #tray,
 #custom-power {
-  background-color: rgba(45, 45, 45, 0.85); /* Lighter module bg */
-  color: @fg;
-
-  padding-left: 10px;
-  padding-right: 10px;
-  margin-left: 0px;
-  margin-right: 0px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  border-radius: 10px;
-
-  border-bottom-width: 2px;
-  border-bottom-color: #0e0e0e;
-  border-bottom-style: solid;
+  background-color: #2d2d2d;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 0 12px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  margin-left: 3px;
+  margin-right: 3px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
 }
 
+/* ─── Wrap Containers for CPU and RAM ─── */
+#cpu-group,
+#mem-group,
+#temp-group {
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  padding: 0 12px 0 0; /* Remove left padding so the circle sits flush against the curve */
+}
+
+/* ─── Icon-only modules ─── */
+#custom-launcher,
+#custom-caffeine,
+#custom-power-profile,
+#pulseaudio,
+#network,
+#custom-power {
+  padding: 0 11px;
+}
+
+/* Power button square alignment and optical centering */
+#custom-power {
+  padding: 0 16px 0 12px; /* Shift icon left to compensate for font bearing */
+}
+
+/* Balance font sizes to match visually */
+#pulseaudio {
+  font-size: 17px;
+}
+
+#custom-launcher,
+#custom-caffeine,
+#custom-power-profile,
+#network,
+#custom-power {
+  font-size: 15px;
+}
+
+/* Clock - vertical text */
+#clock {
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+/* Hover effects (using surface-2 color #404040) */
+#custom-launcher:hover,
+#cpu-group:hover,
+#mem-group:hover,
+#temp-group:hover,
+#custom-caffeine:hover,
+#custom-power-profile:hover,
+#clock:hover,
+#pulseaudio:hover,
+#backlight:hover,
+#battery:hover,
+#network:hover,
+#tray:hover,
+#custom-power:hover {
+  background-color: #404040;
+}
+
+/* ─── Workspaces ─── */
 #workspaces {
-  padding: 0px;
+  background-color: #2d2d2d;
+  border-radius: 12px;
+  margin-top: 8px;
+  margin-bottom: 6px;
+  margin-left: 3px;
+  margin-right: 3px;
+  padding: 0 4px;
 }
 
 #workspaces button {
-  background-color: @bg1;
-  color: @fg;
-  padding: 0 5px;
-  min-width: 20px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  margin-left: 3px;
-  margin-right: 3px;
-  border-radius: 6px;
-  border-bottom-width: 2px;
-  border-bottom-color: #0e0e0e;
-  border-bottom-style: solid;
+  color: #ffffff;
+  background: transparent;
+  border-radius: 50px;
+  padding: 0 8px;
+  margin: 2px 2px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+#workspaces button label {
+  color: inherit;
+}
+
+#workspaces button.active {
+  color: #121212;
+  background: #e0e0e0;
+  border: none;
+  border-radius: 50%;
+  min-width: 26px;
+  min-height: 26px;
+  margin: 4px 4px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 #workspaces button:hover {
-  background-color: @bg3;
+  background: #404040;
+  color: #ffffff;
+  box-shadow: none;
+  text-shadow: none;
+}
+#workspaces button:hover label {
+  color: #ffffff;
 }
 
-#workspaces button.active,
-#workspaces button.focused {
-  background-color: @accent;
-  color: @bg0;
-  border-radius: 6px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-
-  border-bottom-width: 2px;
-  border-bottom-color: @accent;
-  border-bottom-style: solid;
+#custom-caffeine.activated,
+#pulseaudio.microphone.source-muted,
+#pulseaudio.muted:not(.microphone) {
+  background: #e0e0e0;
+  color: #121212;
 }
 
-#custom-power-profile {
-  padding-left: 9px;
-  padding-right: 12px;
+#custom-caffeine.activated:hover,
+#pulseaudio.microphone.source-muted:hover,
+#pulseaudio.muted:not(.microphone):hover {
+  background: #ffffff;
+  color: #121212;
 }
 
-#custom-caffeine {
-  padding-left: 10px;
-  padding-right: 12px;
-}
-
-#custom-power {
-  background-color: @crit;
-  color: @bg0;
-  border-bottom-color: #999999;
-
-  margin-right: 8px;
-  padding-left: 12px;
-  padding-right: 15px;
-}
-
-/* Battery states */
 #battery.charging {
-  background-color: @green;
-  color: @bg0;
+  color: #ffffff;
 }
-
 #battery.warning:not(.charging) {
-  background-color: @warn;
-  color: @bg0;
+  color: #e5c07b;
 }
-
 #battery.critical:not(.charging) {
-  background-color: @crit;
-  color: @bg0;
+  background-color: #e06c75;
+  color: #ffffff;
 }
 
-/* Volume muted (exclude microphone) */
-#pulseaudio.muted:not(.microphone),
-#pulseaudio.bluetooth.muted:not(.microphone) {
-  background-color: @warn;
-  color: @bg0;
-}
-
-/* Microphone muted */
-#pulseaudio.microphone.source-muted {
-  background-color: @warn;
-  color: @bg0;
-}
-
-/* Caffeine active */
-#custom-caffeine.activated {
-  background-color: @warn;
-  color: @bg0;
-}
-
-/* Temperature critical */
 #temperature.critical {
-  background-color: @crit;
-  color: @bg0;
+  color: #e06c75;
+  border-color: #e06c75;
 }
 
-/* Tray */
-#tray > .passive {
-  -gtk-icon-effect: dim;
+#network.disconnected {
+  color: #aaaaaa;
 }
 
-#tray > .needs-attention {
-  -gtk-icon-effect: highlight;
-  background-color: @crit;
+#cpu,
+#memory,
+#temperature {
+  background-color: transparent;
+  color: #e0e0e0;
+  border: 2px solid #e0e0e0;
+  border-radius: 50%;
+  min-width: 30px;
+  min-height: 30px;
+  margin: 0 6px 0 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
 }
 
-#cpu {
-  margin-left: 8px;
+#custom-cpu-label,
+#custom-mem-label,
+#custom-temp-label {
+  background-color: transparent;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  font-weight: 600;
 }
 
-/* Bluetooth off/disabled */
-#bluetooth.off,
-#bluetooth.disabled {
-  color: @fg_dim;
+#backlight {
+  color: #ffffff;
 }
 
+/* ─── GTK Menus (Tray Popups) ─── */
+menu {
+  border-radius: 12px;
+  background-color: #222222;
+  border: 1px solid #404040;
+  padding: 6px;
+}
+
+menu menuitem {
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: background 0.2s ease;
+}
+
+menu menuitem:hover {
+  background: #404040;
+}
+
+window.popup {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  margin-top: 34px;
+}
+
+window.popup decoration {
+  box-shadow: none;
+}

@@ -7,7 +7,7 @@
 }
 
 window {
-    background-color: rgba(14, 14, 14, 0.75);
+    background-color: rgba(10, 10, 10, 0.7);
 }
 
 button {
@@ -47,6 +47,7 @@ button:hover {
 
 #logout {
     background-image: image(url("icons/logout.png"), url("/usr/share/wlogout/icons/logout.png"), url("/usr/local/share/wlogout/icons/logout.png"));
+    background-position: calc(50% + 12px) 34%;
 }
 
 #shutdown {

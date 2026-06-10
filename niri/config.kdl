@@ -1,12 +1,16 @@
-// Niri -- Monochrome Theme
+// ╔═══════════════════════════════════════════════╗
+// ║    Niri Configuration — Monochrome Theme      ║
+// ╚═══════════════════════════════════════════════╝
 
 // ── Outputs ──────────────────────────────────────
-
+// Laptop display (always present)
 output "eDP-1" {
     mode "2880x1800@120"
     scale 2.0
 }
 
+// External monitor (left of laptop)
+// Niri auto-ignores this when disconnected
 output "DP-3" {
     mode "2560x1440@179.999"
     scale 1.0
@@ -119,36 +123,52 @@ hotkey-overlay {
 
 // ── Window Rules ─────────────────────────────────
 
+// Rounded corners for all windows
 window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
 }
 
+// Active window: slightly transparent, no border background bleed-through
 window-rule {
     match is-active=true
     draw-border-with-background false
     opacity 0.90
 }
 
+// Inactive windows: more transparent
 window-rule {
     match is-active=false
     draw-border-with-background false
     opacity 0.80
 }
 
+window-rule {
+    match app-id="blueman-manager"
+    open-floating true
+    default-column-width {}
+}
+
 // ── Autostart ────────────────────────────────────
 
-spawn-at-startup "waybar"
-spawn-sh-at-startup "nm-applet --indicator"
-spawn-sh-at-startup "[ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ] && /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "env" "GTK_THEME=Adwaita:dark" "waybar"
+
+spawn-sh-at-startup "env GTK_THEME=Adwaita:dark nm-applet --indicator"
+spawn-sh-at-startup "command -v blueman-applet >/dev/null && env GTK_THEME=Adwaita:dark blueman-applet"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
 spawn-at-startup "alacritty"
+
+// Wallpaper (uses wallpaper.sh script for proper init)
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
+
+// Idle + lock
 spawn-sh-at-startup "hypridle"
+
+// Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
-spawn-sh-at-startup "command -v warp-cli >/dev/null 2>&1 && warp-cli --accept-tos connect >/dev/null 2>&1 || true"
 
 // ── Keybindings ──────────────────────────────────
 
@@ -168,6 +188,7 @@ binds {
     Mod+O repeat=false { toggle-overview; }
     Mod+L { spawn-sh "hyprlock"; }
 
+    // Float toggle
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
 
@@ -260,7 +281,7 @@ binds {
 
     // ── Waybar ───────────────────────────────────
 
-    Mod+Alt+Up { spawn-sh "pkill waybar; waybar &"; }
+    Mod+Alt+Up { spawn-sh "pkill waybar; env GTK_THEME=Adwaita:dark waybar &"; }
     Mod+Alt+Down { spawn-sh "pkill waybar"; }
 
     // ── Workspaces ───────────────────────────────

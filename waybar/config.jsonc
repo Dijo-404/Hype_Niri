@@ -1,17 +1,20 @@
 {
   "layer": "top",
   "position": "top",
-  "height": 40,
+  "height": 44,
   "margin-top": 4,
   "margin-left": 4,
   "margin-right": 4,
-  "spacing": 6,
+  "spacing": 0,
+  "reload_style_on_change": true,
+
   "modules-left": [
-    "cpu",
-    "memory",
-    "temperature",
+    "custom/launcher",
+    "group/cpu-group",
+    "group/mem-group",
+    "group/temp-group",
     "custom/caffeine",
-    "custom/power-profile",
+    "custom/power-profile"
   ],
   "modules-center": ["niri/workspaces"],
   "modules-right": [
@@ -19,88 +22,112 @@
     "pulseaudio#microphone",
     "pulseaudio",
     "backlight",
-    "bluetooth",
     "battery",
     "tray",
-    "custom/power",
+    "custom/power"
   ],
-  "niri/workspaces": {
-    "format": "{index}",
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "fuzzel"
   },
+
+  "niri/workspaces": {
+    "format": "{index}"
+  },
+
   "custom/caffeine": {
     "exec": "~/.config/waybar/scripts/caffeine-control.sh",
     "return-type": "json",
     "interval": 5,
     "format": "{}",
     "on-click": "~/.config/waybar/scripts/caffeine-control.sh toggle",
-    "signal": 15,
+    "signal": 15
   },
   "custom/power-profile": {
     "exec": "~/.config/waybar/scripts/power-profile.sh",
     "return-type": "json",
     "interval": 5,
+    "format": "{icon}",
+    "format-icons": ["󰾆", "󰾅", "󰓅"],
     "on-click": "~/.config/waybar/scripts/power-profile.sh menu",
-    "signal": 16,
+    "signal": 16
   },
-  "tray": {
-    "icon-size": 16,
-    "spacing": 10,
-  },
+
   "clock": {
     "interval": 30,
-    "format": "󰥔 {:%H:%M}",
-    "format-alt": "󰃭 {:%A, %B %d, %Y}",
-    "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
+    "format": "<span line_height='0.8'>{:%H:%M<span size='1pt'>\n</span><span size='9pt' color='#aaaaaa'>%A, %d/%m</span>}</span>",
+    "tooltip-format": "<big>{:%A, %B %d}</big>\n<tt><small>{calendar}</small></tt>"
+  },
+
+  "group/cpu-group": {
+    "orientation": "inherit",
+    "modules": ["cpu", "custom/cpu-label"]
+  },
+  "custom/cpu-label": {
+    "format": "cpu"
   },
   "cpu": {
-    "format": "󰻠 {usage}%",
-    "tooltip": true,
     "interval": 3,
+    "format": "{usage}%",
+    "tooltip-format": "CPU load: {usage}%"
+  },
+
+  "group/mem-group": {
+    "orientation": "inherit",
+    "modules": ["memory", "custom/mem-label"]
+  },
+  "custom/mem-label": {
+    "format": "ram"
   },
   "memory": {
     "interval": 5,
-    "format": "󰍛 {used:0.1f}GB",
-    "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used",
+    "format": "{used:0.0f}G",
+    "tooltip-format": "{used:0.1f}GB / {total:0.1f}GB used ({percentage}%)"
+  },
+  "group/temp-group": {
+    "orientation": "inherit",
+    "modules": ["temperature", "custom/temp-label"]
+  },
+  "custom/temp-label": {
+    "format": "temp"
   },
   "temperature": {
-    // Override per-host if your CPU sensor isn't on thermal_zone0.
-    "thermal-zone": 0,
+    "hwmon-path": "/sys/class/hwmon/hwmon6/temp1_input",
     "interval": 5,
     "critical-threshold": 80,
-    "format": "󰈐 {temperatureC}°C",
-    "format-critical": "󰈐 {temperatureC}°C",
-    "format-icons": ["󰈐", "󰈐", "󰈐", "󰈐", "󰈐"],
+    "format": "{temperatureC}°",
+    "format-critical": "{temperatureC}°",
+    "tooltip-format": "Temperature: {temperatureC}°C"
   },
+
   "backlight": {
-    "format": "{icon} {percent}%",
-    "format-icons": ["󰃞", "󰃟", "󰃠"],
+    "format": "{icon}  {percent}%",
+    "format-icons": ["󰃞", "󰃝", "󰃟", "󰃠"],
+    "tooltip-format": "Brightness: {percent}%",
+    "on-scroll-up": "~/.config/waybar/scripts/brightness-control.sh up",
+    "on-scroll-down": "~/.config/waybar/scripts/brightness-control.sh down"
   },
-  "battery": {
-    "interval": 10,
-    "states": {
-      "warning": 30,
-      "critical": 15,
-    },
-    "format": "{icon} {capacity}%",
-    "format-charging": "󰂄 {capacity}%",
-    "format-plugged": "󰚥 {capacity}%",
-    "format-alt": "{icon} {time}",
-    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+
+  "network": {
+    "interval": 5,
+    "format-wifi": "󰤨",
+    "format-ethernet": "󰈁",
+    "format-linked": "󰈁",
+    "format-disconnected": "󰤭",
+    "tooltip-format-wifi": "{essid}\n{signalStrength}% · {frequency} MHz\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "nm-connection-editor"
   },
-  "bluetooth": {
-    "format-on": "󰂯",
-    "format-off": "󰂲",
-    "format-disabled": "󰂲",
-    "format-connected": "󰂱 {num_connections}",
-    "tooltip-format": "{controller_alias}\n{num_connections} connected",
-    "tooltip-format-connected": "{controller_alias}\n{num_connections} connected\n\n{device_enumerate}",
-    "tooltip-format-enumerate-connected": "{device_alias}",
-    "on-click": "blueman-manager",
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
   },
+
   "pulseaudio": {
     "format": "{icon}",
-    "format-bluetooth": "󰂯",
-    "format-bluetooth-muted": "󰂲",
     "format-muted": "󰝟",
     "format-icons": {
       "headphone": "󰋋",
@@ -109,11 +136,14 @@
       "phone": "",
       "portable": "",
       "car": "",
-      "default": ["󰕿", "󰖀", "󰕾"],
+      "default": ["󰕿", "󰖀", "󰕾"]
     },
     "tooltip": true,
     "tooltip-format": "Volume: {volume}%",
     "on-click": "~/.config/waybar/scripts/volume-control.sh mute",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "~/.config/waybar/scripts/volume-control.sh up",
+    "on-scroll-down": "~/.config/waybar/scripts/volume-control.sh down"
   },
   "pulseaudio#microphone": {
     "format": "{format_source}",
@@ -121,13 +151,28 @@
     "format-source-muted": "󰍭",
     "on-click": "~/.config/waybar/scripts/mic-control.sh mute",
     "tooltip": true,
-    "tooltip-format": "{source_desc} | Volume: {source_volume}%",
+    "tooltip-format": "{source_desc} | Volume: {source_volume}%"
   },
+
+  "battery": {
+    "interval": 10,
+    "states": {
+      "warning": 30,
+      "critical": 15
+    },
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
+    "format-alt": "{icon} {time}",
+    "tooltip-format": "{capacity}% · {timeTo}",
+    "format-icons": ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"]
+  },
+
   "custom/power": {
     "format": "⏻",
     "tooltip": true,
     "tooltip-format": "Power Menu",
     "on-click": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
-    "on-click-right": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css",
-  },
+    "on-click-right": "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"
+  }
 }
