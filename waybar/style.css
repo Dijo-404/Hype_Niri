@@ -52,7 +52,7 @@ window#waybar.hidden {
   margin-left: 3px;
   margin-right: 3px;
   font-weight: 500;
-  transition: background-color 0.2s ease;
+  transition: all 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 /* ─── Wrap Containers for CPU and RAM ─── */
@@ -136,7 +136,7 @@ window#waybar.hidden {
   margin: 2px 2px;
   font-size: 14px;
   font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.25, 0.9, 0.25, 1);
 }
 
 #workspaces button label {
@@ -148,8 +148,8 @@ window#waybar.hidden {
   background: #e0e0e0;
   border: none;
   border-radius: 50%;
-  min-width: 26px;
-  min-height: 26px;
+  min-width: 27px;
+  min-height: 27px;
   margin: 4px 4px;
   padding: 0;
   font-size: 11px;
@@ -240,7 +240,7 @@ menu {
 menu menuitem {
   border-radius: 4px;
   padding: 4px 8px;
-  transition: background 0.2s ease;
+  transition: all 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 menu menuitem:hover {
