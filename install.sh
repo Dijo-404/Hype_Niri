@@ -553,11 +553,8 @@ HandleLidSwitchDocked=ignore
 EOF
     print_done "Wrote $conf_file"
 
-    if sudo systemctl restart systemd-logind.service >/dev/null 2>&1; then
-        print_done "Reloaded systemd-logind"
-    else
-        print_warn "Could not reload systemd-logind -- reboot to apply"
-    fi
+    print_warn "Lid switch changes will apply after reboot"
+    print_warn "Skipping systemd-logind restart to avoid blanking the current session"
 }
 
 setup_firewall() {
