@@ -149,13 +149,13 @@ binds {
     Ctrl+Q repeat=false { close-window; }
     Alt+F4 repeat=false { close-window; }
     Mod+Delete { quit; }
-    Mod+Shift+Delete { spawn-sh "wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
+    Mod+Shift+Delete { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
     Mod+Shift+F { spawn-sh "~/.config/waybar/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
-    Mod+L { spawn-sh "hyprlock"; }
+    Mod+L { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; hyprlock"; }
 
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
@@ -264,7 +264,7 @@ binds {
     Mod+Shift+Alt+Right { move-column-to-monitor-right; }
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
-    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
-    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
 }

@@ -56,12 +56,13 @@ git pull
 ./install.sh
 ```
 
-The install script uses `--needed` for packages so only new packages are installed. Existing configs are backed up before overwriting.
+The install script installs official repository packages with `pacman`, AUR packages with `yay`, and requires a backup before overwriting existing configs.
 
 To update only packages without re-running the full script:
 
 ```bash
-yay -Syu
+sudo pacman -Syu
+yay -Syu --aur
 ```
 
 <br/>

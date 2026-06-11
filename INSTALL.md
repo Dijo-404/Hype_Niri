@@ -11,13 +11,13 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer is interactive at every irreversible step — backup, display manager switch, firewall, WARP, and shell change all confirm before acting.
+The installer is interactive at every irreversible step — backup, display manager switch, lid-switch behavior, firewall, WARP, and shell change all confirm before acting.
 
 > [!TIP]
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
 
 > [!NOTE]
-> If `yay -S` fails on `awww`, the AUR wallpaper daemon may be unavailable on your mirror. Replace `awww` with `swww` in `pkglist.txt` and replace `awww` / `awww-daemon` with `swww` / `swww-daemon` in `waybar/scripts/wallpaper.sh`.
+> The installer uses `pacman` for official repository packages and `yay` only for AUR packages.
 
 ---
 
@@ -29,11 +29,12 @@ If you prefer to understand what is happening under the hood or selectively appl
 
 The repository contains a `pkglist.txt` file listing all necessary dependencies.
 
-> [!IMPORTANT]
-> This assumes you have an AUR helper installed, such as `yay`.
-
 ```bash
-grep -v '^#' pkglist.txt | grep -v '^$' | xargs yay -S --needed --noconfirm
+mapfile -t official < <(awk '!/^#/ && NF {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 && printf '%s\n' "$p"; done)
+mapfile -t aur < <(awk '!/^#/ && NF {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 || printf '%s\n' "$p"; done)
+
+[ "${#official[@]}" -eq 0 ] || sudo pacman -S --needed --noconfirm "${official[@]}"
+[ "${#aur[@]}" -eq 0 ] || yay -S --needed --noconfirm "${aur[@]}"
 ```
 
 ### 2. Back Up and Clean Up Existing Configs
@@ -47,6 +48,7 @@ for c in niri waybar alacritty fuzzel mako fastfetch wlogout hypr; do
     [ -d "$HOME/.config/$c" ] && cp -r "$HOME/.config/$c" "$BACKUP_DIR/"
 done
 [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
+[ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
 ```
 
 Remove any stale configs from previous setups that will conflict (`qt5ct` / `qt6ct` are written fresh in step 4 — do **not** delete them):
@@ -217,12 +219,13 @@ git pull
 ./install.sh
 ```
 
-The install script backs up existing configs before overwriting and only installs new packages (uses `--needed`).
+The install script requires a backup before overwriting existing configs and only installs new packages (uses `--needed`).
 
-To update only system packages without re-running the script:
+To update packages without re-running the script:
 
 ```bash
-yay -Syu
+sudo pacman -Syu
+yay -Syu --aur
 ```
 
 ---
@@ -231,8 +234,8 @@ yay -Syu
 
 - **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
-- **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`.
-- **Lock Screen**: `Super+L` locks via hyprlock; passwords are hidden by default. The lock screen uses a solid dark background — to use a wallpaper, edit `~/.config/hypr/hyprlock.conf` and replace the `color = ...` line in the `background` block with `path = $HOME/Pictures/Wallpapers/your-wallpaper.jpg`.
+- **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/hypr/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
+- **Lock Screen**: `Super+L` locks via hyprlock and uses the saved wallpaper pointer from `~/.local/state/hypr/current_wallpaper`.
 - **Firewall / WARP**: If you skipped step 7 and want them later, just run the relevant commands above — both are idempotent.
 
 ## Troubleshooting

@@ -11,6 +11,7 @@ NC='\033[0m'
 BOLD='\033[1m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKUP_DIR=""
 
 _tmp_resources=()
 cleanup_tmp() {
@@ -55,6 +56,55 @@ confirm() {
     esac
 }
 
+save_install_log() {
+    local install_log="$1"
+    print_error "Package installation failed. Last 40 log lines:"
+    tail -n 40 "$install_log" | sed 's/^/    /'
+    # Survive the EXIT trap so the user can still inspect it.
+    local persisted
+    persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
+    cp -- "$install_log" "$persisted" 2>/dev/null || true
+    print_warn "Full install log saved to: $persisted"
+}
+
+check_internet() {
+    if command -v curl &>/dev/null; then
+        curl --connect-timeout 5 -fsS https://archlinux.org >/dev/null 2>&1
+        return $?
+    fi
+
+    if command -v wget &>/dev/null; then
+        wget --timeout=5 --spider -q https://archlinux.org >/dev/null 2>&1
+        return $?
+    fi
+
+    print_warn "curl/wget not found; skipping network preflight"
+    print_warn "Package installation will report any network errors"
+    return 0
+}
+
+ensure_yay() {
+    if command -v yay &>/dev/null; then
+        print_done "yay found"
+        return 0
+    fi
+
+    print_warn "yay (AUR helper) not found"
+    if ! confirm "Install yay for AUR packages?"; then
+        print_error "AUR packages require yay. Exiting."
+        exit 1
+    fi
+
+    print_step "Installing yay..."
+    local tmpdir
+    sudo pacman -S --needed --noconfirm git base-devel
+    tmpdir=$(mktemp -d) || { print_error "Failed to create temp directory"; exit 1; }
+    _tmp_resources+=("$tmpdir")
+    git clone https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
+    (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
+    print_done "yay installed"
+}
+
 preflight() {
     print_header "Preflight Checks"
 
@@ -64,29 +114,11 @@ preflight() {
     fi
     print_done "Arch Linux detected"
 
-    if ! command -v yay &>/dev/null; then
-        print_warn "yay (AUR helper) not found"
-        if confirm "Install yay?"; then
-            print_step "Installing yay..."
-            sudo pacman -S --needed --noconfirm git base-devel
-            tmpdir=$(mktemp -d) || { print_error "Failed to create temp directory"; exit 1; }
-            _tmp_resources+=("$tmpdir")
-            git clone https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
-            (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
-            print_done "yay installed"
-        else
-            print_error "yay is required. Exiting."
-            exit 1
-        fi
-    else
-        print_done "yay found"
-    fi
-
-    if ! curl --connect-timeout 5 -fsS https://archlinux.org > /dev/null 2>&1; then
+    if ! check_internet; then
         print_error "No internet connection"
         exit 1
     fi
-    print_done "Internet connection OK"
+    print_done "Network preflight complete"
 }
 
 install_packages() {
@@ -96,6 +128,13 @@ install_packages() {
         print_error "pkglist.txt not found at $SCRIPT_DIR/pkglist.txt"
         exit 1
     fi
+
+    local packages=()
+    local pacman_packages=()
+    local aur_packages=()
+    local total
+    local pkg
+    local install_log
 
     mapfile -t packages < <(
         grep -v '^#' "$SCRIPT_DIR/pkglist.txt" | \
@@ -118,16 +157,40 @@ install_packages() {
     done
     echo ""
 
-    print_step "Starting installation (live output):"
+    print_step "Classifying packages..."
+    for pkg in "${packages[@]}"; do
+        if pacman -Si "$pkg" >/dev/null 2>&1; then
+            pacman_packages+=("$pkg")
+        else
+            aur_packages+=("$pkg")
+        fi
+    done
+
+    print_step "Pacman packages: ${#pacman_packages[@]}"
+    print_step "AUR packages: ${#aur_packages[@]}"
+
     install_log="$(mktemp)" || { print_error "Failed to create temp log"; exit 1; }
     _tmp_resources+=("$install_log")
-    if ! stdbuf -oL -eL yay -S --needed --noconfirm "${packages[@]}" 2>&1 | tee "$install_log"; then
-        print_error "Package installation failed. Last 40 log lines:"
-        tail -n 40 "$install_log" | sed 's/^/    /'
-        # Survive the EXIT trap so the user can still inspect it.
-        persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
-        cp -- "$install_log" "$persisted" 2>/dev/null || true
-        print_warn "Full install log saved to: $persisted"
+
+    if [ "${#pacman_packages[@]}" -gt 0 ]; then
+        print_step "Installing official repository packages with pacman..."
+        if ! stdbuf -oL -eL sudo pacman -S --needed --noconfirm "${pacman_packages[@]}" 2>&1 | tee "$install_log"; then
+            save_install_log "$install_log"
+            exit 1
+        fi
+    fi
+
+    if [ "${#aur_packages[@]}" -gt 0 ]; then
+        ensure_yay
+        print_step "Installing AUR packages with yay..."
+        if ! stdbuf -oL -eL yay -S --needed --noconfirm "${aur_packages[@]}" 2>&1 | tee -a "$install_log"; then
+            save_install_log "$install_log"
+            exit 1
+        fi
+    fi
+
+    if [ "${#pacman_packages[@]}" -eq 0 ] && [ "${#aur_packages[@]}" -eq 0 ]; then
+        print_error "No installable packages found in pkglist.txt"
         exit 1
     fi
 
@@ -150,9 +213,20 @@ backup_configs() {
         "hypr"
     )
 
-    has_existing=false
+    local files_to_backup=(
+        "$HOME/.zshrc"
+        "$HOME/.p10k.zsh"
+    )
+
+    local has_existing=false
     for config in "${configs_to_backup[@]}"; do
         if [ -d "$HOME/.config/$config" ]; then
+            has_existing=true
+            break
+        fi
+    done
+    for file in "${files_to_backup[@]}"; do
+        if [ -f "$file" ]; then
             has_existing=true
             break
         fi
@@ -170,9 +244,13 @@ backup_configs() {
             done
             [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
             [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/.bashrc"
+            [ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
             [ -d "$HOME/.local/share/nautilus" ] && \
                 cp -r "$HOME/.local/share/nautilus" "$BACKUP_DIR/nautilus-share"
             print_done "Backup saved to $BACKUP_DIR"
+        else
+            print_error "Backup declined. Existing configs will not be overwritten."
+            exit 1
         fi
     else
         print_done "No existing configs to back up"
@@ -223,11 +301,15 @@ copy_configs() {
 
     # Seed the wallpaper pointer so hyprlock has a background before first init.
     mkdir -p "$HOME/.local/state/hypr"
-    if [ ! -e "$HOME/.local/state/hypr/current_wallpaper" ] && \
-       [ -f "$HOME/Pictures/Wallpapers/wallpaperflare.com_wallpaper.jpg" ]; then
-        ln -sfn "$HOME/Pictures/Wallpapers/wallpaperflare.com_wallpaper.jpg" \
-                "$HOME/.local/state/hypr/current_wallpaper"
-        print_done "Seeded wallpaper pointer -> ~/.local/state/hypr/current_wallpaper"
+    if [ ! -e "$HOME/.local/state/hypr/current_wallpaper" ]; then
+        local seed_wallpaper
+        seed_wallpaper="$(find "$HOME/Pictures/Wallpapers" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | head -n 1)"
+        if [ -n "$seed_wallpaper" ] && [ -f "$seed_wallpaper" ]; then
+            ln -sfn "$seed_wallpaper" "$HOME/.local/state/hypr/current_wallpaper"
+            print_done "Seeded wallpaper pointer -> ~/.local/state/hypr/current_wallpaper"
+        else
+            print_warn "No wallpaper available to seed current_wallpaper"
+        fi
     fi
 
     mkdir -p "$HOME/.cache/cliphist"
@@ -244,6 +326,8 @@ EOF
 
 setup_shell() {
     print_header "Setting Up Zsh"
+
+    local current_shell
 
     print_step "Installing fzf-tab plugin..."
     if [ ! -d "$HOME/.zsh/fzf-tab" ]; then
@@ -452,6 +536,11 @@ setup_system() {
 setup_logind() {
     print_header "Lid Switch Behavior (suspend on close)"
 
+    if ! confirm "Configure systemd-logind to suspend on lid close?"; then
+        print_warn "Lid switch setup skipped"
+        return 0
+    fi
+
     local conf_dir=/etc/systemd/logind.conf.d
     local conf_file="$conf_dir/10-hype-niri-lid.conf"
 
@@ -515,7 +604,11 @@ setup_cloudflare() {
     fi
 
     if ! systemctl is-active --quiet warp-svc; then
-        sudo systemctl enable --now warp-svc >/dev/null 2>&1
+        if ! sudo systemctl enable --now warp-svc >/dev/null 2>&1; then
+            print_warn "Could not start/enable warp-svc -- skipping WARP setup"
+            print_warn "Retry later with: sudo systemctl enable --now warp-svc"
+            return 0
+        fi
         print_done "warp-svc started + enabled"
         sleep 1
     else
@@ -538,9 +631,9 @@ setup_cloudflare() {
     echo "    3) Skip for now (leave configured but disconnected)"
     read -rp "  Mode [1/2/3]: " mode_choice || mode_choice=""
     case "${mode_choice:-1}" in
-        2) warp-cli --accept-tos mode warp >/dev/null 2>&1 && print_done "Mode: WARP (VPN)" ;;
+        2) warp-cli --accept-tos mode warp >/dev/null 2>&1 && print_done "Mode: WARP (VPN)" || print_warn "Failed to set WARP mode" ;;
         3) print_warn "WARP enabled but no mode set; run 'warp-cli mode doh' to switch later"; return 0 ;;
-        *) warp-cli --accept-tos mode doh  >/dev/null 2>&1 && print_done "Mode: DoH" ;;
+        *) warp-cli --accept-tos mode doh  >/dev/null 2>&1 && print_done "Mode: DoH" || print_warn "Failed to set DoH mode" ;;
     esac
 
     if warp-cli --accept-tos connect >/dev/null 2>&1; then
@@ -556,14 +649,18 @@ setup_cloudflare() {
 validate() {
     print_header "Validating Installation"
 
+    local all_ok=true
+
     if command -v niri &>/dev/null; then
         if niri validate 2>/dev/null; then
             print_done "Niri config is valid"
         else
             print_warn "Niri config validation failed -- check ~/.config/niri/config.kdl"
+            all_ok=false
         fi
     else
         print_warn "niri not found in PATH (may need a reboot)"
+        all_ok=false
     fi
 
     local critical_files=(
@@ -588,7 +685,6 @@ validate() {
         "$HOME/.p10k.zsh"
     )
 
-    all_ok=true
     for f in "${critical_files[@]}"; do
         if [ -f "$f" ]; then
             print_done "$(basename "$f")"
@@ -601,7 +697,10 @@ validate() {
     if $all_ok; then
         echo ""
         echo -e "${GREEN}${BOLD}  All files in place!${NC}"
+        return 0
     fi
+
+    return 1
 }
 
 cleanup_old_configs() {
@@ -696,8 +795,12 @@ main() {
     setup_logind
     setup_firewall
     setup_cloudflare
-    validate
-    print_summary
+    if validate; then
+        print_summary
+    else
+        print_error "Validation failed; installation did not complete cleanly"
+        exit 1
+    fi
 }
 
 main "$@"

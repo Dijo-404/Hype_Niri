@@ -1,7 +1,6 @@
 #!/bin/bash
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
-DEFAULT_WALLPAPER="$WALLPAPER_DIR/wallpaperflare.com_wallpaper.jpg"
 
 # Pointer to the last-chosen wallpaper -- persists across reboot, read by hyprlock.
 STATE_DIR="$HOME/.local/state/hypr"
@@ -13,38 +12,73 @@ TRANSITION_STEP=90
 TRANSITION_FPS=120
 TRANSITION_DURATION=1
 
-# Silent exit if awww missing -- called on niri startup, must not spam errors.
-command -v awww >/dev/null 2>&1 || exit 0
+find_wallpaper() {
+    [[ -d "$WALLPAPER_DIR" ]] || return 1
+    find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | head -n 1
+}
 
-if ! pgrep -x awww-daemon > /dev/null; then
-    awww-daemon --format xrgb &
-    sleep 0.3
-fi
+ensure_current_wallpaper() {
+    [[ -f "$CURRENT_LINK" ]] && return 0
+
+    local fallback
+    fallback="$(find_wallpaper)"
+    [[ -f "$fallback" ]] || return 1
+    ln -sfn "$fallback" "$CURRENT_LINK"
+}
+
+start_daemon() {
+    # Silent exit if awww is missing -- startup calls must not spam errors.
+    command -v awww >/dev/null 2>&1 || return 1
+
+    if ! pgrep -x awww-daemon >/dev/null; then
+        local daemon_pid
+        awww-daemon --format xrgb >/dev/null 2>&1 &
+        daemon_pid=$!
+        sleep 0.3
+        if ! kill -0 "$daemon_pid" 2>/dev/null; then
+            wait "$daemon_pid" 2>/dev/null || true
+        fi
+    fi
+
+    pgrep -x awww-daemon >/dev/null || return 1
+}
+
+apply_wallpaper() {
+    local img="$1"
+    local transition="${2:-$TRANSITION_TYPE}"
+
+    start_daemon || return 0
+    awww img "$img" \
+        --transition-type "$transition" \
+        --transition-step "$TRANSITION_STEP" \
+        --transition-fps "$TRANSITION_FPS" \
+        --transition-duration "$TRANSITION_DURATION"
+}
 
 set_wallpaper() {
     local img="$1"
     if [[ -f "$img" ]]; then
-        awww img "$img" \
-            --transition-type "$TRANSITION_TYPE" \
-            --transition-step "$TRANSITION_STEP" \
-            --transition-fps "$TRANSITION_FPS" \
-            --transition-duration "$TRANSITION_DURATION"
         ln -sfn "$img" "$CURRENT_LINK"
+        apply_wallpaper "$img"
     fi
 }
 
-case "$1" in
+case "${1:-}" in
     init)
-        if [[ ! -e "$CURRENT_LINK" ]]; then
-            [[ -f "$DEFAULT_WALLPAPER" ]] && ln -sfn "$DEFAULT_WALLPAPER" "$CURRENT_LINK"
-        fi
-        [[ -e "$CURRENT_LINK" ]] && awww img "$CURRENT_LINK" --transition-type none
+        ensure_current_wallpaper || exit 0
+        apply_wallpaper "$CURRENT_LINK" none
+        ;;
+    current|restore|sync)
+        ensure_current_wallpaper || exit 0
+        apply_wallpaper "$CURRENT_LINK" none
         ;;
     random)
+        [[ -d "$WALLPAPER_DIR" ]] || exit 0
         img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | shuf -n1)
         set_wallpaper "$img"
         ;;
     select)
+        [[ -d "$WALLPAPER_DIR" ]] || exit 0
         img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | fuzzel --dmenu -p "Wallpaper: ")
         set_wallpaper "$img"
         ;;
@@ -52,7 +86,7 @@ case "$1" in
         if [[ -f "$1" ]]; then
             set_wallpaper "$1"
         else
-            echo "Usage: wallpaper.sh {init|random|select|<path>}"
+            echo "Usage: wallpaper.sh {init|current|random|select|<path>}"
             exit 1
         fi
         ;;
