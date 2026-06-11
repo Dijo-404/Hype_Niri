@@ -1,6 +1,3 @@
-# Mako notification daemon config (Wayland-native)
-# Monochrome theme
-
 font=JetBrainsMono Nerd Font, monospace 10
 background-color=#141414dd
 text-color=#d4d4d4

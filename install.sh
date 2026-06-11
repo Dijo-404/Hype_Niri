@@ -1,5 +1,4 @@
 #!/bin/bash
-# Hype Niri -- automated installer for Arch + Niri.
 
 set -euo pipefail
 
@@ -22,8 +21,6 @@ cleanup_tmp() {
 }
 trap cleanup_tmp EXIT
 trap 'echo; printf "  \033[0;31mx\033[0m Installation interrupted\n"; exit 130' INT TERM
-
-# ── Helpers ──
 
 print_header() {
     echo ""
@@ -58,8 +55,6 @@ confirm() {
     esac
 }
 
-# ── Preflight ──
-
 preflight() {
     print_header "Preflight Checks"
 
@@ -93,8 +88,6 @@ preflight() {
     fi
     print_done "Internet connection OK"
 }
-
-# ── Packages ──
 
 install_packages() {
     print_header "Installing Packages"
@@ -141,8 +134,6 @@ install_packages() {
     print_done "All packages installed"
 }
 
-# ── Backup ──
-
 backup_configs() {
     print_header "Backing Up Existing Configs"
 
@@ -187,8 +178,6 @@ backup_configs() {
         print_done "No existing configs to back up"
     fi
 }
-
-# ── Copy configs ──
 
 copy_configs() {
     print_header "Copying Configurations"
@@ -253,8 +242,6 @@ EOF
     print_done "Suppressed blueman tray autostart"
 }
 
-# ── Shell ──
-
 setup_shell() {
     print_header "Setting Up Zsh"
 
@@ -288,8 +275,6 @@ setup_shell() {
         print_done "Zsh is already the default shell"
     fi
 }
-
-# ── GTK theme ──
 
 setup_gtk() {
     print_header "GTK Theme Setup"
@@ -360,8 +345,6 @@ EOF
     fi
 }
 
-# ── Desktop integrations ──
-
 setup_desktop_integrations() {
     print_header "Desktop Integration Setup"
 
@@ -372,8 +355,6 @@ setup_desktop_integrations() {
         print_warn "xdg-user-dirs-update not found"
     fi
 }
-
-# ── System (sudo) ──
 
 setup_system() {
     print_header "System Configuration (requires sudo)"
@@ -468,8 +449,6 @@ setup_system() {
     print_done "System services configured"
 }
 
-# ── Logind (lid switch) ──
-
 setup_logind() {
     print_header "Lid Switch Behavior (suspend on close)"
 
@@ -491,8 +470,6 @@ EOF
         print_warn "Could not reload systemd-logind -- reboot to apply"
     fi
 }
-
-# ── Firewall (ufw, opt-in) ──
 
 setup_firewall() {
     print_header "Firewall Setup (ufw)"
@@ -523,8 +500,6 @@ setup_firewall() {
     print_step "Current rules:"
     sudo ufw status verbose | sed 's/^/    /'
 }
-
-# ── Cloudflare WARP (opt-in) ──
 
 setup_cloudflare() {
     print_header "Cloudflare WARP (opt-in)"
@@ -578,8 +553,6 @@ setup_cloudflare() {
     fi
 }
 
-# ── Validate ──
-
 validate() {
     print_header "Validating Installation"
 
@@ -631,8 +604,6 @@ validate() {
     fi
 }
 
-# ── Cleanup old configs ──
-
 cleanup_old_configs() {
     print_header "Clean Up Old Configs (Optional)"
 
@@ -673,8 +644,6 @@ cleanup_old_configs() {
     fi
 }
 
-# ── Summary ──
-
 print_summary() {
     echo ""
     echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
@@ -697,8 +666,6 @@ print_summary() {
     echo -e "    Keybindings  -> $SCRIPT_DIR/keybindings.md"
     echo ""
 }
-
-# ── Main ──
 
 main() {
     clear

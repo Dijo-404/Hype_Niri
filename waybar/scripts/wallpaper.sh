@@ -35,7 +35,6 @@ set_wallpaper() {
 
 case "$1" in
     init)
-        # Restore last-chosen wallpaper, else seed and use the default.
         if [[ ! -e "$CURRENT_LINK" ]]; then
             [[ -f "$DEFAULT_WALLPAPER" ]] && ln -sfn "$DEFAULT_WALLPAPER" "$CURRENT_LINK"
         fi

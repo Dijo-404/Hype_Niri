@@ -40,7 +40,6 @@ case "${1:-}" in
         max=$(brightnessctl max)
         min=$((max / 100)); [ "$min" -lt 1 ] && min=1
         step=$((max / 100)); [ "$step" -lt 1 ] && step=1
-        # Don't bump up when already at or below the floor.
         if [ "$current" -le "$min" ]; then
             target=$current
         else

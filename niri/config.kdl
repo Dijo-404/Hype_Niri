@@ -1,15 +1,8 @@
-// ╔═══════════════════════════════════════════════╗
-// ║    Niri Configuration — Monochrome Theme      ║
-// ╚═══════════════════════════════════════════════╝
-
-// ── Outputs ──────────────────────────────────────
-// Laptop display (always present)
 output "eDP-1" {
     mode "2880x1800@120"
     scale 2.0
 }
 
-// External monitor (left of laptop)
 // Niri auto-ignores this when disconnected
 output "DP-3" {
     mode "2560x1440@179.999"
@@ -17,16 +10,12 @@ output "DP-3" {
     position x=0 y=0
 }
 
-// ── Environment ──────────────────────────────────
-
 environment {
     XCURSOR_THEME "Adwaita"
     XCURSOR_SIZE "24"
     XDG_SESSION_TYPE "wayland"
     DISPLAY null
 }
-
-// ── Input ────────────────────────────────────────
 
 input {
     keyboard {
@@ -43,8 +32,6 @@ input {
 
     focus-follows-mouse max-scroll-amount="0%"
 }
-
-// ── Layout ───────────────────────────────────────
 
 layout {
     gaps 4
@@ -76,8 +63,6 @@ layout {
         color "#00000066"
     }
 }
-
-// ── Animations ───────────────────────────────────
 
 animations {
     workspace-switch {
@@ -111,8 +96,6 @@ animations {
     }
 }
 
-// ── Miscellaneous ────────────────────────────────
-
 prefer-no-csd
 
 screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
@@ -121,22 +104,17 @@ hotkey-overlay {
     skip-at-startup
 }
 
-// ── Window Rules ─────────────────────────────────
-
-// Rounded corners for all windows
 window-rule {
     geometry-corner-radius 4
     clip-to-geometry true
 }
 
-// Active window: slightly transparent, no border background bleed-through
 window-rule {
     match is-active=true
     draw-border-with-background false
     opacity 0.90
 }
 
-// Inactive windows: more transparent
 window-rule {
     match is-active=false
     draw-border-with-background false
@@ -149,8 +127,6 @@ window-rule {
     default-column-width {}
 }
 
-// ── Autostart ────────────────────────────────────
-
 spawn-at-startup "env" "GTK_THEME=Adwaita:dark" "waybar"
 
 spawn-sh-at-startup "env GTK_THEME=Adwaita:dark nm-applet --indicator"
@@ -160,21 +136,14 @@ spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
 spawn-at-startup "alacritty"
 
-// Wallpaper (uses wallpaper.sh script for proper init)
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
-// Idle + lock
 spawn-sh-at-startup "hypridle"
 
-// Clipboard history
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
 
-// ── Keybindings ──────────────────────────────────
-
 binds {
-
-    // ── Window Management ────────────────────────
 
     Mod+Q repeat=false { close-window; }
     Ctrl+Q repeat=false { close-window; }
@@ -188,19 +157,14 @@ binds {
     Mod+O repeat=false { toggle-overview; }
     Mod+L { spawn-sh "hyprlock"; }
 
-    // Float toggle
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
-
-    // ── Focus ────────────────────────────────────
 
     Mod+Left  { focus-column-left; }
     Mod+Right { focus-column-right; }
     Mod+Up    { focus-window-up; }
     Mod+Down  { focus-window-down; }
     Alt+Tab   { focus-window-down; }
-
-    // ── Resize ───────────────────────────────────
 
     Mod+Ctrl+Left  { set-column-width "-30"; }
     Mod+Ctrl+Right { set-column-width "+30"; }
@@ -211,14 +175,10 @@ binds {
     Mod+Shift+Minus { set-window-height "-10%"; }
     Mod+Shift+Equal { set-window-height "+10%"; }
 
-    // ── Move Window ──────────────────────────────
-
     Alt+Shift+Left  { move-column-left; }
     Alt+Shift+Right { move-column-right; }
     Alt+Shift+Up    { move-window-up; }
     Alt+Shift+Down  { move-window-down; }
-
-    // ── Applications ─────────────────────────────
 
     Mod+T hotkey-overlay-title="Terminal: alacritty" { spawn "alacritty"; }
     Mod+E { spawn "nautilus" "-w"; }
@@ -226,14 +186,10 @@ binds {
     Mod+B { spawn "firefox"; }
     Ctrl+Shift+Escape { spawn-sh "alacritty -e htop"; }
 
-    // ── Launcher & Menus ─────────────────────────
-
     Mod+A hotkey-overlay-title="App Launcher: fuzzel" { spawn "fuzzel"; }
     Mod+Tab { toggle-overview; }
     Mod+Period { spawn-sh "bemoji -t"; }
     Mod+V { spawn-sh "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"; }
-
-    // ── Column Management ────────────────────────
 
     Mod+R { switch-preset-column-width; }
     Mod+Shift+R { switch-preset-window-height; }
@@ -244,8 +200,6 @@ binds {
     Mod+BracketRight { consume-or-expel-window-right; }
     Mod+Comma { consume-window-into-column; }
 
-    // ── Audio ────────────────────────────────────
-
     F10 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh mute"; }
     XF86AudioMute allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh mute"; }
     F11 allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh down"; }
@@ -254,37 +208,25 @@ binds {
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh down"; }
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume-control.sh up"; }
 
-    // ── Media ────────────────────────────────────
-
     XF86AudioPlay allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioPause allow-when-locked=true { spawn-sh "playerctl play-pause"; }
     XF86AudioNext allow-when-locked=true { spawn-sh "playerctl next"; }
     XF86AudioPrev allow-when-locked=true { spawn-sh "playerctl previous"; }
 
-    // ── Brightness ───────────────────────────────
-
     XF86MonBrightnessUp allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh up"; }
     XF86MonBrightnessDown allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/brightness-control.sh down"; }
-
-    // ── Screenshots ──────────────────────────────
 
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
     Mod+Shift+P { spawn-sh "hyprpicker -a"; }
 
-    // ── Wallpaper ────────────────────────────────
-
     Mod+Alt+Right { spawn-sh "~/.config/waybar/scripts/wallpaper.sh random"; }
     Mod+Alt+Left { spawn-sh "~/.config/waybar/scripts/wallpaper.sh random"; }
     Mod+Shift+W { spawn-sh "~/.config/waybar/scripts/wallpaper.sh select"; }
 
-    // ── Waybar ───────────────────────────────────
-
     Mod+Alt+Up { spawn-sh "pkill waybar; env GTK_THEME=Adwaita:dark waybar &"; }
     Mod+Alt+Down { spawn-sh "pkill waybar"; }
-
-    // ── Workspaces ───────────────────────────────
 
     Mod+1 { focus-workspace 1; }
     Mod+2 { focus-workspace 2; }
@@ -302,8 +244,6 @@ binds {
     Mod+WheelScrollDown cooldown-ms=150 { focus-workspace-down; }
     Mod+WheelScrollUp cooldown-ms=150 { focus-workspace-up; }
 
-    // ── Move to Workspace ────────────────────────
-
     Mod+Shift+1 { move-column-to-workspace 1; }
     Mod+Shift+2 { move-column-to-workspace 2; }
     Mod+Shift+3 { move-column-to-workspace 3; }
@@ -318,14 +258,10 @@ binds {
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
     Mod+Ctrl+Page_Up { move-column-to-workspace-up; }
 
-    // ── Monitors ─────────────────────────────────
-
     Mod+Shift+Left  { focus-monitor-left; }
     Mod+Shift+Right { focus-monitor-right; }
     Mod+Shift+Alt+Left  { move-column-to-monitor-left; }
     Mod+Shift+Alt+Right { move-column-to-monitor-right; }
-
-    // ── Power ────────────────────────────────────
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
     XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }

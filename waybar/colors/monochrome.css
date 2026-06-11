@@ -1,5 +1,3 @@
-/* Monochrome Palette */
-
 @define-color bg_dim #0e0e0e;
 @define-color bg0 #141414;
 @define-color bg1 #1c1c1c;
@@ -13,7 +11,6 @@
 @define-color warn #cccccc;
 @define-color crit #ffffff;
 
-/* Material tonal surfaces (elevation) + state layers */
 @define-color surface        rgba(22, 22, 22, 0.78);
 @define-color surface_high   rgba(40, 40, 40, 0.55);
 @define-color state_hover    rgba(255, 255, 255, 0.07);
