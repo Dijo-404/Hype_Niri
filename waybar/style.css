@@ -95,6 +95,13 @@ window#waybar.hidden {
   font-size: 15px;
 }
 
+#custom-power {
+  font-family: 'JetBrainsMono Nerd Font', 'Material Design Icons', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-shadow: 0.35px 0 currentColor, -0.35px 0 currentColor;
+}
+
 /* Clock - vertical text */
 #clock {
   font-weight: 700;
