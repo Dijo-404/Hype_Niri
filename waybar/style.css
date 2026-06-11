@@ -1,7 +1,7 @@
 * {
   border: none;
   border-radius: 0;
-  font-family: 'Roboto', 'Material Design Icons', 'JetBrainsMono Nerd Font', 'Font Awesome 6 Free', sans-serif;
+  font-family: 'Roboto', 'Material Design Icons', 'JetBrainsMono Nerd Font', 'Font Awesome 7 Free', 'Font Awesome 6 Free', sans-serif;
   font-size: 13px;
   min-height: 0;
   color: #ffffff;
@@ -18,6 +18,7 @@ window#waybar.hidden {
   margin-top: -52px;
 }
 
+/* Module containers spacing */
 .modules-left {
   padding-left: 8px;
 }
@@ -28,6 +29,7 @@ window#waybar.hidden {
   padding: 0;
 }
 
+/* ─── Base style for ALL modules (like .mod in HTML) ─── */
 #custom-launcher,
 #cpu-group,
 #mem-group,
@@ -54,6 +56,7 @@ window#waybar.hidden {
   transition: all 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
+/* ─── Wrap Containers for CPU and RAM ─── */
 #cpu-group,
 #mem-group,
 #temp-group {
@@ -61,9 +64,10 @@ window#waybar.hidden {
   border-bottom-left-radius: 30px;
   border-top-right-radius: 14px;
   border-bottom-right-radius: 14px;
-  padding: 0 12px 0 0; /* circle sits flush against the left curve */
+  padding: 0 12px 0 0; /* Remove left padding so the circle sits flush against the curve */
 }
 
+/* ─── Icon-only modules ─── */
 #custom-launcher,
 #custom-caffeine,
 #custom-power-profile,
@@ -73,10 +77,12 @@ window#waybar.hidden {
   padding: 0 11px;
 }
 
+/* Power button square alignment and optical centering */
 #custom-power {
-  padding: 0 16px 0 12px; /* shift left to compensate for font bearing */
+  padding: 0 16px 0 12px; /* Shift icon left to compensate for font bearing */
 }
 
+/* Balance font sizes to match visually */
 #pulseaudio {
   font-size: 17px;
 }
@@ -89,11 +95,13 @@ window#waybar.hidden {
   font-size: 15px;
 }
 
+/* Clock - vertical text */
 #clock {
   font-weight: 700;
   padding: 0 12px;
 }
 
+/* Hover effects (using surface-2 color #404040) */
 #custom-launcher:hover,
 #cpu-group:hover,
 #mem-group:hover,
@@ -110,6 +118,7 @@ window#waybar.hidden {
   background-color: #404040;
 }
 
+/* ─── Workspaces ─── */
 #workspaces {
   background-color: #2d2d2d;
   border-radius: 12px;
@@ -227,6 +236,7 @@ window#waybar.hidden {
   color: #ffffff;
 }
 
+/* ─── GTK Menus (Tray Popups) ─── */
 menu {
   border-radius: 12px;
   background-color: #222222;

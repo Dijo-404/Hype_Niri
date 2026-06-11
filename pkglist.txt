@@ -79,6 +79,7 @@ ffmpegthumbnailer
 # ── Networking ────────────────────────────────────
 networkmanager
 network-manager-applet
+nm-connection-editor
 gnome-keyring
 libsecret
 xdg-user-dirs
@@ -102,9 +103,15 @@ blueman
 
 # ── Fonts & Theming ───────────────────────────────
 ttf-jetbrains-mono-nerd
+ttf-roboto
+otf-font-awesome
 papirus-icon-theme
 adwaita-dark
 
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl
 power-profiles-daemon
+lm_sensors
+
+# ── Desktop Notifications ─────────────────────────
+libnotify
