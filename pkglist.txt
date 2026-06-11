@@ -104,7 +104,7 @@ blueman
 # ── Fonts & Theming ───────────────────────────────
 ttf-jetbrains-mono-nerd
 ttf-roboto
-otf-font-awesome
+ttf-material-design-icons-webfont
 papirus-icon-theme
 adwaita-dark
 

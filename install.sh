@@ -691,6 +691,28 @@ validate() {
         fi
     done
 
+    if command -v fc-match &>/dev/null; then
+        local font_match
+        font_match=$(fc-match -f '%{family}\n' 'Roboto' 2>/dev/null | head -n 1 || true)
+        if [[ "$font_match" == *"Roboto"* ]]; then
+            print_done "Font: Roboto"
+        else
+            print_warn "Roboto font not resolving -- install ttf-roboto"
+            all_ok=false
+        fi
+
+        font_match=$(fc-match -f '%{family}\n' 'Material Design Icons' 2>/dev/null | head -n 1 || true)
+        if [[ "$font_match" == *"Material Design Icons"* ]]; then
+            print_done "Font: Material Design Icons"
+        else
+            print_warn "Material Design Icons font not resolving -- install ttf-material-design-icons-webfont"
+            all_ok=false
+        fi
+    else
+        print_warn "fontconfig not found -- cannot validate Waybar fonts"
+        all_ok=false
+    fi
+
     if $all_ok; then
         echo ""
         echo -e "${GREEN}${BOLD}  All files in place!${NC}"
