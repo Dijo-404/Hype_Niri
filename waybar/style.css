@@ -51,7 +51,6 @@ window#waybar.hidden {
   margin-left: 3px;
   margin-right: 3px;
   font-weight: 500;
-  min-height: 32px;
   transition: all 0.15s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
@@ -62,7 +61,7 @@ window#waybar.hidden {
   border-bottom-left-radius: 30px;
   border-top-right-radius: 14px;
   border-bottom-right-radius: 14px;
-  padding: 0 14px 0 4px;
+  padding: 0 12px 0 0; /* circle sits flush against the left curve */
 }
 
 #custom-launcher,
@@ -72,7 +71,6 @@ window#waybar.hidden {
 #network,
 #custom-power {
   padding: 0 11px;
-  min-width: 34px;
 }
 
 #custom-power {
@@ -202,9 +200,9 @@ window#waybar.hidden {
   color: #b0b0b0;
   border: 2px solid #b0b0b0;
   border-radius: 50%;
-  min-width: 32px;
-  min-height: 32px;
-  margin: 0 8px 0 0;
+  min-width: 35px;
+  min-height: 35px;
+  margin: 0 6px 0 0;
   padding: 0;
   font-size: 11px;
   font-weight: 700;
@@ -212,8 +210,8 @@ window#waybar.hidden {
 
 #cpu,
 #temperature {
-  min-width: 32px;
-  padding-left: 0;
+  min-width: 34px;
+  padding-left: 1px;
 }
 #custom-cpu-label,
 #custom-mem-label,
@@ -222,7 +220,6 @@ window#waybar.hidden {
   color: #e0e0e0;
   margin: 0;
   padding: 0;
-  font-size: 13px;
   font-weight: 600;
 }
 
