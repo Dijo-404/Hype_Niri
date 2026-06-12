@@ -546,11 +546,11 @@ setup_system() {
         fi
     done
 
-    # Pipewire is socket-activated on modern Arch; explicit enable is best-effort.
     local user_services=(
         "pipewire"
         "pipewire-pulse"
         "wireplumber"
+        "hypridle"
     )
 
     for service in "${user_services[@]}"; do
@@ -584,7 +584,7 @@ HandleLidSwitchExternalPower=suspend
 HandleLidSwitchDocked=suspend
 LidSwitchIgnoreInhibited=yes
 HoldoffTimeoutSec=0s
-InhibitDelayMaxSec=2
+InhibitDelayMaxSec=5
 EOF
     print_done "Wrote $conf_file"
 
@@ -772,7 +772,6 @@ cleanup_old_configs() {
         fi
     fi
 
-    # qt5ct/qt6ct are managed by setup_gtk; do not list them here.
     local old_configs=(
         "$HOME/.config/Kvantum"
         "$HOME/.config/rofi"

@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# Per-user runtime dir only -- refuse /tmp fallback (world-writable).
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 if [ ! -d "$RUNTIME_DIR" ] || [ ! -w "$RUNTIME_DIR" ]; then
     echo '{"text": "", "tooltip": "runtime dir unavailable", "class": "deactivated"}'

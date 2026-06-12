@@ -128,7 +128,7 @@ sudo systemctl enable ly
 
 sudo systemctl enable NetworkManager bluetooth
 
-systemctl --user enable pipewire pipewire-pulse wireplumber 2>/dev/null || true
+systemctl --user enable pipewire pipewire-pulse wireplumber hypridle 2>/dev/null || true
 
 sudo mkdir -p /etc/systemd/logind.conf.d
 sudo tee /etc/systemd/logind.conf.d/10-hype-niri-lid.conf >/dev/null << 'EOF'
@@ -138,6 +138,7 @@ HandleLidSwitchExternalPower=suspend
 HandleLidSwitchDocked=suspend
 LidSwitchIgnoreInhibited=yes
 HoldoffTimeoutSec=0s
+InhibitDelayMaxSec=5
 EOF
 ```
 
