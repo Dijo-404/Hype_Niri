@@ -1,13 +1,13 @@
 {
     "label": "lock",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; hyprlock",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/lock-screen.sh",
     "text": "Lock",
     "keybind": "l"
 }
 
 {
     "label": "suspend",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/suspend-now.sh",
     "text": "Sleep",
     "keybind": "s"
 }

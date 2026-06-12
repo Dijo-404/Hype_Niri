@@ -15,7 +15,6 @@ layer=overlay
 anchor=top-right
 icon-path=/usr/share/icons/Papirus-Dark
 
-# Low-urgency notifications use a softer gray border to visually de-emphasize them.
 [urgency=low]
 background-color=#141414dd
 border-color=#666666

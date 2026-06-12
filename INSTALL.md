@@ -65,17 +65,13 @@ Move the dotfiles to their respective locations in your home directory.
 ```bash
 mkdir -p ~/.config ~/.cache/cliphist ~/Pictures/Screenshots ~/Pictures/Wallpapers
 
-# Copy Wayland/UI configurations
 cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
 
-# Copy wallpapers
 [ -d Wallpapers ] && cp -r Wallpapers/* ~/Pictures/Wallpapers/
 
-# Copy Shell configuration
 cp zsh/.zshrc ~/
 cp zsh/.p10k.zsh ~/
 
-# Make scripts executable
 chmod +x ~/.config/waybar/scripts/*.sh
 ```
 
@@ -105,13 +101,14 @@ standard_dialogs=default
 EOF
 cp ~/.config/qt5ct/conf ~/.config/qt6ct/conf
 
-# Apply via dconf (writes are persistent, no dbus session required).
 dconf write /org/gnome/desktop/interface/color-scheme   "'prefer-dark'"
 dconf write /org/gnome/desktop/interface/gtk-theme      "'Adwaita-dark'"
 dconf write /org/gnome/desktop/interface/icon-theme     "'Papirus-Dark'"
 dconf write /org/gnome/desktop/interface/cursor-theme   "'Adwaita'"
 dconf write /org/gnome/desktop/interface/cursor-size    "24"
 dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Font 10'"
+
+papirus-folders -C black --theme Papirus-Dark
 ```
 
 ### 5. System-Wide Setup
@@ -119,33 +116,36 @@ dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Fon
 These steps require elevated privileges (`sudo`).
 
 ```bash
-# Tune pacman output (color, parallel downloads)
 sudo sed -i 's/^#Color$/Color/' /etc/pacman.conf
 sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf
 
-# Polkit rules (system-wide -- do NOT copy to ~/.config/polkit)
 sudo cp polkit/*.rules /etc/polkit-1/rules.d/
 
-# Enable Ly display manager and disable any others
 for dm in sddm gdm lightdm greetd; do
     systemctl is-enabled "$dm" &>/dev/null && sudo systemctl disable "$dm"
 done
 sudo systemctl enable ly
 
-# Enable system services
 sudo systemctl enable NetworkManager bluetooth
 
-# Pipewire is socket-activated on modern Arch -- explicit enable is best-effort
 systemctl --user enable pipewire pipewire-pulse wireplumber 2>/dev/null || true
+
+sudo mkdir -p /etc/systemd/logind.conf.d
+sudo tee /etc/systemd/logind.conf.d/10-hype-niri-lid.conf >/dev/null << 'EOF'
+[Login]
+HandleLidSwitch=suspend
+HandleLidSwitchExternalPower=suspend
+HandleLidSwitchDocked=suspend
+LidSwitchIgnoreInhibited=yes
+HoldoffTimeoutSec=0s
+EOF
 ```
 
 ### 6. Shell Setup
 
 ```bash
-# Install fzf-tab zsh plugin
 git clone https://github.com/Aloxaf/fzf-tab ~/.zsh/fzf-tab
 
-# Change default shell to zsh
 chsh -s /usr/bin/zsh
 ```
 
@@ -180,16 +180,12 @@ Disable later with `sudo ufw disable`. The installer never opens SSH or any othe
 The `cloudflare-warp-bin` AUR package ships a system service (`warp-svc`) and a user CLI (`warp-cli`). DoH (DNS-over-HTTPS) is the safe default; full WARP is a VPN tunnel.
 
 ```bash
-# Start + persist the service
 sudo systemctl enable --now warp-svc
 
-# Accept TOS and register (one-time)
 warp-cli --accept-tos registration new
 
-# Pick a mode -- DoH is the safest default
-warp-cli --accept-tos mode doh        # OR: warp-cli --accept-tos mode warp
+warp-cli --accept-tos mode doh
 
-# Connect
 warp-cli --accept-tos connect
 warp-cli --accept-tos status
 ```
@@ -265,12 +261,10 @@ Fast Startup leaves the Windows NTFS partition hibernated on shutdown, and Linux
 Open Nautilus, click "Other Locations", and click the Windows partition — it should mount and open. Or from the terminal:
 
 ```bash
-# Find your Windows partition
-lsblk -f                                # look for the partition with fstype "ntfs" (usually the largest)
+lsblk -f
 
-# Mount read/write to a chosen location
 sudo mkdir -p /mnt/windows
-sudo mount -t ntfs3 /dev/nvme0n1pX /mnt/windows    # replace X with the right number
+sudo mount -t ntfs3 /dev/nvme0n1pX /mnt/windows
 ```
 
 If `mount` reports `falling back to read-only`, Fast Startup is still on or Windows was not shut down cleanly — boot back into Windows, fully shut down, retry.
@@ -281,7 +275,6 @@ Add it to `/etc/fstab`. Get the UUID first:
 
 ```bash
 sudo blkid /dev/nvme0n1pX
-# UUID="XXXXXXXX-XXXX" TYPE="ntfs"
 ```
 
 Then append to `/etc/fstab`:

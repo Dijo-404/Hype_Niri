@@ -3,7 +3,6 @@ output "eDP-1" {
     scale 2.0
 }
 
-// Niri auto-ignores this when disconnected
 output "DP-3" {
     mode "2560x1440@179.999"
     scale 1.0
@@ -138,7 +137,7 @@ spawn-at-startup "alacritty"
 
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 
-spawn-sh-at-startup "hypridle"
+spawn-sh-at-startup "pkill -x hypridle 2>/dev/null; sleep 0.2; exec hypridle"
 
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
@@ -155,7 +154,7 @@ binds {
     Mod+Shift+F { spawn-sh "~/.config/waybar/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
-    Mod+L { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; hyprlock"; }
+    Mod+L { spawn-sh "~/.config/waybar/scripts/lock-screen.sh"; }
 
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }
@@ -264,7 +263,7 @@ binds {
     Mod+Shift+Alt+Right { move-column-to-monitor-right; }
 
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
-    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
-    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl suspend"; }
+    XF86PowerOff allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/suspend-now.sh"; }
+    XF86Sleep allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/suspend-now.sh"; }
+    XF86Suspend allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/suspend-now.sh"; }
 }

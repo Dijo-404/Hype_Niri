@@ -22,12 +22,22 @@ read_pid_file() {
 }
 
 is_inhibitor_pid() {
-    pid="$1"
+    local pid="$1"
+    local cmdline
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
     [ -r "/proc/$pid/cmdline" ] || return 1
 
     cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
     [[ "$cmdline" == *"systemd-inhibit"* && "$cmdline" == *"sleep infinity"* ]]
+}
+
+is_current_inhibitor_pid() {
+    local pid="$1"
+    local cmdline
+    is_inhibitor_pid "$pid" || return 1
+
+    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+    [[ "$cmdline" == *"--what=idle "* ]]
 }
 
 start_inhibitor() {
@@ -38,7 +48,7 @@ start_inhibitor() {
     fi
     rm -f "$PID_FILE"
 
-    systemd-inhibit --what=idle:sleep --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 &
+    systemd-inhibit --what=idle --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 &
     echo "$!" > "$PID_FILE"
 }
 
@@ -61,19 +71,19 @@ elif [ "$action" == "toggle" ]; then
     if [ -f "$STATE_FILE" ]; then
         rm -f "$STATE_FILE"
         stop_inhibitor
-        notify-send -r "$ID" "󰾪  Caffeine Mode Deactivated" "System will auto-suspend"
+        notify-send -r "$ID" "󰾪  Caffeine Mode Deactivated" "Idle lock and display sleep restored"
         echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
     else
         touch "$STATE_FILE"
         start_inhibitor
-        notify-send -r "$ID" "󰅶  Caffeine Mode Active" "System will stay awake"
+        notify-send -r "$ID" "󰅶  Caffeine Mode Active" "Idle lock and display sleep paused"
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
     fi
     pkill -RTMIN+15 waybar || true
 else
     if [ -f "$STATE_FILE" ]; then
         existing_pid=$(read_pid_file)
-        if [ -z "$existing_pid" ] || ! is_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
+        if [ -z "$existing_pid" ] || ! is_current_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
             start_inhibitor
         fi
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'

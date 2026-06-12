@@ -106,7 +106,7 @@ ttf-jetbrains-mono-nerd
 ttf-roboto
 ttf-material-design-icons-webfont
 papirus-icon-theme
-adwaita-dark
+papirus-folders-catppuccin-git
 
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl

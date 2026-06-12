@@ -12,6 +12,8 @@ BOLD='\033[1m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR=""
+PHASE_TOTAL=13
+PHASE_CURRENT=0
 
 _tmp_resources=()
 cleanup_tmp() {
@@ -47,6 +49,40 @@ print_done() {
     echo -e "  ${GREEN}+${NC} $1"
 }
 
+print_progress() {
+    local current="$1"
+    local total="$2"
+    local label="$3"
+    local width=26
+    local filled
+    local percent
+    local bar=""
+    local i
+
+    percent=$((current * 100 / total))
+    filled=$((current * width / total))
+
+    for ((i = 0; i < width; i++)); do
+        if [ "$i" -lt "$filled" ]; then
+            bar+="#"
+        else
+            bar+="-"
+        fi
+    done
+
+    echo ""
+    echo -e "  ${CYAN}Progress${NC} [${bar}] ${BOLD}${percent}%${NC}  (${current}/${total}) ${label}"
+}
+
+run_phase() {
+    local label="$1"
+    shift
+
+    PHASE_CURRENT=$((PHASE_CURRENT + 1))
+    print_progress "$PHASE_CURRENT" "$PHASE_TOTAL" "$label"
+    "$@"
+}
+
 confirm() {
     echo ""
     read -rp "  $(echo -e "${YELLOW}?${NC}") $1 [Y/n] " response
@@ -60,7 +96,6 @@ save_install_log() {
     local install_log="$1"
     print_error "Package installation failed. Last 40 log lines:"
     tail -n 40 "$install_log" | sed 's/^/    /'
-    # Survive the EXIT trap so the user can still inspect it.
     local persisted
     persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
     cp -- "$install_log" "$persisted" 2>/dev/null || true
@@ -299,7 +334,6 @@ copy_configs() {
         print_warn "No wallpapers found in source directory"
     fi
 
-    # Seed the wallpaper pointer so hyprlock has a background before first init.
     mkdir -p "$HOME/.local/state/hypr"
     if [ ! -e "$HOME/.local/state/hypr/current_wallpaper" ]; then
         local seed_wallpaper
@@ -314,7 +348,6 @@ copy_configs() {
 
     mkdir -p "$HOME/.cache/cliphist"
 
-    # Suppress blueman xdg-autostart -- the waybar bluetooth module handles it.
     mkdir -p "$HOME/.config/autostart"
     cat > "$HOME/.config/autostart/blueman.desktop" << 'EOF'
 [Desktop Entry]
@@ -398,14 +431,14 @@ EOF
     print_done "Created Qt5/Qt6 theme settings"
 
     if command -v papirus-folders &>/dev/null; then
-        papirus-folders -C grey --theme Papirus-Dark >/dev/null 2>&1 \
-            && print_done "Set Papirus-Dark folder color to grey" \
+        print_step "Setting Papirus-Dark folder color to black..."
+        papirus-folders -C black --theme Papirus-Dark \
+            && print_done "Set Papirus-Dark folder color to black" \
             || print_warn "papirus-folders failed -- folder color unchanged"
     else
-        print_warn "papirus-folders not found -- install 'papirus-folders' from AUR to recolor folders"
+        print_warn "papirus-folders not found -- install 'papirus-folders-catppuccin-git' from AUR to recolor folders"
     fi
 
-    # dconf write works from any context; gsettings needs a running dbus session.
     if command -v dconf &>/dev/null; then
         print_step "Applying dark theme via dconf..."
         dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null || true
@@ -491,7 +524,6 @@ setup_system() {
         print_done "Polkit rules applied"
     fi
 
-    # Ensure hyprlock has a PAM config -- missing => "invalid key down event"
     if [ ! -f /etc/pam.d/hyprlock ]; then
         printf '#%%PAM-1.0\nauth include login\n' | sudo tee /etc/pam.d/hyprlock >/dev/null
         print_done "Created /etc/pam.d/hyprlock"
@@ -549,7 +581,10 @@ setup_logind() {
 [Login]
 HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
-HandleLidSwitchDocked=ignore
+HandleLidSwitchDocked=suspend
+LidSwitchIgnoreInhibited=yes
+HoldoffTimeoutSec=0s
+InhibitDelayMaxSec=2
 EOF
     print_done "Wrote $conf_file"
 
@@ -665,6 +700,10 @@ validate() {
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/waybar/colors/monochrome.css"
+        "$HOME/.config/waybar/scripts/caffeine-control.sh"
+        "$HOME/.config/waybar/scripts/lock-screen.sh"
+        "$HOME/.config/waybar/scripts/prepare-sleep.sh"
+        "$HOME/.config/waybar/scripts/suspend-now.sh"
         "$HOME/.config/waybar/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
         "$HOME/.config/fuzzel/fuzzel.ini"
@@ -802,19 +841,19 @@ main() {
         exit 0
     fi
 
-    preflight
-    install_packages
-    backup_configs
-    cleanup_old_configs
-    copy_configs
-    setup_shell
-    setup_gtk
-    setup_desktop_integrations
-    setup_system
-    setup_logind
-    setup_firewall
-    setup_cloudflare
-    if validate; then
+    run_phase "Preflight checks" preflight
+    run_phase "Package installation" install_packages
+    run_phase "Config backup" backup_configs
+    run_phase "Old config cleanup" cleanup_old_configs
+    run_phase "Copy dotfiles" copy_configs
+    run_phase "Zsh setup" setup_shell
+    run_phase "GTK/Qt theme setup" setup_gtk
+    run_phase "Desktop integrations" setup_desktop_integrations
+    run_phase "System services" setup_system
+    run_phase "Lid switch behavior" setup_logind
+    run_phase "Firewall setup" setup_firewall
+    run_phase "Cloudflare WARP" setup_cloudflare
+    if run_phase "Validation" validate; then
         print_summary
     else
         print_error "Validation failed; installation did not complete cleanly"

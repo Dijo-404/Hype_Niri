@@ -2,7 +2,6 @@
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 
-# Pointer to the last-chosen wallpaper -- persists across reboot, read by hyprlock.
 STATE_DIR="$HOME/.local/state/hypr"
 CURRENT_LINK="$STATE_DIR/current_wallpaper"
 mkdir -p "$STATE_DIR"
@@ -27,7 +26,6 @@ ensure_current_wallpaper() {
 }
 
 start_daemon() {
-    # Silent exit if awww is missing -- startup calls must not spam errors.
     command -v awww >/dev/null 2>&1 || return 1
 
     if ! pgrep -x awww-daemon >/dev/null; then

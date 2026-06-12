@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Emit a benign JSON stub if power-profiles-daemon is missing -- waybar polls this.
 if ! command -v powerprofilesctl >/dev/null 2>&1; then
     [[ "${1:-}" != "menu" ]] && echo '{"text": "", "tooltip": "power-profiles-daemon not installed", "class": "missing"}'
     exit 0
