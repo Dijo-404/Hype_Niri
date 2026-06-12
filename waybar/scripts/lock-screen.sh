@@ -5,4 +5,4 @@ set -euo pipefail
 
 pidof hyprlock >/dev/null 2>&1 && exit 0
 
-exec hyprlock --immediate
+exec hyprlock --grace 0

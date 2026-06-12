@@ -551,6 +551,7 @@ setup_system() {
         "pipewire"
         "pipewire-pulse"
         "wireplumber"
+        "hypridle"
     )
 
     for service in "${user_services[@]}"; do
@@ -584,7 +585,7 @@ HandleLidSwitchExternalPower=suspend
 HandleLidSwitchDocked=suspend
 LidSwitchIgnoreInhibited=yes
 HoldoffTimeoutSec=0s
-InhibitDelayMaxSec=2
+InhibitDelayMaxSec=5
 EOF
     print_done "Wrote $conf_file"
 
