@@ -5,23 +5,40 @@ set -euo pipefail
 command -v brightnessctl >/dev/null 2>&1 || exit 0
 
 ID=2000
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+LOCK_FILE="$RUNTIME_DIR/brightness-control.lock"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    flock -n 9 || exit 0
+fi
 
 smooth_set() {
-    current=$1
-    target=$2
+    local current=$1
+    local target=$2
+    local diff
+    local abs_diff
+    local steps=8
+    local i
+    local next
+    local last=""
 
     if [ "$target" -eq "$current" ]; then
         return
-    elif [ "$target" -gt "$current" ]; then
-        step=1
-    else
-        step=-1
     fi
 
-    while [ "$current" -ne "$target" ]; do
-        current=$((current + step))
-        brightnessctl -q set "$current"
-        sleep 0.005
+    diff=$((target - current))
+    abs_diff=${diff#-}
+    [ "$abs_diff" -lt "$steps" ] && steps=$abs_diff
+    [ "$steps" -lt 1 ] && steps=1
+
+    for ((i = 1; i <= steps; i++)); do
+        next=$((current + diff * i / steps))
+        [ "$next" = "$last" ] && continue
+        brightnessctl -q set "$next"
+        last="$next"
+        [ "$i" -lt "$steps" ] && sleep 0.005
     done
 }
 
@@ -70,7 +87,8 @@ else
     icon="󰃠"
 fi
 
+command -v notify-send >/dev/null 2>&1 || exit 0
 notify-send -r "$ID" \
     -h string:x-canonical-private-synchronous:brightness \
     -h int:value:"$percent" \
-    "$icon  Brightness: ${percent}%"
+    "$icon  Brightness: ${percent}%" 2>/dev/null || true

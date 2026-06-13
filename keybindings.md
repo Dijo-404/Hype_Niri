@@ -64,6 +64,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | :--- | :--- | :--- |
 | `Super + T` | `alacritty` | Launch Terminal |
 | `Super + E` | `nautilus` | Launch File Manager |
+| `Super + U` | `open-drives` | Mount/unlock known external/secondary drives, then launch Nautilus |
 | `Super + C` | `nvim` | Launch Neovim |
 | `Super + B` | `firefox` | Launch Browser |
 | `Ctrl + Shift + Esc`| `htop` | Launch System Monitor |

@@ -145,7 +145,12 @@ setopt SHARE_HISTORY
 autoload -Uz compinit && compinit
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
-[[ -f ~/.zsh/fzf-tab/fzf-tab.plugin.zsh ]] && source ~/.zsh/fzf-tab/fzf-tab.plugin.zsh
+for fzf_tab_plugin in \
+    /usr/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh \
+    ~/.zsh/fzf-tab/fzf-tab.plugin.zsh; do
+    [[ -f "$fzf_tab_plugin" ]] && source "$fzf_tab_plugin" && break
+done
+unset fzf_tab_plugin
 zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
 zstyle ':completion:*' menu no

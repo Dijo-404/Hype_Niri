@@ -17,7 +17,7 @@ The installer is interactive at every irreversible step — backup, display mana
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
 
 > [!NOTE]
-> The installer uses `pacman` for official repository packages and `yay` only for AUR packages.
+> The installer uses `pacman` for official repository packages and `yay` only for AUR packages. Install `yay` first with your preferred method; this installer does not clone AUR repos to bootstrap it.
 
 ---
 
@@ -144,9 +144,9 @@ EOF
 
 ### 6. Shell Setup
 
-```bash
-git clone https://github.com/Aloxaf/fzf-tab ~/.zsh/fzf-tab
+`fzf-tab` is installed from `pkglist.txt`; no manual plugin clone is needed.
 
+```bash
 chsh -s /usr/bin/zsh
 ```
 
@@ -244,12 +244,15 @@ If your Windows partition doesn't appear in Nautilus, or appears but won't open 
 **1. Install the prerequisites** (already in `pkglist.txt`):
 
 ```bash
-yay -S --needed ntfs-3g gvfs udisks2
+yay -S --needed ntfs-3g gvfs udisks2 lvm2 libblockdev-lvm
 ```
 
 - `ntfs-3g` — NTFS driver. Even though the kernel has `ntfs3` built-in, ntfs-3g handles Fast Startup detection cleanly.
 - `gvfs` — lets Nautilus mount partitions on click.
 - `udisks2` — the mount daemon Nautilus talks to.
+- `lvm2` and `libblockdev-lvm` — let encrypted LUKS drives reveal and mount LVM-backed filesystems.
+
+The `Super+U` keybinding runs `~/.config/waybar/scripts/open-drives.sh` before opening Nautilus. It mounts ordinary volumes, falls back to read-only for dirty Windows NTFS volumes, asks GVFS to unlock encrypted drives, mounts inner filesystems, and creates friendly links under `~/Drives`.
 
 **2. Disable Windows Fast Startup** (this is the cause ~90% of the time).
 

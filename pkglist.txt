@@ -16,6 +16,7 @@ zsh
 zsh-completions
 zsh-autosuggestions
 zsh-syntax-highlighting
+fzf-tab
 zsh-theme-powerlevel10k-git
 
 # ── Terminal & Editor ─────────────────────────────
@@ -88,6 +89,8 @@ xdg-user-dirs
 ntfs-3g
 gvfs
 gvfs-mtp
+libblockdev-lvm
+lvm2
 udisks2
 
 # ── Firewall ──────────────────────────────────────

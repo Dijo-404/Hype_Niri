@@ -7,8 +7,13 @@ fi
 
 ID=2004
 
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -r "$ID" "$@" 2>/dev/null || true
+}
+
 get_current_profile() {
-    powerprofilesctl get
+    powerprofilesctl get 2>/dev/null || true
 }
 
 get_icon() {
@@ -33,8 +38,19 @@ send_notification() {
     profile=$1
     icon=$(get_icon "$profile")
     name=$(get_name "$profile")
-    notify-send -r "$ID" \
-        "$icon  Power Mode: $name"
+    notify "$icon  Power Mode: $name"
+}
+
+set_profile() {
+    local profile="$1"
+    local output
+
+    if output="$(powerprofilesctl set "$profile" 2>&1)"; then
+        send_notification "$profile"
+    else
+        notify "Could not set Power Mode" "${output:-$(get_name "$profile") is unavailable on this system}"
+        return 1
+    fi
 }
 
 if [[ "${1:-}" == "menu" ]]; then
@@ -44,21 +60,23 @@ if [[ "${1:-}" == "menu" ]]; then
     
     case "$choice" in
         *"Performance"*)
-            powerprofilesctl set performance
-            send_notification "performance"
+            set_profile "performance"
             ;;
         *"Balanced"*)
-            powerprofilesctl set balanced
-            send_notification "balanced"
+            set_profile "balanced"
             ;;
         *"Power Saver"*)
-            powerprofilesctl set power-saver
-            send_notification "power-saver"
+            set_profile "power-saver"
             ;;
     esac
-    pkill -RTMIN+16 waybar
+    pkill -RTMIN+16 waybar || true
 else
     current=$(get_current_profile)
+    if [ -z "$current" ]; then
+        echo '{"text": "", "tooltip": "power profile unavailable", "class": "missing", "percentage": 50}'
+        exit 0
+    fi
+
     case "$current" in
         "performance") pct=100 ;;
         "balanced")    pct=50 ;;

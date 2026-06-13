@@ -124,20 +124,10 @@ ensure_yay() {
         return 0
     fi
 
-    print_warn "yay (AUR helper) not found"
-    if ! confirm "Install yay for AUR packages?"; then
-        print_error "AUR packages require yay. Exiting."
-        exit 1
-    fi
-
-    print_step "Installing yay..."
-    local tmpdir
-    sudo pacman -S --needed --noconfirm git base-devel
-    tmpdir=$(mktemp -d) || { print_error "Failed to create temp directory"; exit 1; }
-    _tmp_resources+=("$tmpdir")
-    git clone https://aur.archlinux.org/yay-bin.git "$tmpdir/yay-bin"
-    (cd "$tmpdir/yay-bin" && makepkg -si --noconfirm)
-    print_done "yay installed"
+    print_error "yay (AUR helper) is required for AUR packages, but it is not installed."
+    print_warn "Install yay with your preferred method, then rerun ./install.sh."
+    print_warn "The installer does not clone AUR repos to bootstrap yay."
+    exit 1
 }
 
 preflight() {
@@ -362,13 +352,12 @@ setup_shell() {
 
     local current_shell
 
-    print_step "Installing fzf-tab plugin..."
-    if [ ! -d "$HOME/.zsh/fzf-tab" ]; then
-        mkdir -p "$HOME/.zsh"
-        git clone https://github.com/Aloxaf/fzf-tab "$HOME/.zsh/fzf-tab"
-        print_done "fzf-tab installed"
+    print_step "Checking fzf-tab plugin..."
+    if [ -f /usr/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh ] || \
+       [ -f "$HOME/.zsh/fzf-tab/fzf-tab.plugin.zsh" ]; then
+        print_done "fzf-tab available"
     else
-        print_done "fzf-tab already installed"
+        print_warn "fzf-tab not found -- ensure the 'fzf-tab' package installed from pkglist.txt"
     fi
 
     if [ -f "$SCRIPT_DIR/zsh/.zshrc" ]; then
@@ -700,10 +689,17 @@ validate() {
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/waybar/colors/monochrome.css"
+        "$HOME/.config/waybar/scripts/brightness-control.sh"
         "$HOME/.config/waybar/scripts/caffeine-control.sh"
+        "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
         "$HOME/.config/waybar/scripts/lock-screen.sh"
+        "$HOME/.config/waybar/scripts/mic-control.sh"
+        "$HOME/.config/waybar/scripts/open-drives.sh"
+        "$HOME/.config/waybar/scripts/power-profile.sh"
         "$HOME/.config/waybar/scripts/prepare-sleep.sh"
         "$HOME/.config/waybar/scripts/suspend-now.sh"
+        "$HOME/.config/waybar/scripts/temperature.sh"
+        "$HOME/.config/waybar/scripts/volume-control.sh"
         "$HOME/.config/waybar/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
         "$HOME/.config/fuzzel/fuzzel.ini"
@@ -726,6 +722,17 @@ validate() {
             print_done "$(basename "$f")"
         else
             print_error "Missing: $f"
+            all_ok=false
+        fi
+    done
+
+    local script
+    for script in "$HOME/.config/waybar/scripts/"*.sh; do
+        [ -e "$script" ] || continue
+        if bash -n "$script" 2>/dev/null; then
+            print_done "Script syntax: $(basename "$script")"
+        else
+            print_error "Script syntax failed: $script"
             all_ok=false
         fi
     done

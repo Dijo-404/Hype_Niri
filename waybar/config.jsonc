@@ -90,19 +90,16 @@
   },
   "group/temp-group": {
     "orientation": "inherit",
-    "modules": ["temperature", "custom/temp-label"]
+    "modules": ["custom/temperature", "custom/temp-label"]
   },
   "custom/temp-label": {
     "format": "temp"
   },
-  "temperature": {
-    "hwmon-path": "/sys/class/hwmon/hwmon6/temp1_input",
+  "custom/temperature": {
+    "exec": "~/.config/waybar/scripts/temperature.sh",
+    "return-type": "json",
     "interval": 5,
-    "critical-threshold": 80,
-    "format": "{temperatureC}°",
-    "format-critical": "{temperatureC}°",
-    "tooltip-format": "Temperature: {temperatureC}°C",
-    "align": 0.5
+    "format": "{}"
   },
 
   "backlight": {

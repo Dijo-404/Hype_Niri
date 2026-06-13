@@ -9,7 +9,18 @@ if [ ! -d "$RUNTIME_DIR" ] || [ ! -w "$RUNTIME_DIR" ]; then
 fi
 STATE_FILE="$RUNTIME_DIR/caffeine_state"
 PID_FILE="$RUNTIME_DIR/caffeine_pid"
+LOCK_FILE="$RUNTIME_DIR/caffeine.lock"
 ID=2002
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    flock 9 || exit 0
+fi
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 || return 0
+    notify-send -r "$ID" "$@" 2>/dev/null || true
+}
 
 read_pid_file() {
     local pid=""
@@ -70,12 +81,12 @@ elif [ "$action" == "toggle" ]; then
     if [ -f "$STATE_FILE" ]; then
         rm -f "$STATE_FILE"
         stop_inhibitor
-        notify-send -r "$ID" "󰾪  Caffeine Mode Deactivated" "Idle lock and display sleep restored"
+        notify "󰾪  Caffeine Mode Deactivated" "Idle lock and display sleep restored"
         echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
     else
         touch "$STATE_FILE"
         start_inhibitor
-        notify-send -r "$ID" "󰅶  Caffeine Mode Active" "Idle lock and display sleep paused"
+        notify "󰅶  Caffeine Mode Active" "Idle lock and display sleep paused"
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
     fi
     pkill -RTMIN+15 waybar || true

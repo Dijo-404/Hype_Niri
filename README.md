@@ -24,7 +24,7 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 | **Notifications** | [Mako](https://github.com/emersion/mako) |
 | **Lock Screen** | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | **Idle Daemon** | [Hypridle](https://github.com/hyprwm/hypridle) |
-| **Wallpaper** | [Swww](https://github.com/LGFae/swww) |
+| **Wallpaper** | [Awww](https://codeberg.org/LGFae/awww) |
 | **Login Manager** | [Ly](https://github.com/fairyglade/ly) |
 | **Fetch App** | [Fastfetch](https://github.com/fastfetch-cli/fastfetch) |
 | **Logout Menu** | [Wlogout](https://github.com/ArtsyMacaw/wlogout) |
@@ -56,7 +56,7 @@ git pull
 ./install.sh
 ```
 
-The install script installs official repository packages with `pacman`, AUR packages with `yay`, and requires a backup before overwriting existing configs.
+The install script installs official repository packages with `pacman`, AUR packages with `yay`, and requires a backup before overwriting existing configs. Install `yay` first with your preferred method; the installer does not clone AUR repos to bootstrap it.
 
 To update only packages without re-running the full script:
 
