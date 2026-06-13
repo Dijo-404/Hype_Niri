@@ -13,7 +13,6 @@ environment {
     XCURSOR_THEME "Adwaita"
     XCURSOR_SIZE "24"
     XDG_SESSION_TYPE "wayland"
-    DISPLAY null
 }
 
 input {
