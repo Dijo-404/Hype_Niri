@@ -707,7 +707,6 @@ validate() {
         "$HOME/.config/niri/config.kdl"
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
-        "$HOME/.config/waybar/colors/monochrome.css"
         "$HOME/.config/waybar/scripts/brightness-control.sh"
         "$HOME/.config/waybar/scripts/caffeine-control.sh"
         "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
