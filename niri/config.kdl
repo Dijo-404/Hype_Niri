@@ -1,3 +1,4 @@
+// author-hardware outputs — safely ignored on other systems (niri uses preferred mode)
 output "eDP-1" {
     mode "2880x1800@120"
     scale 2.0
