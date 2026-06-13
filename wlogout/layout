@@ -21,14 +21,14 @@
 
 {
     "label": "shutdown",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl poweroff",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
     "text": "Shutdown",
     "keybind": "p"
 }
 
 {
     "label": "reboot",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop && systemctl reboot",
+    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
     "text": "Reboot",
     "keybind": "r"
 }
