@@ -191,7 +191,7 @@ window#waybar.hidden {
   color: #ffffff;
 }
 
-#custom-temperature.critical {
+#temperature.critical {
   color: #e06c75;
   border-color: #e06c75;
 }
@@ -202,7 +202,7 @@ window#waybar.hidden {
 
 #cpu,
 #memory,
-#custom-temperature {
+#temperature {
   background-color: transparent;
   color: #b0b0b0;
   border: 2px solid #b0b0b0;
@@ -216,7 +216,7 @@ window#waybar.hidden {
 }
 
 #cpu,
-#custom-temperature {
+#temperature {
   min-width: 34px;
   padding-left: 1px;
 }

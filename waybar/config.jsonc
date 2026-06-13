@@ -90,16 +90,23 @@
   },
   "group/temp-group": {
     "orientation": "inherit",
-    "modules": ["custom/temperature", "custom/temp-label"]
+    "modules": ["temperature", "custom/temp-label"]
   },
   "custom/temp-label": {
     "format": "temp"
   },
-  "custom/temperature": {
-    "exec": "~/.config/waybar/scripts/temperature.sh",
-    "return-type": "json",
+  "temperature": {
+    "hwmon-path-abs": [
+      "/sys/devices/platform/coretemp.0/hwmon",
+      "/sys/devices/virtual/thermal/thermal_zone0"
+    ],
+    "input-filename": "temp1_input",
     "interval": 5,
-    "format": "{}"
+    "critical-threshold": 80,
+    "format": "{temperatureC}°",
+    "format-critical": "{temperatureC}°",
+    "tooltip-format": "Temperature: {temperatureC}°C",
+    "align": 0.5
   },
 
   "backlight": {
