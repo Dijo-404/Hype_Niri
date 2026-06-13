@@ -84,6 +84,7 @@ run_phase() {
 }
 
 confirm() {
+    [ -t 0 ] || return 1
     echo ""
     read -rp "  $(echo -e "${YELLOW}?${NC}") $1 [Y/n] " response
     case "$response" in
@@ -272,6 +273,8 @@ backup_configs() {
             [ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
             [ -d "$HOME/.local/share/nautilus" ] && \
                 cp -r "$HOME/.local/share/nautilus" "$BACKUP_DIR/nautilus-share"
+            [ -d "$HOME/.config/nautilus" ] && \
+                cp -r "$HOME/.config/nautilus" "$BACKUP_DIR/nautilus-config"
             print_done "Backup saved to $BACKUP_DIR"
         else
             print_error "Backup declined. Existing configs will not be overwritten."
@@ -300,8 +303,11 @@ copy_configs() {
 
     for config in "${configs[@]}"; do
         if [ -d "$SCRIPT_DIR/$config" ]; then
+            local tmp="$HOME/.config/$config.new.$$"
+            rm -rf "$tmp"
+            cp -r "$SCRIPT_DIR/$config" "$tmp"
             rm -rf "$HOME/.config/$config"
-            cp -r "$SCRIPT_DIR/$config" "$HOME/.config/$config"
+            mv "$tmp" "$HOME/.config/$config"
             print_done "Copied $config -> ~/.config/$config"
         fi
     done
@@ -695,7 +701,6 @@ validate() {
         fi
     else
         print_warn "niri not found in PATH (may need a reboot)"
-        all_ok=false
     fi
 
     local critical_files=(
@@ -758,7 +763,6 @@ validate() {
             print_done "Font: Roboto"
         else
             print_warn "Roboto font not resolving -- install ttf-roboto"
-            all_ok=false
         fi
 
         font_match=$(fc-match -f '%{family}\n' 'Material Design Icons' 2>/dev/null | head -n 1 || true)
@@ -766,11 +770,9 @@ validate() {
             print_done "Font: Material Design Icons"
         else
             print_warn "Material Design Icons font not resolving -- install ttf-material-design-icons-webfont"
-            all_ok=false
         fi
     else
         print_warn "fontconfig not found -- cannot validate Waybar fonts"
-        all_ok=false
     fi
 
     if $all_ok; then
