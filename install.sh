@@ -713,7 +713,6 @@ validate() {
         "$HOME/.config/waybar/scripts/power-profile.sh"
         "$HOME/.config/waybar/scripts/prepare-sleep.sh"
         "$HOME/.config/waybar/scripts/suspend-now.sh"
-        "$HOME/.config/waybar/scripts/temperature.sh"
         "$HOME/.config/waybar/scripts/volume-control.sh"
         "$HOME/.config/waybar/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
