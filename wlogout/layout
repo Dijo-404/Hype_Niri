@@ -14,7 +14,7 @@
 
 {
     "label": "logout",
-    "action": "pkill -x wlogout; niri msg action quit",
+    "action": "pkill -x wlogout; niri msg action quit --skip-confirmation",
     "text": "Logout",
     "keybind": "e"
 }

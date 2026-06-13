@@ -1,12 +1,9 @@
 # ── Niri + Wayland ────────────────────────────────
 niri
-uwsm
 wlogout
 xdg-desktop-portal-gnome
 xdg-utils
 wl-clipboard
-grim
-slurp
 qt5-wayland
 qt6-wayland
 xorg-xwayland
@@ -62,6 +59,8 @@ wget
 fastfetch
 lazygit
 lazydocker
+docker
+docker-compose
 imagemagick
 cliphist
 bemoji
