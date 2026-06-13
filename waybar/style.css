@@ -117,6 +117,22 @@ window#waybar.hidden {
   background-color: #404040;
 }
 
+#custom-power-profile.performance {
+  color: #e06c75;
+}
+
+#custom-power-profile.balanced {
+  color: #e0e0e0;
+}
+
+#custom-power-profile.power-saver {
+  color: #98c379;
+}
+
+#custom-power-profile.missing {
+  color: #666666;
+}
+
 #workspaces {
   background-color: #2d2d2d;
   border-radius: 12px;
