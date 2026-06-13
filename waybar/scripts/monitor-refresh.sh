@@ -64,7 +64,7 @@ kdl_escape() {
 get_outputs_json() {
     local output
 
-    if ! output="$(niri msg -j outputs 2>&1)"; then
+    if ! output="$(niri msg --json outputs 2>&1)"; then
         notify "Could not read monitors" "$output"
         exit 1
     fi
