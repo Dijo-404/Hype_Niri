@@ -108,7 +108,7 @@ dconf write /org/gnome/desktop/interface/cursor-theme   "'Adwaita'"
 dconf write /org/gnome/desktop/interface/cursor-size    "24"
 dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Font 10'"
 
-papirus-folders -C black --theme Papirus-Dark
+papirus-folders -C cat-mocha-grey --theme Papirus-Dark
 ```
 
 ### 5. System-Wide Setup
