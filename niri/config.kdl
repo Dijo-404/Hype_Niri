@@ -181,6 +181,7 @@ binds {
 
     Mod+T hotkey-overlay-title="Terminal: alacritty" { spawn "alacritty"; }
     Mod+E { spawn "nautilus" "-w"; }
+    Mod+D hotkey-overlay-title="Display Refresh Rate" { spawn-sh "~/.config/waybar/scripts/monitor-refresh.sh"; }
     Mod+U { spawn-sh "~/.config/waybar/scripts/open-drives.sh"; }
     Mod+C { spawn-sh "alacritty -e nvim"; }
     Mod+B { spawn "firefox"; }

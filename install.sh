@@ -708,6 +708,7 @@ validate() {
         "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
         "$HOME/.config/waybar/scripts/lock-screen.sh"
         "$HOME/.config/waybar/scripts/mic-control.sh"
+        "$HOME/.config/waybar/scripts/monitor-refresh.sh"
         "$HOME/.config/waybar/scripts/open-drives.sh"
         "$HOME/.config/waybar/scripts/power-profile.sh"
         "$HOME/.config/waybar/scripts/prepare-sleep.sh"

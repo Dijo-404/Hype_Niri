@@ -55,6 +55,7 @@ fzf
 zoxide
 git
 github-cli
+jq
 htop
 wget
 fastfetch
