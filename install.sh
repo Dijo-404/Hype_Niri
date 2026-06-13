@@ -421,9 +421,11 @@ EOF
 
     if command -v papirus-folders &>/dev/null; then
         print_step "Setting Papirus-Dark folder color to black..."
-        papirus-folders -C black --theme Papirus-Dark \
-            && print_done "Set Papirus-Dark folder color to black" \
-            || print_warn "papirus-folders failed -- folder color unchanged"
+        if papirus-folders -C black --theme Papirus-Dark; then
+            print_done "Set Papirus-Dark folder color to black"
+        else
+            print_warn "papirus-folders failed -- folder color unchanged"
+        fi
     else
         print_warn "papirus-folders not found -- install 'papirus-folders-catppuccin-git' from AUR to recolor folders"
     fi
@@ -652,9 +654,21 @@ setup_cloudflare() {
     echo "    3) Skip for now (leave configured but disconnected)"
     read -rp "  Mode [1/2/3]: " mode_choice || mode_choice=""
     case "${mode_choice:-1}" in
-        2) warp-cli --accept-tos mode warp >/dev/null 2>&1 && print_done "Mode: WARP (VPN)" || print_warn "Failed to set WARP mode" ;;
+        2)
+            if warp-cli --accept-tos mode warp >/dev/null 2>&1; then
+                print_done "Mode: WARP (VPN)"
+            else
+                print_warn "Failed to set WARP mode"
+            fi
+            ;;
         3) print_warn "WARP enabled but no mode set; run 'warp-cli mode doh' to switch later"; return 0 ;;
-        *) warp-cli --accept-tos mode doh  >/dev/null 2>&1 && print_done "Mode: DoH" || print_warn "Failed to set DoH mode" ;;
+        *)
+            if warp-cli --accept-tos mode doh >/dev/null 2>&1; then
+                print_done "Mode: DoH"
+            else
+                print_warn "Failed to set DoH mode"
+            fi
+            ;;
     esac
 
     if warp-cli --accept-tos connect >/dev/null 2>&1; then

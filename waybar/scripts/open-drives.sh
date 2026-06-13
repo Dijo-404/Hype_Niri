@@ -58,14 +58,12 @@ mount_with_fallback() {
         return 0
     fi
 
-    output="$(udisksctl mount -b "$dev" 2>&1)"
-    if [ "$?" -eq 0 ]; then
+    if output="$(udisksctl mount -b "$dev" 2>&1)"; then
         return 0
     fi
 
     if [ "$fstype" = "ntfs" ]; then
-        output="$(udisksctl mount -b "$dev" -o ro 2>&1)"
-        if [ "$?" -eq 0 ]; then
+        if output="$(udisksctl mount -b "$dev" -o ro 2>&1)"; then
             notify "Mounted Windows volume read-only" "Windows left this NTFS volume dirty or hibernated. Run chkdsk and fully shut down Windows for write access."
             return 0
         fi
