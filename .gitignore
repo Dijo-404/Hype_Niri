@@ -4,3 +4,6 @@
 *.swo
 *~
 .DS_Store
+
+.claude/
+plans/

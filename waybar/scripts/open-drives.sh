@@ -112,20 +112,10 @@ mount_unmounted_filesystems() {
 alias_for_mount() {
     local source="$1"
     local target="$2"
-    local uuid
     local label
-    local name
 
-    uuid="$(lsblk -no UUID "$source" 2>/dev/null | head -n 1)"
     label="$(lsblk -no LABEL "$source" 2>/dev/null | head -n 1)"
-
-    case "$uuid" in
-        F0801AAB801A7874) name="Windows-SSD" ;;
-        857a0bbf-1aec-402a-aced-2e4936dfaef4) name="Lexar-4TB" ;;
-        *) name="${label:-$(basename "$target")}" ;;
-    esac
-
-    printf '%s\n' "$name"
+    printf '%s\n' "${label:-$(basename "$target")}"
 }
 
 sanitize_link_name() {
