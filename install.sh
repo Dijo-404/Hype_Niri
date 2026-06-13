@@ -420,9 +420,9 @@ EOF
     print_done "Created Qt5/Qt6 theme settings"
 
     if command -v papirus-folders &>/dev/null; then
-        print_step "Setting Papirus-Dark folder color to black..."
-        if papirus-folders -C black --theme Papirus-Dark; then
-            print_done "Set Papirus-Dark folder color to black"
+        print_step "Setting Papirus-Dark folder color to cat-mocha-grey..."
+        if papirus-folders -C cat-mocha-grey --theme Papirus-Dark; then
+            print_done "Set Papirus-Dark folder color to cat-mocha-grey"
         else
             print_warn "papirus-folders failed -- folder color unchanged"
         fi
