@@ -96,11 +96,7 @@
     "format": "temp"
   },
   "temperature": {
-    "hwmon-path-abs": [
-      "/sys/devices/platform/coretemp.0/hwmon",
-      "/sys/devices/virtual/thermal/thermal_zone0"
-    ],
-    "input-filename": "temp1_input",
+    "thermal-zone": 0,
     "interval": 5,
     "critical-threshold": 80,
     "format": "{temperatureC}°",
@@ -117,17 +113,6 @@
     "on-scroll-down": "~/.config/waybar/scripts/brightness-control.sh down"
   },
 
-  "network": {
-    "interval": 5,
-    "format-wifi": "󰤨",
-    "format-ethernet": "󰈁",
-    "format-linked": "󰈁",
-    "format-disconnected": "󰤭",
-    "tooltip-format-wifi": "{essid}\n{signalStrength}% · {frequency} MHz\n{ipaddr}",
-    "tooltip-format-ethernet": "{ifname}\n{ipaddr}",
-    "tooltip-format-disconnected": "Disconnected",
-    "on-click": "nm-connection-editor"
-  },
   "tray": {
     "icon-size": 16,
     "spacing": 8

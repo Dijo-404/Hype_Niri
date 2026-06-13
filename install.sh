@@ -711,6 +711,7 @@ validate() {
         "$HOME/.config/waybar/scripts/caffeine-control.sh"
         "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
         "$HOME/.config/waybar/scripts/lock-screen.sh"
+        "$HOME/.config/waybar/scripts/lock.sh"
         "$HOME/.config/waybar/scripts/mic-control.sh"
         "$HOME/.config/waybar/scripts/monitor-refresh.sh"
         "$HOME/.config/waybar/scripts/open-drives.sh"
