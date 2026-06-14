@@ -61,6 +61,7 @@ lazygit
 lazydocker
 docker
 docker-compose
+docker-buildx
 imagemagick
 cliphist
 bemoji

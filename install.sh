@@ -426,9 +426,9 @@ EOF
     print_done "Created Qt5/Qt6 theme settings"
 
     if command -v papirus-folders &>/dev/null; then
-        print_step "Setting Papirus-Dark folder color to cat-mocha-grey..."
-        if papirus-folders -C cat-mocha-grey --theme Papirus-Dark; then
-            print_done "Set Papirus-Dark folder color to cat-mocha-grey"
+        print_step "Setting Papirus-Dark folder color to grey..."
+        if papirus-folders -C grey --theme Papirus-Dark; then
+            print_done "Set Papirus-Dark folder color to grey"
         else
             print_warn "papirus-folders failed -- folder color unchanged"
         fi
@@ -533,6 +533,7 @@ setup_system() {
     local system_services=(
         "NetworkManager"
         "bluetooth"
+        "docker"
     )
 
     for service in "${system_services[@]}"; do
@@ -542,6 +543,24 @@ setup_system() {
             print_warn "Failed to enable system service: $service"
         fi
     done
+
+    if command -v docker >/dev/null 2>&1 && getent group docker >/dev/null 2>&1; then
+        local current_user
+        current_user="${SUDO_USER:-${USER:-$(id -un)}}"
+
+        if id -nG "$current_user" 2>/dev/null | grep -qw docker; then
+            print_done "User $current_user is already in docker group"
+        elif confirm "Add $current_user to docker group? This requires logging out and back in."; then
+            if sudo usermod -aG docker "$current_user"; then
+                print_done "Added $current_user to docker group"
+                print_warn "Log out and back in before running Docker without sudo"
+            else
+                print_warn "Could not add $current_user to docker group"
+            fi
+        else
+            print_warn "Docker group setup skipped -- use sudo docker or add your user later"
+        fi
+    fi
 
     local user_services=(
         "pipewire"
@@ -709,6 +728,7 @@ validate() {
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/waybar/scripts/brightness-control.sh"
         "$HOME/.config/waybar/scripts/caffeine-control.sh"
+        "$HOME/.config/waybar/scripts/display-scale.sh"
         "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
         "$HOME/.config/waybar/scripts/lock-screen.sh"
         "$HOME/.config/waybar/scripts/lock.sh"
@@ -748,6 +768,13 @@ validate() {
     local script
     for script in "$HOME/.config/waybar/scripts/"*.sh; do
         [ -e "$script" ] || continue
+        if [ -x "$script" ]; then
+            print_done "Script executable: $(basename "$script")"
+        else
+            print_error "Script not executable: $script"
+            all_ok=false
+        fi
+
         if bash -n "$script" 2>/dev/null; then
             print_done "Script syntax: $(basename "$script")"
         else

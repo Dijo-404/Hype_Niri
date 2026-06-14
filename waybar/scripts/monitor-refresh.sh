@@ -3,6 +3,7 @@
 set -euo pipefail
 
 CONFIG_FILE="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
+OUTPUT_SCALE="2.0"
 NOTIFY_ID=2006
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 [ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
@@ -175,6 +176,16 @@ apply_mode() {
     fi
 }
 
+apply_scale() {
+    local output_name="$1"
+    local output
+
+    if ! output="$(niri msg output "$output_name" scale "$OUTPUT_SCALE" 2>&1)"; then
+        notify "Could not set display scale" "$output"
+        exit 1
+    fi
+}
+
 write_config_mode() {
     local output_name="$1"
     local mode="$2"
@@ -188,11 +199,12 @@ write_config_mode() {
     tmp_file="$(mktemp "$config_dir/.config.kdl.XXXXXX")"
 
     if [ -f "$CONFIG_FILE" ]; then
-        awk -v output="$output_kdl" -v mode="$mode" '
+        awk -v output="$output_kdl" -v mode="$mode" -v scale="$OUTPUT_SCALE" '
             BEGIN {
                 in_output = 0
                 seen_output = 0
                 wrote_mode = 0
+                wrote_scale = 0
             }
 
             /^[[:space:]]*output[[:space:]]+"/ {
@@ -204,6 +216,7 @@ write_config_mode() {
                         in_output = 1
                         seen_output = 1
                         wrote_mode = 0
+                        wrote_scale = 0
                         print
                         next
                     }
@@ -223,10 +236,27 @@ write_config_mode() {
                 next
             }
 
+            in_output && /^[[:space:]]*scale[[:space:]]+/ {
+                indent = $0
+                sub(/[^[:space:]].*/, "", indent)
+                if (indent == "") {
+                    indent = "    "
+                }
+                if (!wrote_scale) {
+                    print indent "scale " scale
+                    wrote_scale = 1
+                }
+                next
+            }
+
             in_output && /^[[:space:]]*}[[:space:]]*$/ {
                 if (!wrote_mode) {
                     print "    mode \"" mode "\""
                     wrote_mode = 1
+                }
+                if (!wrote_scale) {
+                    print "    scale " scale
+                    wrote_scale = 1
                 }
                 in_output = 0
                 print
@@ -240,6 +270,7 @@ write_config_mode() {
                     print ""
                     print "output \"" output "\" {"
                     print "    mode \"" mode "\""
+                    print "    scale " scale
                     print "}"
                 }
             }
@@ -248,6 +279,7 @@ write_config_mode() {
         {
             printf 'output "%s" {\n' "$output_kdl"
             printf '    mode "%s"\n' "$mode"
+            printf '    scale %s\n' "$OUTPUT_SCALE"
             printf '}\n'
         } >"$tmp_file"
     fi
@@ -292,8 +324,9 @@ main() {
     mode="${mode_choice%%$'\t'*}"
 
     apply_mode "$output_name" "$mode"
+    apply_scale "$output_name"
     write_config_mode "$output_name" "$mode"
-    notify "Monitor refresh saved" "$output_name is now $mode"
+    notify "Monitor refresh saved" "$output_name is now $mode at ${OUTPUT_SCALE}x scale"
 }
 
 main "$@"
