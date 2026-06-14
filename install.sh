@@ -86,11 +86,14 @@ run_phase() {
 confirm() {
     [ -t 0 ] || return 1
     echo ""
-    read -rp "  $(echo -e "${YELLOW}?${NC}") $1 [Y/n] " response
-    case "$response" in
-        [nN][oO]|[nN]) return 1 ;;
-        *) return 0 ;;
-    esac
+    while true; do
+        read -rp "  $(echo -e "${YELLOW}?${NC}") $1 [ y | n ] " response || return 1
+        case "$response" in
+            [yY][eE][sS]|[yY]) return 0 ;;
+            [nN][oO]|[nN]) return 1 ;;
+            *) print_warn "Please answer y or n." ;;
+        esac
+    done
 }
 
 save_install_log() {
@@ -981,24 +984,17 @@ print_summary() {
 }
 
 prompt_reboot() {
-    local response
-
     [ -t 0 ] || return 0
 
-    echo ""
-    read -rp "  $(echo -e "${YELLOW}?${NC}") Restart now? [y/N] " response
-    case "$response" in
-        [yY]|[yY][eE][sS])
-            print_warn "Restarting now..."
-            if ! systemctl reboot; then
-                print_error "Could not restart automatically. Please reboot manually."
-                return 1
-            fi
-            ;;
-        *)
-            print_warn "Restart skipped. Reboot when ready to start using Niri."
-            ;;
-    esac
+    if confirm "Restart now?"; then
+        print_warn "Restarting now..."
+        if ! systemctl reboot; then
+            print_error "Could not restart automatically. Please reboot manually."
+            return 1
+        fi
+    else
+        print_warn "Restart skipped. Reboot when ready to start using Niri."
+    fi
 }
 
 main() {
