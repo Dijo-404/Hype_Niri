@@ -165,7 +165,10 @@ autoload -Uz colors && colors
 [[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]] && \
     source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
-[[ $SHLVL -eq 1 ]] && command -v fastfetch >/dev/null && fastfetch
+if [[ -z "${HYPE_NIRI_FASTFETCH_SHOWN:-}" && -t 1 ]] && command -v fastfetch >/dev/null; then
+    export HYPE_NIRI_FASTFETCH_SHOWN=1
+    fastfetch
+fi
 
 
 [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \

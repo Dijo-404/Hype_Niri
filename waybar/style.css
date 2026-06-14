@@ -203,14 +203,24 @@ window#waybar.hidden {
   color: #ffffff;
 }
 
-#temperature.critical {
+#custom-temperature.warning {
+  color: #e5c07b;
+  border-color: #e5c07b;
+}
+
+#custom-temperature.critical {
   color: #e06c75;
   border-color: #e06c75;
 }
 
+#custom-temperature.missing {
+  color: #666666;
+  border-color: #666666;
+}
+
 #cpu,
 #memory,
-#temperature {
+#custom-temperature {
   background-color: transparent;
   color: #b0b0b0;
   border: 2px solid #b0b0b0;
@@ -224,7 +234,7 @@ window#waybar.hidden {
 }
 
 #cpu,
-#temperature {
+#custom-temperature {
   min-width: 34px;
   padding-left: 1px;
 }

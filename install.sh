@@ -840,9 +840,11 @@ validate() {
         "$HOME/.config/waybar/scripts/mic-control.sh"
         "$HOME/.config/waybar/scripts/monitor-refresh.sh"
         "$HOME/.config/waybar/scripts/open-drives.sh"
+        "$HOME/.config/waybar/scripts/power-menu-action.sh"
         "$HOME/.config/waybar/scripts/power-profile.sh"
         "$HOME/.config/waybar/scripts/prepare-sleep.sh"
         "$HOME/.config/waybar/scripts/suspend-now.sh"
+        "$HOME/.config/waybar/scripts/temperature-control.sh"
         "$HOME/.config/waybar/scripts/volume-control.sh"
         "$HOME/.config/waybar/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
@@ -978,6 +980,27 @@ print_summary() {
     echo ""
 }
 
+prompt_reboot() {
+    local response
+
+    [ -t 0 ] || return 0
+
+    echo ""
+    read -rp "  $(echo -e "${YELLOW}?${NC}") Restart now? [y/N] " response
+    case "$response" in
+        [yY]|[yY][eE][sS])
+            print_warn "Restarting now..."
+            if ! systemctl reboot; then
+                print_error "Could not restart automatically. Please reboot manually."
+                return 1
+            fi
+            ;;
+        *)
+            print_warn "Restart skipped. Reboot when ready to start using Niri."
+            ;;
+    esac
+}
+
 main() {
     clear
     echo ""
@@ -1011,6 +1034,7 @@ main() {
     run_phase "Cloudflare WARP" setup_cloudflare
     if run_phase "Validation" validate; then
         print_summary
+        prompt_reboot
     else
         print_error "Validation failed; installation did not complete cleanly"
         exit 1

@@ -41,7 +41,7 @@
     "exec": "~/.config/waybar/scripts/caffeine-control.sh",
     "return-type": "json",
     "interval": 5,
-    "format": "{}",
+    "format": "{text}",
     "on-click": "~/.config/waybar/scripts/caffeine-control.sh toggle",
     "signal": 15
   },
@@ -90,18 +90,16 @@
   },
   "group/temp-group": {
     "orientation": "inherit",
-    "modules": ["temperature", "custom/temp-label"]
+    "modules": ["custom/temperature", "custom/temp-label"]
   },
   "custom/temp-label": {
     "format": "temp"
   },
-  "temperature": {
-    "thermal-zone": 0,
+  "custom/temperature": {
+    "exec": "~/.config/waybar/scripts/temperature-control.sh",
+    "return-type": "json",
     "interval": 5,
-    "critical-threshold": 80,
-    "format": "{temperatureC}°",
-    "format-critical": "{temperatureC}°",
-    "tooltip-format": "Temperature: {temperatureC}°C",
+    "format": "{text}",
     "align": 0.5
   },
 

@@ -1,34 +1,34 @@
 {
     "label": "lock",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/lock-screen.sh",
+    "action": "~/.config/waybar/scripts/power-menu-action.sh lock",
     "text": "Lock",
     "keybind": "l"
 }
 
 {
     "label": "suspend",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/suspend-now.sh",
+    "action": "~/.config/waybar/scripts/power-menu-action.sh suspend",
     "text": "Sleep",
     "keybind": "s"
 }
 
 {
     "label": "logout",
-    "action": "pkill -x wlogout; niri msg action quit --skip-confirmation",
+    "action": "~/.config/waybar/scripts/power-menu-action.sh logout",
     "text": "Logout",
     "keybind": "e"
 }
 
 {
     "label": "shutdown",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl poweroff",
+    "action": "~/.config/waybar/scripts/power-menu-action.sh shutdown",
     "text": "Shutdown",
     "keybind": "p"
 }
 
 {
     "label": "reboot",
-    "action": "pkill -x wlogout; ~/.config/waybar/scripts/wallpaper.sh current; ~/.config/waybar/scripts/caffeine-control.sh stop; systemctl reboot",
+    "action": "~/.config/waybar/scripts/power-menu-action.sh reboot",
     "text": "Reboot",
     "keybind": "r"
 }
