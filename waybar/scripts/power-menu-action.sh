@@ -28,6 +28,7 @@ case "$ACTION" in
         exec "$SCRIPT_DIR/suspend-now.sh"
         ;;
     logout)
+        stop_caffeine
         close_wlogout
         exec niri msg action quit --skip-confirmation
         ;;
