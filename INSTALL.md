@@ -108,7 +108,7 @@ dconf write /org/gnome/desktop/interface/cursor-theme   "'Adwaita'"
 dconf write /org/gnome/desktop/interface/cursor-size    "24"
 dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Font 10'"
 
-papirus-folders -C cat-mocha-grey --theme Papirus-Dark
+papirus-folders -C grey --theme Papirus-Dark
 ```
 
 ### 5. System-Wide Setup
@@ -126,7 +126,8 @@ for dm in sddm gdm lightdm greetd; do
 done
 sudo systemctl enable ly
 
-sudo systemctl enable NetworkManager bluetooth
+sudo systemctl enable NetworkManager bluetooth docker
+sudo usermod -aG docker "$USER"   # log out/in before using docker without sudo
 
 systemctl --user enable pipewire pipewire-pulse wireplumber hypridle 2>/dev/null || true
 

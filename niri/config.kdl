@@ -124,6 +124,7 @@ spawn-at-startup "mako"
 spawn-at-startup "alacritty"
 
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
+spawn-sh-at-startup "~/.config/waybar/scripts/display-scale.sh"
 
 spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user restart hypridle.service"
 
