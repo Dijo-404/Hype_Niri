@@ -41,7 +41,7 @@
     "exec": "~/.config/waybar/scripts/caffeine-control.sh",
     "return-type": "json",
     "interval": 5,
-    "format": "{text}",
+    "format": "{}",
     "on-click": "~/.config/waybar/scripts/caffeine-control.sh toggle",
     "signal": 15
   },
