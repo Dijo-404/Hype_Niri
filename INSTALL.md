@@ -2,7 +2,7 @@
 
 ## Quick Install (Recommended)
 
-The automated install script handles everything: installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services, and optionally configuring a firewall and Cloudflare WARP.
+The automated install script handles everything: refreshing mirrors, updating the Arch keyring/system packages, installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services, and optionally configuring a firewall and Cloudflare WARP.
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -11,7 +11,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer is interactive at every irreversible step — backup, display manager switch, lid-switch behavior, firewall, WARP, and shell change all confirm before acting.
+The installer is interactive at every irreversible step — mirror refresh, system update, backup, display manager switch, lid-switch behavior, firewall, WARP, and shell change all confirm before acting.
 
 > [!TIP]
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
@@ -28,6 +28,23 @@ If you prefer to understand what is happening under the hood or selectively appl
 ### 1. Install Required Packages
 
 The repository contains a `pkglist.txt` file listing all necessary dependencies.
+
+For smoother downloads, refresh mirrors before installing packages. If `reflector` is already installed, use it:
+
+```bash
+sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.hype-niri.bak
+sudo reflector --protocol https --latest 30 --sort rate --save /etc/pacman.d/mirrorlist
+sudo pacman -Syy
+```
+
+If `reflector` is not installed yet, the automated installer can download a fresh HTTPS mirrorlist directly from Arch's mirror status service before package installation.
+
+Then update the keyring and system before installing new packages:
+
+```bash
+sudo pacman -Sy --needed archlinux-keyring
+sudo pacman -Syu
+```
 
 ```bash
 mapfile -t official < <(awk '!/^#/ && NF {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 && printf '%s\n' "$p"; done)
@@ -237,6 +254,18 @@ yay -Syu --aur
 - **Firewall / WARP**: If you skipped step 7 and want them later, just run the relevant commands above — both are idempotent.
 
 ## Troubleshooting
+
+### xwayland-satellite fails to download
+
+`xwayland-satellite` is an official Arch `extra` package. If pacman or yay reports a download error for it, the package name is not the problem; refresh mirrors, refresh your system package database, and retry:
+
+```bash
+sudo reflector --protocol https --latest 30 --sort rate --save /etc/pacman.d/mirrorlist
+sudo pacman -Syu
+sudo pacman -S --needed xwayland-satellite
+```
+
+If `reflector` is not installed, rerun `./install.sh` and allow the mirror refresh step. Niri starts `xwayland-satellite` automatically when it is installed and available in `PATH`, so it does not need a manual `spawn-at-startup` entry.
 
 ### Can't access a Windows partition from Linux (dual-boot)
 

@@ -56,7 +56,7 @@ git pull
 ./install.sh
 ```
 
-The install script installs official repository packages with `pacman`, AUR packages with `yay`, and requires a backup before overwriting existing configs. Install `yay` first with your preferred method; the installer does not clone AUR repos to bootstrap it.
+The install script can refresh Arch mirrors, update the Arch keyring/system packages, install official repository packages with `pacman`, install AUR packages with `yay`, and requires a backup before overwriting existing configs. Install `yay` first with your preferred method; the installer does not clone AUR repos to bootstrap it.
 
 To update only packages without re-running the full script:
 
