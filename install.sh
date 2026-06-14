@@ -12,7 +12,7 @@ BOLD='\033[1m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR=""
-PHASE_TOTAL=13
+PHASE_TOTAL=15
 PHASE_CURRENT=0
 
 _tmp_resources=()
@@ -97,6 +97,15 @@ save_install_log() {
     local install_log="$1"
     print_error "Package installation failed. Last 40 log lines:"
     tail -n 40 "$install_log" | sed 's/^/    /'
+
+    if grep -Eqi 'xwayland-satellite|failed retrieving file|404 Not Found|Could not resolve host|Connection timed out|SSL certificate problem|invalid or corrupted package' "$install_log"; then
+        print_warn "If xwayland-satellite failed, it is an official Arch extra package, not an AUR package."
+        print_warn "Rerun this installer and allow the mirror refresh step, or refresh manually:"
+        print_warn "  sudo reflector --protocol https --latest 30 --sort rate --save /etc/pacman.d/mirrorlist"
+        print_warn "  sudo pacman -Syu"
+        print_warn "  sudo pacman -S --needed xwayland-satellite"
+    fi
+
     local persisted
     persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
     cp -- "$install_log" "$persisted" 2>/dev/null || true
@@ -117,6 +126,102 @@ check_internet() {
     print_warn "curl/wget not found; skipping network preflight"
     print_warn "Package installation will report any network errors"
     return 0
+}
+
+refresh_mirrors() {
+    print_header "Mirror Refresh"
+
+    if ! confirm "Refresh Arch mirrors before installing packages?"; then
+        print_warn "Skipping mirror refresh"
+        print_warn "If downloads fail with 404s or timeouts, rerun and allow this step."
+        return 0
+    fi
+
+    local mirrorlist="/etc/pacman.d/mirrorlist"
+    local backup="/etc/pacman.d/mirrorlist.hype-niri.bak"
+    local mirror_tmp=""
+
+    if [ -f "$mirrorlist" ]; then
+        print_step "Backing up current mirrorlist to $backup..."
+        sudo cp "$mirrorlist" "$backup" 2>/dev/null || print_warn "Could not back up current mirrorlist"
+    fi
+
+    if command -v reflector &>/dev/null; then
+        print_step "Ranking fresh HTTPS mirrors with reflector..."
+        if sudo reflector --protocol https --latest 30 --sort rate --save "$mirrorlist"; then
+            print_done "Mirrorlist refreshed with reflector"
+            print_step "Refreshing pacman package databases..."
+            sudo pacman -Syy
+            print_done "Package databases refreshed"
+            return 0
+        fi
+
+        print_warn "reflector failed; falling back to Arch's mirrorlist service"
+    fi
+
+    mirror_tmp="$(mktemp)" || { print_error "Failed to create temp mirrorlist"; exit 1; }
+    _tmp_resources+=("$mirror_tmp")
+
+    print_step "Downloading fresh HTTPS mirrorlist from archlinux.org..."
+    if command -v curl &>/dev/null; then
+        if ! curl --connect-timeout 10 -fsSL 'https://archlinux.org/mirrorlist/?country=all&protocol=https&ip_version=4&use_mirror_status=on' -o "$mirror_tmp"; then
+            print_error "Failed to download a fresh mirrorlist with curl"
+            print_warn "Keeping the existing mirrorlist"
+            exit 1
+        fi
+    elif command -v wget &>/dev/null; then
+        if ! wget --timeout=10 -qO "$mirror_tmp" 'https://archlinux.org/mirrorlist/?country=all&protocol=https&ip_version=4&use_mirror_status=on'; then
+            print_error "Failed to download a fresh mirrorlist with wget"
+            print_warn "Keeping the existing mirrorlist"
+            exit 1
+        fi
+    else
+        print_error "curl or wget is required to refresh mirrors without reflector"
+        print_warn "Install reflector or refresh /etc/pacman.d/mirrorlist manually, then rerun ./install.sh"
+        exit 1
+    fi
+
+    if ! grep -q '^#Server = https://' "$mirror_tmp"; then
+        print_error "Downloaded mirrorlist did not contain HTTPS mirrors"
+        print_warn "Keeping the existing mirrorlist"
+        exit 1
+    fi
+
+    sed -i 's/^#Server = https:/Server = https:/' "$mirror_tmp"
+    sudo install -m 644 "$mirror_tmp" "$mirrorlist"
+    print_done "Mirrorlist refreshed from Arch mirror status"
+
+    print_step "Refreshing pacman package databases..."
+    sudo pacman -Syy
+    print_done "Package databases refreshed"
+}
+
+update_system_packages() {
+    print_header "System Package Update"
+
+    if ! confirm "Update Arch keyring and system packages before installing?"; then
+        print_warn "Skipping system update"
+        print_warn "If package signatures or downloads fail, rerun and allow this step."
+        return 0
+    fi
+
+    local update_log
+    update_log="$(mktemp)" || { print_error "Failed to create temp log"; exit 1; }
+    _tmp_resources+=("$update_log")
+
+    print_step "Updating archlinux-keyring first..."
+    if ! stdbuf -oL -eL sudo pacman -Sy --needed archlinux-keyring 2>&1 | tee "$update_log"; then
+        save_install_log "$update_log"
+        exit 1
+    fi
+
+    print_step "Updating system packages..."
+    if ! stdbuf -oL -eL sudo pacman -Syu 2>&1 | tee -a "$update_log"; then
+        save_install_log "$update_log"
+        exit 1
+    fi
+
+    print_done "System packages updated"
 }
 
 ensure_yay() {
@@ -891,6 +996,8 @@ main() {
     fi
 
     run_phase "Preflight checks" preflight
+    run_phase "Mirror refresh" refresh_mirrors
+    run_phase "System package update" update_system_packages
     run_phase "Package installation" install_packages
     run_phase "Config backup" backup_configs
     run_phase "Old config cleanup" cleanup_old_configs
