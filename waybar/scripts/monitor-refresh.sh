@@ -3,7 +3,6 @@
 set -euo pipefail
 
 CONFIG_FILE="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
-OUTPUT_SCALE="2.0"
 NOTIFY_ID=2006
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 [ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
@@ -52,6 +51,29 @@ format_rate() {
         sub(/\.$/, "", value)
         print value
     }'
+}
+
+scale_for_resolution() {
+    local width="$1"
+    local height="$2"
+    local short
+
+    [[ "$width" =~ ^[0-9]+$ ]] || { printf '1.0\n'; return; }
+    [[ "$height" =~ ^[0-9]+$ ]] || { printf '1.0\n'; return; }
+
+    if [ "$width" -lt "$height" ]; then
+        short="$width"
+    else
+        short="$height"
+    fi
+
+    if [ "$short" -ge 1800 ]; then
+        printf '2.0\n'
+    elif [ "$short" -ge 1600 ]; then
+        printf '1.5\n'
+    else
+        printf '1.0\n'
+    fi
 }
 
 kdl_escape() {
@@ -178,9 +200,10 @@ apply_mode() {
 
 apply_scale() {
     local output_name="$1"
+    local scale="$2"
     local output
 
-    if ! output="$(niri msg output "$output_name" scale "$OUTPUT_SCALE" 2>&1)"; then
+    if ! output="$(niri msg output "$output_name" scale "$scale" 2>&1)"; then
         notify "Could not set display scale" "$output"
         exit 1
     fi
@@ -189,6 +212,7 @@ apply_scale() {
 write_config_mode() {
     local output_name="$1"
     local mode="$2"
+    local scale="$3"
     local config_dir
     local tmp_file
     local output_kdl
@@ -199,7 +223,7 @@ write_config_mode() {
     tmp_file="$(mktemp "$config_dir/.config.kdl.XXXXXX")"
 
     if [ -f "$CONFIG_FILE" ]; then
-        awk -v output="$output_kdl" -v mode="$mode" -v scale="$OUTPUT_SCALE" '
+        awk -v output="$output_kdl" -v mode="$mode" -v scale="$scale" '
             BEGIN {
                 in_output = 0
                 seen_output = 0
@@ -279,7 +303,7 @@ write_config_mode() {
         {
             printf 'output "%s" {\n' "$output_kdl"
             printf '    mode "%s"\n' "$mode"
-            printf '    scale %s\n' "$OUTPUT_SCALE"
+            printf '    scale %s\n' "$scale"
             printf '}\n'
         } >"$tmp_file"
     fi
@@ -301,6 +325,10 @@ main() {
     local mode_options
     local mode_choice
     local mode
+    local mode_width
+    local mode_height
+    local mode_rest
+    local scale
 
     missing_commands
 
@@ -322,11 +350,15 @@ main() {
 
     mode_choice="$(choose_line "$output_name refresh" "$mode_options")"
     mode="${mode_choice%%$'\t'*}"
+    mode_width="${mode%%x*}"
+    mode_rest="${mode#*x}"
+    mode_height="${mode_rest%%@*}"
+    scale="$(scale_for_resolution "$mode_width" "$mode_height")"
 
     apply_mode "$output_name" "$mode"
-    apply_scale "$output_name"
-    write_config_mode "$output_name" "$mode"
-    notify "Monitor refresh saved" "$output_name is now $mode at ${OUTPUT_SCALE}x scale"
+    apply_scale "$output_name" "$scale"
+    write_config_mode "$output_name" "$mode" "$scale"
+    notify "Monitor refresh saved" "$output_name is now $mode at ${scale}x scale"
 }
 
 main "$@"
