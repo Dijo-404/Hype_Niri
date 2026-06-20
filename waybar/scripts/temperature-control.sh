@@ -10,12 +10,18 @@ CRITICAL_TEMP="${HYPE_NIRI_TEMP_CRITICAL:-80}"
 [[ "$WARNING_TEMP" =~ ^[0-9]+$ ]] || WARNING_TEMP=70
 [[ "$CRITICAL_TEMP" =~ ^[0-9]+$ ]] || CRITICAL_TEMP=80
 
+# Cache the resolved sensor path in the runtime dir; clears on reboot.
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+CACHE_FILE="$RUNTIME_DIR/hype-niri-temp-sensor"
+
 best_score=-9999
 best_temp=""
 best_source=""
+best_input=""
 
 lower() {
-    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+    printf '%s' "${1,,}"
 }
 
 read_first_line() {
@@ -124,6 +130,7 @@ consider_sensor() {
         best_score="$score"
         best_temp="$temp"
         best_source="$source"
+        best_input="$input_file"
     fi
 }
 
@@ -159,6 +166,36 @@ scan_thermal_zones() {
     done
 }
 
+emit_temp() {
+    local temp="$1"
+    local source="$2"
+    local temp_class
+
+    if (( temp >= CRITICAL_TEMP )); then
+        temp_class="critical"
+    elif (( temp >= WARNING_TEMP )); then
+        temp_class="warning"
+    else
+        temp_class="normal"
+    fi
+
+    emit "${temp}°" "CPU temperature: ${temp}°C (${source})" "$temp_class"
+}
+
+# Fast path: read the cached sensor; fall through to a rescan if it's stale.
+if [ -r "$CACHE_FILE" ]; then
+    IFS=$'\t' read -r cached_path cached_source < "$CACHE_FILE" || true
+    if [ -n "${cached_path:-}" ] && [ -r "$cached_path" ]; then
+        cached_raw="$(read_first_line "$cached_path" 2>/dev/null || true)"
+        cached_temp="$(to_celsius "$cached_raw" 2>/dev/null || true)"
+        if [ -n "$cached_temp" ] && (( cached_temp >= -40 && cached_temp <= 150 )); then
+            emit_temp "$cached_temp" "${cached_source:-cached}"
+            exit 0
+        fi
+    fi
+fi
+
+# Slow path: discover and score sensors, then cache the winner.
 scan_hwmon
 scan_thermal_zones
 
@@ -167,12 +204,8 @@ if [ -z "$best_temp" ] || (( best_score <= 0 )); then
     exit 0
 fi
 
-if (( best_temp >= CRITICAL_TEMP )); then
-    temp_class="critical"
-elif (( best_temp >= WARNING_TEMP )); then
-    temp_class="warning"
-else
-    temp_class="normal"
+if [ -n "$best_input" ]; then
+    printf '%s\t%s\n' "$best_input" "$best_source" > "$CACHE_FILE" 2>/dev/null || true
 fi
 
-emit "${best_temp}°" "CPU temperature: ${best_temp}°C (${best_source})" "$temp_class"
+emit_temp "$best_temp" "$best_source"
