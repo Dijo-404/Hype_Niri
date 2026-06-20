@@ -154,7 +154,8 @@ sudo tee /etc/systemd/logind.conf.d/10-hype-niri-lid.conf >/dev/null << 'EOF'
 [Login]
 HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
-HandleLidSwitchDocked=suspend
+# Docked (external monitor): don't suspend; niri blanks the built-in panel.
+HandleLidSwitchDocked=ignore
 LidSwitchIgnoreInhibited=yes
 HoldoffTimeoutSec=0s
 InhibitDelayMaxSec=5
