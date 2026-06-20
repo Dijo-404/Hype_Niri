@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+WALLPAPER_DIR="${WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
 
 STATE_DIR="$HOME/.local/state/niri"
 CURRENT_LINK="$STATE_DIR/current_wallpaper"
