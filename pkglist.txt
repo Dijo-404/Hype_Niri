@@ -78,7 +78,7 @@ man-db
 tmux
 openssh
 base-devel
-satty
+util-linux
 
 # ── Audio & Media ─────────────────────────────────
 pipewire

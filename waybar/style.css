@@ -225,18 +225,17 @@ window#waybar.hidden {
   color: #b0b0b0;
   border: 2px solid #b0b0b0;
   border-radius: 50%;
-  min-width: 35px;
+  min-width: 34px;
   min-height: 35px;
   margin: 0 6px 0 0;
-  padding: 0;
+  padding: 0 0 0 1px;
   font-size: 11px;
   font-weight: 700;
 }
 
-#cpu,
-#custom-temperature {
-  min-width: 34px;
-  padding-left: 1px;
+#memory {
+  min-width: 35px;
+  padding-left: 0;
 }
 #custom-cpu-label,
 #custom-mem-label,
