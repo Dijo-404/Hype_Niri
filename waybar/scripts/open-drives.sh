@@ -32,7 +32,7 @@ have_storage_tools() {
     done
 
     if [ "${#missing[@]}" -gt 0 ]; then
-        notify "Drive mounting unavailable" "Missing required command(s): ${missing[*]}"
+        notify "Drive mounting unavailable" "Missing: ${missing[*]} — install with: sudo pacman -S --needed util-linux udisks2"
         return 1
     fi
 }
@@ -115,6 +115,7 @@ alias_for_mount() {
     local label
 
     label="$(lsblk -no LABEL "$source" 2>/dev/null | head -n 1)"
+    [ -n "$label" ] || label="$(lsblk -no PARTLABEL "$source" 2>/dev/null | head -n 1)"
     printf '%s\n' "${label:-$(basename "$target")}"
 }
 
@@ -163,17 +164,52 @@ create_drive_links() {
     done < <(findmnt -rn -o SOURCE,TARGET)
 }
 
-open_file_manager() {
-    command -v nautilus >/dev/null 2>&1 || {
-        notify "Nautilus not found" "Install nautilus or open ~/Drives manually."
-        return 0
-    }
+detect_file_manager() {
+    local cmd candidate
 
-    if [ -d "$DRIVES_DIR" ]; then
-        nautilus -w "$DRIVES_DIR" >/dev/null 2>&1 &
-    else
-        nautilus -w >/dev/null 2>&1 &
+    # Honor an explicit override (may include arguments).
+    if [ -n "${FILE_MANAGER:-}" ]; then
+        cmd="${FILE_MANAGER%% *}"
+        command -v "$cmd" >/dev/null 2>&1 && { printf '%s\n' "$FILE_MANAGER"; return 0; }
     fi
+
+    # Map the user's default directory handler to its binary.
+    if command -v xdg-mime >/dev/null 2>&1; then
+        case "$(xdg-mime query default inode/directory 2>/dev/null)" in
+            org.gnome.Nautilus.desktop) candidate=nautilus ;;
+            org.kde.dolphin.desktop)    candidate=dolphin ;;
+            nemo.desktop)               candidate=nemo ;;
+            *[Tt]hunar.desktop)         candidate=thunar ;;
+            *pcmanfm-qt*)               candidate=pcmanfm-qt ;;
+            *pcmanfm*)                  candidate=pcmanfm ;;
+            caja*)                      candidate=caja ;;
+        esac
+        [ -n "${candidate:-}" ] && command -v "$candidate" >/dev/null 2>&1 && \
+            { printf '%s\n' "$candidate"; return 0; }
+    fi
+
+    for candidate in nautilus dolphin nemo thunar pcmanfm-qt pcmanfm caja; do
+        command -v "$candidate" >/dev/null 2>&1 && { printf '%s\n' "$candidate"; return 0; }
+    done
+
+    return 1
+}
+
+open_file_manager() {
+    local fm target="$DRIVES_DIR"
+    [ -d "$target" ] || target="$HOME"
+
+    if fm="$(detect_file_manager)"; then
+        $fm "$target" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$target" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    notify "No file manager found" "Install one (nautilus, dolphin, thunar, ...) or open $target manually."
 }
 
 if have_storage_tools; then
