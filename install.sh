@@ -5,8 +5,8 @@ set -euo pipefail
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+GREY='\033[0;90m'
 NC='\033[0m'
 BOLD='\033[1m'
 
@@ -14,6 +14,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR=""
 PHASE_TOTAL=15
 PHASE_CURRENT=0
+
+# Visual layout: 2-space indent, fixed inner box width (columns between borders).
+INDENT="  "
+BOX_W=60
 
 _tmp_resources=()
 cleanup_tmp() {
@@ -23,63 +27,116 @@ cleanup_tmp() {
     done
 }
 trap cleanup_tmp EXIT
-trap 'echo; printf "  \033[0;31mx\033[0m Installation interrupted\n"; exit 130' INT TERM
+trap 'echo; printf "  \033[0;31m✗\033[0m Installation interrupted\n"; exit 130' INT TERM
+
+# Repeat a (possibly multi-byte) char N times.
+_repeat() {
+    local char="$1" count="$2" out="" i
+    for ((i = 0; i < count; i++)); do out+="$char"; done
+    printf '%s' "$out"
+}
+
+# Word-wrap plain text to a max visible width, one line per row.
+_wrap_text() {
+    local text="$1" max="$2" line="" word
+    for word in $text; do
+        if [ -z "$line" ]; then
+            line="$word"
+        elif [ "$(( ${#line} + 1 + ${#word} ))" -le "$max" ]; then
+            line="$line $word"
+        else
+            printf '%s\n' "$line"
+            line="$word"
+        fi
+    done
+    if [ -n "$line" ]; then printf '%s\n' "$line"; fi
+}
+
+_box_top() {
+    echo -e "${INDENT}${CYAN}╭$(_repeat '─' "$BOX_W")╮${NC}"
+}
+
+# Top border carrying a left-aligned tag, e.g. "╭─ Phase 12 / 15 ─────╮"
+_box_top_tag() {
+    local tag="$1" fill
+    fill=$(( BOX_W - 3 - ${#tag} ))
+    if [ "$fill" -lt 0 ]; then fill=0; fi
+    echo -e "${INDENT}${CYAN}╭─ ${BOLD}${tag}${NC}${CYAN} $(_repeat '─' "$fill")╮${NC}"
+}
+
+_box_bottom() {
+    echo -e "${INDENT}${CYAN}╰$(_repeat '─' "$BOX_W")╯${NC}"
+}
+
+# One content row: " text" left-aligned, padded, closed with a right border.
+_box_line() {
+    local text="$1" color="${2:-}" padlen
+    padlen=$(( BOX_W - 1 - ${#text} ))
+    if [ "$padlen" -lt 0 ]; then padlen=0; fi
+    echo -e "${INDENT}${CYAN}│${NC} ${color}${text}${NC}$(_repeat ' ' "$padlen")${CYAN}│${NC}"
+}
+
+# Slim overall-progress bar (filled vs remaining), aligned under the box.
+_progress_bar() {
+    local current="$1" total="$2" barw pct filled empty
+    barw=$(( BOX_W - 6 ))
+    pct=$(( current * 100 / total ))
+    filled=$(( current * barw / total ))
+    empty=$(( barw - filled ))
+    echo -e "${INDENT}${GREEN}$(_repeat '█' "$filled")${GREY}$(_repeat '░' "$empty")${NC}  ${BOLD}${pct}%${NC}"
+}
 
 print_header() {
+    local title="$1" subtitle="${2:-}" line
+    local maxtext=$(( BOX_W - 2 ))
+    local in_phase=false
+    if [ "$PHASE_CURRENT" -gt 0 ] && [ "$PHASE_CURRENT" -le "$PHASE_TOTAL" ]; then
+        in_phase=true
+    fi
+
     echo ""
-    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC}  ${BOLD}$1${NC}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
+    if $in_phase; then
+        _box_top_tag "Phase ${PHASE_CURRENT} / ${PHASE_TOTAL}"
+    else
+        _box_top
+    fi
+
+    while IFS= read -r line; do
+        _box_line "$line" "${BOLD}"
+    done < <(_wrap_text "$title" "$maxtext")
+
+    if [ -n "$subtitle" ]; then
+        while IFS= read -r line; do
+            _box_line "$line" "${GREY}"
+        done < <(_wrap_text "$subtitle" "$maxtext")
+    fi
+
+    _box_bottom
+    if $in_phase; then
+        _progress_bar "$PHASE_CURRENT" "$PHASE_TOTAL"
+    fi
     echo ""
 }
 
 print_step() {
-    echo -e "  ${GREEN}>>${NC} $1"
+    echo -e "${INDENT}${CYAN}▸${NC} $1"
 }
 
 print_warn() {
-    echo -e "  ${YELLOW}!!${NC} $1"
+    echo -e "${INDENT}${YELLOW}▲${NC} $1"
 }
 
 print_error() {
-    echo -e "  ${RED}x${NC} $1"
+    echo -e "${INDENT}${RED}✗${NC} $1"
 }
 
 print_done() {
-    echo -e "  ${GREEN}+${NC} $1"
-}
-
-print_progress() {
-    local current="$1"
-    local total="$2"
-    local label="$3"
-    local width=26
-    local filled
-    local percent
-    local bar=""
-    local i
-
-    percent=$((current * 100 / total))
-    filled=$((current * width / total))
-
-    for ((i = 0; i < width; i++)); do
-        if [ "$i" -lt "$filled" ]; then
-            bar+="#"
-        else
-            bar+="-"
-        fi
-    done
-
-    echo ""
-    echo -e "  ${CYAN}Progress${NC} [${bar}] ${BOLD}${percent}%${NC}  (${current}/${total}) ${label}"
+    echo -e "${INDENT}${GREEN}✓${NC} $1"
 }
 
 run_phase() {
-    local label="$1"
-    shift
-
+    shift  # drop the short label; the header now renders the full title
     PHASE_CURRENT=$((PHASE_CURRENT + 1))
-    print_progress "$PHASE_CURRENT" "$PHASE_TOTAL" "$label"
     "$@"
 }
 
@@ -87,7 +144,7 @@ confirm() {
     [ -t 0 ] || return 1
     echo ""
     while true; do
-        read -rp "  $(echo -e "${YELLOW}?${NC}") $1 [ y | n ] " response || return 1
+        read -rp "$(echo -e "${INDENT}${YELLOW}?${NC} $1 ${GREY}[y/n]${NC}") " response || return 1
         case "$response" in
             [yY][eE][sS]|[yY]) return 0 ;;
             [nN][oO]|[nN]) return 1 ;;
@@ -132,7 +189,7 @@ check_internet() {
 }
 
 refresh_mirrors() {
-    print_header "Mirror Refresh"
+    print_header "Mirror Refresh" "rank fresh HTTPS mirrors for faster downloads"
 
     if ! confirm "Refresh Arch mirrors before installing packages?"; then
         print_warn "Skipping mirror refresh"
@@ -200,7 +257,7 @@ refresh_mirrors() {
 }
 
 update_system_packages() {
-    print_header "System Package Update"
+    print_header "System Package Update" "refresh keyring and upgrade installed packages"
 
     if ! confirm "Update Arch keyring and system packages before installing?"; then
         print_warn "Skipping system update"
@@ -240,7 +297,7 @@ ensure_yay() {
 }
 
 preflight() {
-    print_header "Preflight Checks"
+    print_header "Preflight Checks" "verify Arch and network before any changes"
 
     if ! command -v pacman &>/dev/null; then
         print_error "This script requires Arch Linux (pacman not found)"
@@ -256,7 +313,7 @@ preflight() {
 }
 
 install_packages() {
-    print_header "Installing Packages"
+    print_header "Installing Packages" "official repo and AUR packages from pkglist.txt"
 
     if [ ! -f "$SCRIPT_DIR/pkglist.txt" ]; then
         print_error "pkglist.txt not found at $SCRIPT_DIR/pkglist.txt"
@@ -332,7 +389,7 @@ install_packages() {
 }
 
 backup_configs() {
-    print_header "Backing Up Existing Configs"
+    print_header "Backing Up Existing Configs" "saved to a timestamped folder in your home"
 
     BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
 
@@ -394,7 +451,7 @@ backup_configs() {
 }
 
 copy_configs() {
-    print_header "Copying Configurations"
+    print_header "Copying Configurations" "niri, waybar, terminal, theming and dotfiles"
 
     mkdir -p "$HOME/.config"
 
@@ -462,7 +519,7 @@ EOF
 }
 
 setup_shell() {
-    print_header "Setting Up Zsh"
+    print_header "Setting Up Zsh" "zsh, powerlevel10k and fzf-tab"
 
     local current_shell
 
@@ -497,7 +554,7 @@ setup_shell() {
 }
 
 setup_gtk() {
-    print_header "GTK Theme Setup"
+    print_header "GTK Theme Setup" "dark GTK, Qt and icon theming"
 
     mkdir -p "$HOME/.config/gtk-3.0"
     cat > "$HOME/.config/gtk-3.0/settings.ini" << 'EOF'
@@ -568,7 +625,7 @@ EOF
 }
 
 setup_desktop_integrations() {
-    print_header "Desktop Integration Setup"
+    print_header "Desktop Integration Setup" "initialize XDG user directories"
 
     if command -v xdg-user-dirs-update &>/dev/null; then
         xdg-user-dirs-update
@@ -637,7 +694,7 @@ enable_user_service() {
 }
 
 setup_system() {
-    print_header "System Configuration (requires sudo)"
+    print_header "System Configuration" "services, display manager and pacman tuning (sudo)"
 
     if [ -f /etc/pacman.conf ]; then
         print_step "Tuning pacman output..."
@@ -741,7 +798,7 @@ setup_system() {
 }
 
 setup_logind() {
-    print_header "Lid Switch Behavior (suspend on close, stay awake when docked)"
+    print_header "Lid Switch Behavior" "suspend on lid close, stay awake while docked"
 
     if ! confirm "Configure systemd-logind to suspend on lid close (but keep running when an external monitor is connected)?"; then
         print_warn "Lid switch setup skipped"
@@ -769,7 +826,7 @@ EOF
 }
 
 setup_firewall() {
-    print_header "Firewall Setup (ufw)"
+    print_header "Firewall Setup" "ufw with sensible desktop defaults"
 
     if ! command -v ufw &>/dev/null; then
         print_warn "ufw not installed -- skipping firewall setup"
@@ -799,7 +856,7 @@ setup_firewall() {
 }
 
 setup_cloudflare() {
-    print_header "Cloudflare WARP (opt-in)"
+    print_header "Cloudflare WARP" "optional DNS-over-HTTPS or full VPN"
 
     if ! command -v warp-cli &>/dev/null; then
         print_warn "warp-cli not installed -- skipping (install cloudflare-warp-bin if you want it)"
@@ -867,7 +924,7 @@ setup_cloudflare() {
 }
 
 validate() {
-    print_header "Validating Installation"
+    print_header "Validating Installation" "check commands, configs, fonts and services"
 
     local all_ok=true
     local required_commands=(
@@ -1065,7 +1122,7 @@ validate() {
 }
 
 cleanup_old_configs() {
-    print_header "Clean Up Old Configs (Optional)"
+    print_header "Clean Up Old Configs" "remove leftover Hyprland, rofi and dunst configs"
 
     if [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
         print_warn "Found old Hyprland config at ~/.config/hypr/hyprland.conf"
@@ -1105,24 +1162,22 @@ cleanup_old_configs() {
 
 print_summary() {
     echo ""
-    echo -e "${CYAN}╔═══════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC}  ${BOLD}${GREEN}Installation Complete!${NC}"
-    echo -e "${CYAN}╚═══════════════════════════════════════════════════════╝${NC}"
+    _box_top
+    _box_line "✓  Installation Complete" "${BOLD}${GREEN}"
+    _box_line "your Niri desktop is ready to use" "${GREY}"
+    _box_bottom
     echo ""
-    echo -e "  ${BOLD}Your Niri setup is ready.${NC}"
+    echo -e "  ${BOLD}Next steps${NC}"
+    echo -e "    ${CYAN}1${NC}  Reboot your system"
+    echo -e "    ${CYAN}2${NC}  Select ${BOLD}niri-session${NC} at the ly login screen"
+    echo -e "    ${CYAN}3${NC}  Powerlevel10k is preconfigured (run ${BOLD}p10k configure${NC} to tweak)"
+    echo -e "    ${CYAN}4${NC}  ${BOLD}Super+A${NC} app launcher  ${GREY}·${NC}  ${BOLD}Super+T${NC} terminal"
     echo ""
-    echo -e "  ${CYAN}Next steps:${NC}"
-    echo -e "    1. Reboot your system"
-    echo -e "    2. Select ${BOLD}niri-session${NC} from the ly login screen"
-    echo -e "    3. Powerlevel10k is pre-configured (run ${BOLD}p10k configure${NC} to customize)"
-    echo -e "    4. Press ${BOLD}Super+A${NC} for app launcher"
-    echo -e "    5. Press ${BOLD}Super+T${NC} for terminal"
-    echo ""
-    echo -e "  ${CYAN}Key files:${NC}"
-    echo -e "    Niri config  -> ~/.config/niri/config.kdl"
-    echo -e "    Waybar       -> ~/.config/waybar/"
-    echo -e "    Zsh config   -> ~/.zshrc"
-    echo -e "    Keybindings  -> $SCRIPT_DIR/keybindings.md"
+    echo -e "  ${BOLD}Key files${NC}"
+    echo -e "    ${GREY}niri  ${NC}  ~/.config/niri/config.kdl"
+    echo -e "    ${GREY}waybar${NC}  ~/.config/waybar/"
+    echo -e "    ${GREY}zsh   ${NC}  ~/.zshrc"
+    echo -e "    ${GREY}keys  ${NC}  $SCRIPT_DIR/keybindings.md"
     echo ""
 }
 
@@ -1144,12 +1199,14 @@ main() {
     clear
     echo ""
     echo -e "${CYAN}${BOLD}"
-    echo "  ╦ ╦╦ ╦╔═╗╔═╗  ╔╗╔╦╦═╗╦"
-    echo "  ╠═╣╚╦╝╠═╝║╣   ║║║║╠╦╝║"
-    echo "  ╩ ╩ ╩ ╩  ╚═╝  ╝╚╝╩╩╚═╩"
+    echo "    ╦ ╦╦ ╦╔═╗╔═╗  ╔╗╔╦╦═╗╦"
+    echo "    ╠═╣╚╦╝╠═╝║╣   ║║║║╠╦╝║"
+    echo "    ╩ ╩ ╩ ╩  ╚═╝  ╝╚╝╩╩╚═╩"
     echo -e "${NC}"
     echo -e "  ${BOLD}Arch Linux + Niri Wayland Setup${NC}"
-    echo -e "  ${BLUE}Monochrome Theme${NC}"
+    echo -e "  ${GREY}monochrome theme · automated installer${NC}"
+    echo ""
+    echo -e "${INDENT}${CYAN}$(_repeat '─' "$BOX_W")${NC}"
     echo ""
 
     if ! confirm "Start installation?"; then
