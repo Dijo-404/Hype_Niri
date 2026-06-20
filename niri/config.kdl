@@ -142,7 +142,7 @@ binds {
     Mod+Shift+F { spawn-sh "~/.config/waybar/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }
-    Mod+L { spawn-sh "~/.config/waybar/scripts/lock-screen.sh"; }
+    Mod+L { spawn-sh "~/.config/waybar/scripts/lock-dim.sh"; }
 
     Mod+Space { toggle-window-floating; }
     Mod+Shift+Space { switch-focus-between-floating-and-tiling; }

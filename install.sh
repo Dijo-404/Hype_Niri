@@ -741,9 +741,9 @@ setup_system() {
 }
 
 setup_logind() {
-    print_header "Lid Switch Behavior (suspend on close)"
+    print_header "Lid Switch Behavior (suspend on close, stay awake when docked)"
 
-    if ! confirm "Configure systemd-logind to suspend on lid close?"; then
+    if ! confirm "Configure systemd-logind to suspend on lid close (but keep running when an external monitor is connected)?"; then
         print_warn "Lid switch setup skipped"
         return 0
     fi
@@ -756,7 +756,8 @@ setup_logind() {
 [Login]
 HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
-HandleLidSwitchDocked=suspend
+# Docked (external monitor): don't suspend; niri blanks the built-in panel.
+HandleLidSwitchDocked=ignore
 LidSwitchIgnoreInhibited=yes
 HoldoffTimeoutSec=0s
 InhibitDelayMaxSec=5
