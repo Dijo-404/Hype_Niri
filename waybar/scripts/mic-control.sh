@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 command -v wpctl >/dev/null 2>&1 || exit 0
 
@@ -11,7 +13,7 @@ case "${1:-}" in
 esac
 
 mic_info=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null) || exit 0
-mute=$(echo "$mic_info" | grep "MUTED")
+mute=$(echo "$mic_info" | grep "MUTED" || true)
 
 command -v notify-send >/dev/null 2>&1 || exit 0
 
