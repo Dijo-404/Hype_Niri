@@ -438,13 +438,13 @@ copy_configs() {
         print_warn "No wallpapers found in source directory"
     fi
 
-    mkdir -p "$HOME/.local/state/hypr"
-    if [ ! -e "$HOME/.local/state/hypr/current_wallpaper" ]; then
+    mkdir -p "$HOME/.local/state/niri"
+    if [ ! -e "$HOME/.local/state/niri/current_wallpaper" ]; then
         local seed_wallpaper
         seed_wallpaper="$(find "$HOME/Pictures/Wallpapers" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | head -n 1)"
         if [ -n "$seed_wallpaper" ] && [ -f "$seed_wallpaper" ]; then
-            ln -sfn "$seed_wallpaper" "$HOME/.local/state/hypr/current_wallpaper"
-            print_done "Seeded wallpaper pointer -> ~/.local/state/hypr/current_wallpaper"
+            ln -sfn "$seed_wallpaper" "$HOME/.local/state/niri/current_wallpaper"
+            print_done "Seeded wallpaper pointer -> ~/.local/state/niri/current_wallpaper"
         else
             print_warn "No wallpaper available to seed current_wallpaper"
         fi

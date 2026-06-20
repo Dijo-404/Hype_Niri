@@ -250,8 +250,8 @@ yay -Syu --aur
 
 - **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
-- **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/hypr/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
-- **Lock Screen**: `Super+L` locks via hyprlock and uses the saved wallpaper pointer from `~/.local/state/hypr/current_wallpaper`.
+- **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/niri/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
+- **Lock Screen**: `Super+L` locks via hyprlock and uses the saved wallpaper pointer from `~/.local/state/niri/current_wallpaper`.
 - **Firewall / WARP**: If you skipped step 7 and want them later, just run the relevant commands above — both are idempotent.
 
 ## Troubleshooting

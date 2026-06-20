@@ -1,8 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 
-STATE_DIR="$HOME/.local/state/hypr"
+STATE_DIR="$HOME/.local/state/niri"
 CURRENT_LINK="$STATE_DIR/current_wallpaper"
 mkdir -p "$STATE_DIR"
 
@@ -20,7 +22,7 @@ ensure_current_wallpaper() {
     [[ -f "$CURRENT_LINK" ]] && return 0
 
     local fallback
-    fallback="$(find_wallpaper)"
+    fallback="$(find_wallpaper)" || true
     [[ -f "$fallback" ]] || return 1
     ln -sfn "$fallback" "$CURRENT_LINK"
 }
@@ -72,16 +74,16 @@ case "${1:-}" in
         ;;
     random)
         [[ -d "$WALLPAPER_DIR" ]] || exit 0
-        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | shuf -n1)
+        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | shuf -n1) || true
         set_wallpaper "$img"
         ;;
     select)
         [[ -d "$WALLPAPER_DIR" ]] || exit 0
-        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | fuzzel --dmenu -p "Wallpaper: ")
+        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | fuzzel --dmenu -p "Wallpaper: ") || true
         set_wallpaper "$img"
         ;;
     *)
-        if [[ -f "$1" ]]; then
+        if [[ -f "${1:-}" ]]; then
             set_wallpaper "$1"
         else
             echo "Usage: wallpaper.sh {init|current|random|select|<path>}"
