@@ -143,10 +143,11 @@ for dm in sddm gdm lightdm greetd; do
 done
 sudo systemctl enable ly
 
-sudo systemctl enable NetworkManager bluetooth docker
+sudo systemctl enable --now NetworkManager bluetooth docker power-profiles-daemon
 sudo usermod -aG docker "$USER"   # log out/in before using docker without sudo
 
-systemctl --user enable pipewire pipewire-pulse wireplumber hypridle 2>/dev/null || true
+systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+systemctl --user enable hypridle 2>/dev/null || true
 
 sudo mkdir -p /etc/systemd/logind.conf.d
 sudo tee /etc/systemd/logind.conf.d/10-hype-niri-lid.conf >/dev/null << 'EOF'

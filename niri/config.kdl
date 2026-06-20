@@ -114,10 +114,9 @@ window-rule {
     default-column-width {}
 }
 
-spawn-at-startup "env" "GTK_THEME=Adwaita:dark" "waybar"
+spawn-sh-at-startup "~/.config/waybar/scripts/start-waybar.sh"
 
-spawn-sh-at-startup "env GTK_THEME=Adwaita:dark nm-applet --indicator"
-spawn-sh-at-startup "command -v blueman-applet >/dev/null && env GTK_THEME=Adwaita:dark blueman-applet"
+spawn-sh-at-startup "~/.config/waybar/scripts/start-tray-applets.sh"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
@@ -126,7 +125,7 @@ spawn-at-startup "alacritty"
 spawn-sh-at-startup "~/.config/waybar/scripts/wallpaper.sh init"
 spawn-sh-at-startup "~/.config/waybar/scripts/display-scale.sh"
 
-spawn-sh-at-startup "systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user restart hypridle.service"
+spawn-sh-at-startup "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user restart hypridle.service || hypridle"
 
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"
@@ -215,7 +214,7 @@ binds {
     Mod+Alt+Left { spawn-sh "~/.config/waybar/scripts/wallpaper.sh random"; }
     Mod+Shift+W { spawn-sh "~/.config/waybar/scripts/wallpaper.sh select"; }
 
-    Mod+Alt+Up { spawn-sh "pkill waybar; env GTK_THEME=Adwaita:dark waybar &"; }
+    Mod+Alt+Up { spawn-sh "pkill waybar; ~/.config/waybar/scripts/start-waybar.sh"; }
     Mod+Alt+Down { spawn-sh "pkill waybar"; }
 
     Mod+1 { focus-workspace 1; }
