@@ -578,6 +578,64 @@ setup_desktop_integrations() {
     fi
 }
 
+enable_system_service_now() {
+    local service="$1"
+    local label="${service%.service}"
+    local unit_state
+
+    unit_state="$(systemctl list-unit-files "$service" --no-legend 2>/dev/null || true)"
+    if [ -z "$unit_state" ]; then
+        print_warn "System service unit not found: $service"
+        return 1
+    fi
+
+    if sudo systemctl enable --now "$service" >/dev/null 2>&1; then
+        print_done "Enabled + started system service: $label"
+        return 0
+    fi
+
+    if sudo systemctl enable "$service" >/dev/null 2>&1; then
+        print_warn "Enabled system service but could not start now: $label"
+    else
+        print_warn "Failed to enable system service: $label"
+    fi
+
+    return 1
+}
+
+enable_user_service() {
+    local service="$1"
+    local start_now="${2:-later}"
+    local label="${service%.service}"
+    local unit_state
+
+    unit_state="$(systemctl --user list-unit-files "$service" --no-legend 2>/dev/null || true)"
+    if [ -z "$unit_state" ]; then
+        print_warn "User service unit not found: $service"
+        return 1
+    fi
+
+    if [ "$start_now" = "now" ]; then
+        if systemctl --user enable --now "$service" >/dev/null 2>&1; then
+            print_done "Enabled + started user service: $label"
+            return 0
+        fi
+
+        if systemctl --user enable "$service" >/dev/null 2>&1; then
+            print_warn "Enabled user service but could not start now: $label"
+        else
+            print_warn "Failed to enable user service: $label"
+        fi
+    elif systemctl --user enable "$service" >/dev/null 2>&1; then
+        print_done "Enabled user service: $label"
+        return 0
+    else
+        print_warn "Failed to enable user service: $label"
+    fi
+
+    return 1
+}
+
 setup_system() {
     print_header "System Configuration (requires sudo)"
 
@@ -639,17 +697,14 @@ setup_system() {
     print_step "Enabling system services..."
 
     local system_services=(
-        "NetworkManager"
-        "bluetooth"
-        "docker"
+        "NetworkManager.service"
+        "bluetooth.service"
+        "docker.service"
+        "power-profiles-daemon.service"
     )
 
     for service in "${system_services[@]}"; do
-        if sudo systemctl enable "$service" >/dev/null 2>&1; then
-            print_done "Enabled system service: $service"
-        else
-            print_warn "Failed to enable system service: $service"
-        fi
+        enable_system_service_now "$service" || true
     done
 
     if command -v docker >/dev/null 2>&1 && getent group docker >/dev/null 2>&1; then
@@ -670,22 +725,18 @@ setup_system() {
         fi
     fi
 
-    local user_services=(
-        "pipewire"
-        "pipewire-pulse"
-        "wireplumber"
-        "hypridle"
+    local start_now_user_services=(
+        "pipewire.service"
+        "pipewire-pulse.service"
+        "wireplumber.service"
     )
 
-    for service in "${user_services[@]}"; do
-        if systemctl --user --quiet is-enabled "$service" 2>/dev/null; then
-            print_done "User service already enabled: $service"
-        elif systemctl --user enable "$service" >/dev/null 2>&1; then
-            print_done "Enabled user service: $service"
-        else
-            print_warn "User service $service not enabled (likely socket-activated, which is fine)"
-        fi
+    for service in "${start_now_user_services[@]}"; do
+        enable_user_service "$service" now || true
     done
+
+    enable_user_service "hypridle.service" later || \
+        print_warn "Niri startup will still try to launch hypridle directly as a fallback"
     print_done "System services configured"
 }
 
@@ -818,6 +869,53 @@ validate() {
     print_header "Validating Installation"
 
     local all_ok=true
+    local required_commands=(
+        "niri"
+        "waybar"
+        "wlogout"
+        "hyprlock"
+        "hypridle"
+        "mako"
+        "fuzzel"
+        "wl-paste"
+        "cliphist"
+        "gnome-keyring-daemon"
+        "nm-applet"
+        "blueman-applet"
+        "notify-send"
+        "brightnessctl"
+        "powerprofilesctl"
+        "loginctl"
+    )
+    local optional_commands=(
+        "pavucontrol"
+        "playerctl"
+    )
+    local cmd
+
+    for cmd in "${required_commands[@]}"; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            print_done "Command available: $cmd"
+        else
+            print_error "Missing command: $cmd"
+            all_ok=false
+        fi
+    done
+
+    for cmd in "${optional_commands[@]}"; do
+        if command -v "$cmd" >/dev/null 2>&1; then
+            print_done "Command available: $cmd"
+        else
+            print_warn "Optional command missing: $cmd"
+        fi
+    done
+
+    if [ -x /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 ]; then
+        print_done "Polkit agent executable present"
+    else
+        print_error "Missing polkit agent: /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+        all_ok=false
+    fi
 
     if command -v niri &>/dev/null; then
         if niri validate 2>/dev/null; then
@@ -845,6 +943,8 @@ validate() {
         "$HOME/.config/waybar/scripts/open-drives.sh"
         "$HOME/.config/waybar/scripts/power-profile.sh"
         "$HOME/.config/waybar/scripts/prepare-sleep.sh"
+        "$HOME/.config/waybar/scripts/start-tray-applets.sh"
+        "$HOME/.config/waybar/scripts/start-waybar.sh"
         "$HOME/.config/waybar/scripts/suspend-now.sh"
         "$HOME/.config/waybar/scripts/temperature-control.sh"
         "$HOME/.config/waybar/scripts/volume-control.sh"
@@ -857,6 +957,11 @@ validate() {
         "$HOME/.config/hypr/hypridle.conf"
         "$HOME/.config/wlogout/layout"
         "$HOME/.config/wlogout/style.css"
+        "$HOME/.config/wlogout/icons/lock.png"
+        "$HOME/.config/wlogout/icons/logout.png"
+        "$HOME/.config/wlogout/icons/reboot.png"
+        "$HOME/.config/wlogout/icons/shutdown.png"
+        "$HOME/.config/wlogout/icons/suspend.png"
         "$HOME/.config/gtk-3.0/settings.ini"
         "$HOME/.config/gtk-4.0/settings.ini"
         "$HOME/.config/qt5ct/conf"
@@ -909,6 +1014,44 @@ validate() {
         fi
     else
         print_warn "fontconfig not found -- cannot validate Waybar fonts"
+    fi
+
+    local unit
+    local unit_state
+    for unit in NetworkManager.service bluetooth.service docker.service power-profiles-daemon.service; do
+        unit_state="$(systemctl list-unit-files "$unit" --no-legend 2>/dev/null || true)"
+        if [ -n "$unit_state" ]; then
+            if systemctl is-enabled --quiet "$unit" 2>/dev/null; then
+                print_done "System service enabled: ${unit%.service}"
+            else
+                print_warn "System service not enabled: ${unit%.service}"
+            fi
+
+            if systemctl is-active --quiet "$unit" 2>/dev/null; then
+                print_done "System service running: ${unit%.service}"
+            else
+                print_warn "System service not running yet: ${unit%.service}"
+            fi
+        else
+            print_warn "System service unit unavailable: $unit"
+        fi
+    done
+
+    if systemctl --user show-environment >/dev/null 2>&1; then
+        for unit in pipewire.service pipewire-pulse.service wireplumber.service hypridle.service; do
+            unit_state="$(systemctl --user list-unit-files "$unit" --no-legend 2>/dev/null || true)"
+            if [ -n "$unit_state" ]; then
+                if systemctl --user is-enabled --quiet "$unit" 2>/dev/null; then
+                    print_done "User service enabled: ${unit%.service}"
+                else
+                    print_warn "User service not enabled: ${unit%.service}"
+                fi
+            else
+                print_warn "User service unit unavailable: $unit"
+            fi
+        done
+    else
+        print_warn "User systemd manager unavailable; skipping live user-service validation"
     fi
 
     if $all_ok; then
