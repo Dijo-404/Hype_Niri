@@ -37,12 +37,13 @@ gnome-themes-extra
 # ── GTK Apps ──────────────────────────────────────
 nautilus
 file-roller
+webp-pixbuf-loader
 gnome-text-editor
 firefox
 brave-bin
 discord
 visual-studio-code-bin
-vlc
+vlc-plugins-all
 obsidian
 
 # ── CLI Tools ─────────────────────────────────────
@@ -67,6 +68,16 @@ imagemagick
 cliphist
 bemoji
 ripgrep
+unzip
+zip
+p7zip
+unrar
+pacman-contrib
+man-db
+tmux
+openssh
+base-devel
+satty
 
 # ── Audio & Media ─────────────────────────────────
 pipewire
@@ -111,6 +122,8 @@ blueman
 ttf-jetbrains-mono-nerd
 ttf-roboto
 ttf-material-design-icons-webfont
+noto-fonts
+noto-fonts-emoji
 papirus-icon-theme
 papirus-folders-catppuccin-git
 
@@ -118,6 +131,7 @@ papirus-folders-catppuccin-git
 brightnessctl
 power-profiles-daemon
 lm_sensors
+intel-media-driver
 
 # ── Desktop Notifications ─────────────────────────
 libnotify
