@@ -1,3 +1,6 @@
+// Per-output scales, written by display-scale.sh
+include "outputs.kdl"
+
 environment {
     XCURSOR_THEME "Adwaita"
     XCURSOR_SIZE "24"

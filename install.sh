@@ -480,6 +480,15 @@ copy_configs() {
     chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null || true
     print_done "Made waybar scripts executable"
 
+    # Seed outputs.kdl so niri's include resolves on first launch.
+    if [ -x "$HOME/.config/waybar/scripts/display-scale.sh" ]; then
+        "$HOME/.config/waybar/scripts/display-scale.sh" --no-reload >/dev/null 2>&1 || true
+    fi
+    if [ -d "$HOME/.config/niri" ] && [ ! -e "$HOME/.config/niri/outputs.kdl" ]; then
+        : > "$HOME/.config/niri/outputs.kdl"
+    fi
+    print_done "Seeded niri output-scale config"
+
     if [ -d "$HOME/.config/waybar/colors" ]; then
         print_done "Waybar colors directory present"
     else
