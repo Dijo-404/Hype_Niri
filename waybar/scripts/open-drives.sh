@@ -41,6 +41,15 @@ is_mounted() {
     findmnt -rn -S "$1" >/dev/null 2>&1
 }
 
+# Cleartext holder of a LUKS device, or empty if still locked.
+luks_cleartext() {
+    lsblk -nrpo NAME "$1" 2>/dev/null | sed -n '2p'
+}
+
+luks_devices() {
+    lsblk -prno NAME,FSTYPE | awk '$2 == "crypto_LUKS" { print $1 }'
+}
+
 settle_devices() {
     if command -v udevadm >/dev/null 2>&1; then
         udevadm settle --timeout=5 >/dev/null 2>&1 || true
@@ -75,20 +84,18 @@ mount_with_fallback() {
 
 unlock_luks_volumes() {
     local dev
-    local child_count
 
     command -v gio >/dev/null 2>&1 || return 0
 
     while read -r dev; do
         [ -b "$dev" ] || continue
 
-        child_count="$(lsblk -nrpo NAME "$dev" 2>/dev/null | wc -l)"
-        if [ "$child_count" -gt 1 ]; then
-            continue
-        fi
+        # Skip if already unlocked.
+        [ -n "$(luks_cleartext "$dev")" ] && continue
 
+        # gio surfaces the GUI passphrase prompt; udisks does the unlock.
         gio mount -d "$dev" >/dev/null 2>&1 || true
-    done < <(lsblk -prno NAME,FSTYPE | awk '$2 == "crypto_LUKS" { print $1 }')
+    done < <(luks_devices)
 }
 
 mount_unmounted_filesystems() {
@@ -107,6 +114,43 @@ mount_unmounted_filesystems() {
                 ;;
         esac
     done < <(lsblk -prno NAME,FSTYPE,MOUNTPOINTS)
+}
+
+# True while a LUKS volume is still locked or a mountable filesystem is unmounted.
+pending_work() {
+    local dev fstype mnt
+
+    while read -r dev; do
+        [ -b "$dev" ] || continue
+        [ -z "$(luks_cleartext "$dev")" ] && return 0
+    done < <(luks_devices)
+
+    while read -r dev fstype mnt; do
+        [ -b "$dev" ] || continue
+        case "$fstype" in
+            ntfs|exfat|btrfs|ext2|ext3|ext4|xfs)
+                [ -z "${mnt:-}" ] && return 0
+                ;;
+        esac
+    done < <(lsblk -prno NAME,FSTYPE,MOUNTPOINTS)
+
+    return 1
+}
+
+# Poll up to ~20s, mounting/linking volumes as they appear (while the user types
+# each passphrase). Also remounts volumes that were only unmounted, not relocked.
+wait_and_mount() {
+    local deadline=$((SECONDS + 20))
+
+    while :; do
+        settle_devices
+        mount_unmounted_filesystems
+        create_drive_links
+
+        pending_work || break
+        [ "$SECONDS" -ge "$deadline" ] && break
+        sleep 1
+    done
 }
 
 alias_for_mount() {
@@ -212,12 +256,10 @@ open_file_manager() {
     notify "No file manager found" "Install one (nautilus, dolphin, thunar, ...) or open $target manually."
 }
 
-if have_storage_tools; then
-    unlock_luks_volumes
-    settle_devices
-    mount_unmounted_filesystems
-    settle_devices
-    mount_unmounted_filesystems
-    create_drive_links
-fi
+storage_ready=0
+have_storage_tools && storage_ready=1
+
+# Prompt to unlock, open the file manager, then mount/link as volumes appear.
+[ "$storage_ready" = 1 ] && unlock_luks_volumes
 open_file_manager
+[ "$storage_ready" = 1 ] && wait_and_mount
