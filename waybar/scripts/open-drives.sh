@@ -82,10 +82,23 @@ mount_with_fallback() {
     return 1
 }
 
-unlock_luks_volumes() {
-    local dev
+# Name shown in the unlock prompt.
+luks_prompt_name() {
+    local dev="$1" name
+    name="$(lsblk -dno PARTLABEL "$dev" 2>/dev/null | head -n 1)"
+    [ -n "${name// /}" ] || name="$(lsblk -dno LABEL "$dev" 2>/dev/null | head -n 1)"
+    [ -n "${name// /}" ] || name="$(lsblk -dno SIZE "$dev" 2>/dev/null | head -n 1) drive"
+    name="$(printf '%s' "$name" | awk '{$1=$1};1')"   # trim padding from lsblk
+    printf '%s\n' "${name:-$(basename "$dev")}"
+}
 
-    command -v gio >/dev/null 2>&1 || return 0
+unlock_luks_volumes() {
+    local dev name pw keyfile
+
+    command -v fuzzel >/dev/null 2>&1 || {
+        notify "Cannot unlock encrypted drives" "fuzzel is needed for the passphrase prompt."
+        return 0
+    }
 
     while read -r dev; do
         [ -b "$dev" ] || continue
@@ -93,8 +106,19 @@ unlock_luks_volumes() {
         # Skip if already unlocked.
         [ -n "$(luks_cleartext "$dev")" ] && continue
 
-        # gio surfaces the GUI passphrase prompt; udisks does the unlock.
-        gio mount -d "$dev" >/dev/null 2>&1 || true
+        name="$(luks_prompt_name "$dev")"
+        pw="$(fuzzel --dmenu --password --prompt "Unlock $name: " </dev/null 2>/dev/null)" || continue
+        [ -n "$pw" ] || continue
+
+        # udisksctl takes the passphrase via key file, not stdin/TTY.
+        keyfile="$(mktemp "$RUNTIME_DIR/hype-unlock.XXXXXX")" || continue
+        chmod 600 "$keyfile"
+        printf '%s' "$pw" > "$keyfile"
+        unset pw
+
+        udisksctl unlock -b "$dev" --key-file "$keyfile" >/dev/null 2>&1 \
+            || notify "Unlock failed" "Wrong passphrase for $name, or device busy."
+        rm -f "$keyfile"
     done < <(luks_devices)
 }
 
@@ -208,58 +232,11 @@ create_drive_links() {
     done < <(findmnt -rn -o SOURCE,TARGET)
 }
 
-detect_file_manager() {
-    local cmd candidate
-
-    # Honor an explicit override (may include arguments).
-    if [ -n "${FILE_MANAGER:-}" ]; then
-        cmd="${FILE_MANAGER%% *}"
-        command -v "$cmd" >/dev/null 2>&1 && { printf '%s\n' "$FILE_MANAGER"; return 0; }
-    fi
-
-    # Map the user's default directory handler to its binary.
-    if command -v xdg-mime >/dev/null 2>&1; then
-        case "$(xdg-mime query default inode/directory 2>/dev/null)" in
-            org.gnome.Nautilus.desktop) candidate=nautilus ;;
-            org.kde.dolphin.desktop)    candidate=dolphin ;;
-            nemo.desktop)               candidate=nemo ;;
-            *[Tt]hunar.desktop)         candidate=thunar ;;
-            *pcmanfm-qt*)               candidate=pcmanfm-qt ;;
-            *pcmanfm*)                  candidate=pcmanfm ;;
-            caja*)                      candidate=caja ;;
-        esac
-        [ -n "${candidate:-}" ] && command -v "$candidate" >/dev/null 2>&1 && \
-            { printf '%s\n' "$candidate"; return 0; }
-    fi
-
-    for candidate in nautilus dolphin nemo thunar pcmanfm-qt pcmanfm caja; do
-        command -v "$candidate" >/dev/null 2>&1 && { printf '%s\n' "$candidate"; return 0; }
-    done
-
-    return 1
-}
-
-open_file_manager() {
-    local fm target="$DRIVES_DIR"
-    [ -d "$target" ] || target="$HOME"
-
-    if fm="$(detect_file_manager)"; then
-        $fm "$target" >/dev/null 2>&1 &
-        return 0
-    fi
-
-    if command -v xdg-open >/dev/null 2>&1; then
-        xdg-open "$target" >/dev/null 2>&1 &
-        return 0
-    fi
-
-    notify "No file manager found" "Install one (nautilus, dolphin, thunar, ...) or open $target manually."
-}
-
 storage_ready=0
 have_storage_tools && storage_ready=1
 
-# Prompt to unlock, open the file manager, then mount/link as volumes appear.
-[ "$storage_ready" = 1 ] && unlock_luks_volumes
-open_file_manager
-[ "$storage_ready" = 1 ] && wait_and_mount
+# Unlock encrypted volumes, then mount/link as they appear.
+if [ "$storage_ready" = 1 ]; then
+    unlock_luks_volumes
+    wait_and_mount
+fi

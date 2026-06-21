@@ -114,6 +114,9 @@ ufw
 # ── Cloudflare WARP (opt-in privacy DNS/VPN) ──────
 cloudflare-warp-bin
 
+# ── ProtonVPN ─────────────────────────────────────
+proton-vpn-gtk-app
+
 # ── Bluetooth ─────────────────────────────────────
 bluez
 bluez-utils
