@@ -1,0 +1,19 @@
+// Wheel (active session): passwordless udisks2 mount/unlock for fixed & removable disks. LUKS passphrase is still required.
+polkit.addRule(function(action, subject) {
+    if (!subject.isInGroup("wheel") || !subject.active) return;
+
+    var allow = [
+        "org.freedesktop.udisks2.filesystem-mount",
+        "org.freedesktop.udisks2.filesystem-mount-system",
+        "org.freedesktop.udisks2.filesystem-unmount-others",
+        "org.freedesktop.udisks2.encrypted-unlock",
+        "org.freedesktop.udisks2.encrypted-unlock-system",
+        "org.freedesktop.udisks2.encrypted-lock-others",
+        "org.freedesktop.udisks2.eject-media",
+        "org.freedesktop.udisks2.power-off-drive"
+    ];
+
+    if (allow.indexOf(action.id) !== -1) {
+        return polkit.Result.YES;
+    }
+});
