@@ -142,7 +142,9 @@ setopt HIST_FIND_NO_DUPS
 setopt APPEND_HISTORY
 setopt SHARE_HISTORY
 
-autoload -Uz compinit && compinit
+autoload -Uz compinit
+mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+compinit -i -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
 for fzf_tab_plugin in \
@@ -163,7 +165,10 @@ autoload -Uz colors && colors
 [[ -f /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme ]] && \
     source /usr/share/zsh-theme-powerlevel10k/powerlevel10k.zsh-theme
 
-command -v fastfetch >/dev/null && fastfetch
+if [[ -z "${HYPE_NIRI_FASTFETCH_SHOWN:-}" && -t 1 ]] && command -v fastfetch >/dev/null; then
+    export HYPE_NIRI_FASTFETCH_SHOWN=1
+    fastfetch
+fi
 
 
 [[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]] && \

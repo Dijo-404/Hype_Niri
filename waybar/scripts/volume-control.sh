@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 command -v wpctl >/dev/null 2>&1 || exit 0
 
@@ -18,7 +20,7 @@ esac
 
 vol_info=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null) || exit 0
 vol=$(echo "$vol_info" | awk '{print int($2 * 100)}')
-mute=$(echo "$vol_info" | grep "MUTED")
+mute=$(echo "$vol_info" | grep "MUTED" || true)
 
 command -v notify-send >/dev/null 2>&1 || exit 0
 

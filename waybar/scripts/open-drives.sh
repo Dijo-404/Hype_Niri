@@ -32,13 +32,22 @@ have_storage_tools() {
     done
 
     if [ "${#missing[@]}" -gt 0 ]; then
-        notify "Drive mounting unavailable" "Missing required command(s): ${missing[*]}"
+        notify "Drive mounting unavailable" "Missing: ${missing[*]} — install with: sudo pacman -S --needed util-linux udisks2"
         return 1
     fi
 }
 
 is_mounted() {
     findmnt -rn -S "$1" >/dev/null 2>&1
+}
+
+# Cleartext holder of a LUKS device, or empty if still locked.
+luks_cleartext() {
+    lsblk -nrpo NAME "$1" 2>/dev/null | sed -n '2p'
+}
+
+luks_devices() {
+    lsblk -prno NAME,FSTYPE | awk '$2 == "crypto_LUKS" { print $1 }'
 }
 
 settle_devices() {
@@ -73,22 +82,44 @@ mount_with_fallback() {
     return 1
 }
 
-unlock_luks_volumes() {
-    local dev
-    local child_count
+# Name shown in the unlock prompt.
+luks_prompt_name() {
+    local dev="$1" name
+    name="$(lsblk -dno PARTLABEL "$dev" 2>/dev/null | head -n 1)"
+    [ -n "${name// /}" ] || name="$(lsblk -dno LABEL "$dev" 2>/dev/null | head -n 1)"
+    [ -n "${name// /}" ] || name="$(lsblk -dno SIZE "$dev" 2>/dev/null | head -n 1) drive"
+    name="$(printf '%s' "$name" | awk '{$1=$1};1')"   # trim padding from lsblk
+    printf '%s\n' "${name:-$(basename "$dev")}"
+}
 
-    command -v gio >/dev/null 2>&1 || return 0
+unlock_luks_volumes() {
+    local dev name pw keyfile
+
+    command -v fuzzel >/dev/null 2>&1 || {
+        notify "Cannot unlock encrypted drives" "fuzzel is needed for the passphrase prompt."
+        return 0
+    }
 
     while read -r dev; do
         [ -b "$dev" ] || continue
 
-        child_count="$(lsblk -nrpo NAME "$dev" 2>/dev/null | wc -l)"
-        if [ "$child_count" -gt 1 ]; then
-            continue
-        fi
+        # Skip if already unlocked.
+        [ -n "$(luks_cleartext "$dev")" ] && continue
 
-        gio mount -d "$dev" >/dev/null 2>&1 || true
-    done < <(lsblk -prno NAME,FSTYPE | awk '$2 == "crypto_LUKS" { print $1 }')
+        name="$(luks_prompt_name "$dev")"
+        pw="$(fuzzel --dmenu --password --prompt "Unlock $name: " </dev/null 2>/dev/null)" || continue
+        [ -n "$pw" ] || continue
+
+        # udisksctl takes the passphrase via key file, not stdin/TTY.
+        keyfile="$(mktemp "$RUNTIME_DIR/hype-unlock.XXXXXX")" || continue
+        chmod 600 "$keyfile"
+        printf '%s' "$pw" > "$keyfile"
+        unset pw
+
+        udisksctl unlock -b "$dev" --key-file "$keyfile" >/dev/null 2>&1 \
+            || notify "Unlock failed" "Wrong passphrase for $name, or device busy."
+        rm -f "$keyfile"
+    done < <(luks_devices)
 }
 
 mount_unmounted_filesystems() {
@@ -109,23 +140,51 @@ mount_unmounted_filesystems() {
     done < <(lsblk -prno NAME,FSTYPE,MOUNTPOINTS)
 }
 
+# True while a LUKS volume is still locked or a mountable filesystem is unmounted.
+pending_work() {
+    local dev fstype mnt
+
+    while read -r dev; do
+        [ -b "$dev" ] || continue
+        [ -z "$(luks_cleartext "$dev")" ] && return 0
+    done < <(luks_devices)
+
+    while read -r dev fstype mnt; do
+        [ -b "$dev" ] || continue
+        case "$fstype" in
+            ntfs|exfat|btrfs|ext2|ext3|ext4|xfs)
+                [ -z "${mnt:-}" ] && return 0
+                ;;
+        esac
+    done < <(lsblk -prno NAME,FSTYPE,MOUNTPOINTS)
+
+    return 1
+}
+
+# Poll up to ~20s, mounting/linking volumes as they appear (while the user types
+# each passphrase). Also remounts volumes that were only unmounted, not relocked.
+wait_and_mount() {
+    local deadline=$((SECONDS + 20))
+
+    while :; do
+        settle_devices
+        mount_unmounted_filesystems
+        create_drive_links
+
+        pending_work || break
+        [ "$SECONDS" -ge "$deadline" ] && break
+        sleep 1
+    done
+}
+
 alias_for_mount() {
     local source="$1"
     local target="$2"
-    local uuid
     local label
-    local name
 
-    uuid="$(lsblk -no UUID "$source" 2>/dev/null | head -n 1)"
     label="$(lsblk -no LABEL "$source" 2>/dev/null | head -n 1)"
-
-    case "$uuid" in
-        F0801AAB801A7874) name="Windows-SSD" ;;
-        857a0bbf-1aec-402a-aced-2e4936dfaef4) name="Lexar-4TB" ;;
-        *) name="${label:-$(basename "$target")}" ;;
-    esac
-
-    printf '%s\n' "$name"
+    [ -n "$label" ] || label="$(lsblk -no PARTLABEL "$source" 2>/dev/null | head -n 1)"
+    printf '%s\n' "${label:-$(basename "$target")}"
 }
 
 sanitize_link_name() {
@@ -173,25 +232,11 @@ create_drive_links() {
     done < <(findmnt -rn -o SOURCE,TARGET)
 }
 
-open_file_manager() {
-    command -v nautilus >/dev/null 2>&1 || {
-        notify "Nautilus not found" "Install nautilus or open ~/Drives manually."
-        return 0
-    }
+storage_ready=0
+have_storage_tools && storage_ready=1
 
-    if [ -d "$DRIVES_DIR" ]; then
-        nautilus -w "$DRIVES_DIR" >/dev/null 2>&1 &
-    else
-        nautilus -w >/dev/null 2>&1 &
-    fi
-}
-
-if have_storage_tools; then
+# Unlock encrypted volumes, then mount/link as they appear.
+if [ "$storage_ready" = 1 ]; then
     unlock_luks_volumes
-    settle_devices
-    mount_unmounted_filesystems
-    settle_devices
-    mount_unmounted_filesystems
-    create_drive_links
+    wait_and_mount
 fi
-open_file_manager

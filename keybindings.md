@@ -19,7 +19,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + O` | `toggle-overview` | Toggle window overview |
 | `Super + Space` | `toggle-window-floating` | Toggle floating mode for a window |
 | `Super + Shift + Space` | `switch-focus` | Switch focus between floating/tiling |
-| `Super + L` | `hyprlock` | Lock the screen |
+| `Super + L` | `lock-dim` | Lock the screen, then power off monitors after 30s (any input wakes them) |
 
 ## Focus & Navigation
 

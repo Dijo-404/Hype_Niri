@@ -38,7 +38,6 @@ window#waybar.hidden {
 #pulseaudio,
 #backlight,
 #battery,
-#network,
 #tray,
 #custom-power {
   background-color: #2d2d2d;
@@ -68,7 +67,6 @@ window#waybar.hidden {
 #custom-caffeine,
 #custom-power-profile,
 #pulseaudio,
-#network,
 #custom-power {
   padding: 0 11px;
 }
@@ -84,7 +82,6 @@ window#waybar.hidden {
 #custom-launcher,
 #custom-caffeine,
 #custom-power-profile,
-#network,
 #custom-power {
   font-size: 15px;
 }
@@ -111,10 +108,25 @@ window#waybar.hidden {
 #pulseaudio:hover,
 #backlight:hover,
 #battery:hover,
-#network:hover,
 #tray:hover,
 #custom-power:hover {
   background-color: #404040;
+}
+
+#custom-power-profile.performance {
+  color: #e06c75;
+}
+
+#custom-power-profile.balanced {
+  color: #e0e0e0;
+}
+
+#custom-power-profile.power-saver {
+  color: #98c379;
+}
+
+#custom-power-profile.missing {
+  color: #666666;
 }
 
 #workspaces {
@@ -191,34 +203,39 @@ window#waybar.hidden {
   color: #ffffff;
 }
 
-#temperature.critical {
+#custom-temperature.warning {
+  color: #e5c07b;
+  border-color: #e5c07b;
+}
+
+#custom-temperature.critical {
   color: #e06c75;
   border-color: #e06c75;
 }
 
-#network.disconnected {
-  color: #aaaaaa;
+#custom-temperature.missing {
+  color: #666666;
+  border-color: #666666;
 }
 
 #cpu,
 #memory,
-#temperature {
+#custom-temperature {
   background-color: transparent;
   color: #b0b0b0;
   border: 2px solid #b0b0b0;
   border-radius: 50%;
-  min-width: 35px;
+  min-width: 34px;
   min-height: 35px;
   margin: 0 6px 0 0;
-  padding: 0;
+  padding: 0 0 0 1px;
   font-size: 11px;
   font-weight: 700;
 }
 
-#cpu,
-#temperature {
-  min-width: 34px;
-  padding-left: 1px;
+#memory {
+  min-width: 35px;
+  padding-left: 0;
 }
 #custom-cpu-label,
 #custom-mem-label,

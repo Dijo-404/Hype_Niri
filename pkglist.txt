@@ -1,15 +1,13 @@
 # ── Niri + Wayland ────────────────────────────────
 niri
-uwsm
 wlogout
 xdg-desktop-portal-gnome
 xdg-utils
 wl-clipboard
-grim
-slurp
 qt5-wayland
 qt6-wayland
 xorg-xwayland
+xwayland-satellite
 
 # ── Shell ─────────────────────────────────────────
 zsh
@@ -22,6 +20,7 @@ zsh-theme-powerlevel10k-git
 # ── Terminal & Editor ─────────────────────────────
 alacritty
 neovim
+kate
 
 # ── Desktop Components ────────────────────────────
 waybar
@@ -39,12 +38,13 @@ gnome-themes-extra
 # ── GTK Apps ──────────────────────────────────────
 nautilus
 file-roller
+webp-pixbuf-loader
 gnome-text-editor
 firefox
 brave-bin
 discord
 visual-studio-code-bin
-vlc
+vlc-plugins-all
 obsidian
 
 # ── CLI Tools ─────────────────────────────────────
@@ -58,13 +58,27 @@ github-cli
 jq
 htop
 wget
+reflector
 fastfetch
 lazygit
 lazydocker
+docker
+docker-compose
+docker-buildx
 imagemagick
 cliphist
 bemoji
 ripgrep
+unzip
+zip
+p7zip
+unrar
+pacman-contrib
+man-db
+tmux
+openssh
+base-devel
+util-linux
 
 # ── Audio & Media ─────────────────────────────────
 pipewire
@@ -100,6 +114,9 @@ ufw
 # ── Cloudflare WARP (opt-in privacy DNS/VPN) ──────
 cloudflare-warp-bin
 
+# ── ProtonVPN ─────────────────────────────────────
+proton-vpn-gtk-app
+
 # ── Bluetooth ─────────────────────────────────────
 bluez
 bluez-utils
@@ -109,6 +126,8 @@ blueman
 ttf-jetbrains-mono-nerd
 ttf-roboto
 ttf-material-design-icons-webfont
+noto-fonts
+noto-fonts-emoji
 papirus-icon-theme
 papirus-folders-catppuccin-git
 
@@ -116,6 +135,7 @@ papirus-folders-catppuccin-git
 brightnessctl
 power-profiles-daemon
 lm_sensors
+intel-media-driver
 
 # ── Desktop Notifications ─────────────────────────
 libnotify

@@ -53,6 +53,49 @@ format_rate() {
     }'
 }
 
+display_rate() {
+    awk -v mhz="$1" 'BEGIN {
+        hz = mhz / 1000
+        nearest = int(hz + 0.5)
+        diff = hz - nearest
+        if (diff < 0) {
+            diff = -diff
+        }
+
+        if (diff < 0.01) {
+            print nearest
+        } else {
+            value = sprintf("%.2f", hz)
+            sub(/0+$/, "", value)
+            sub(/\.$/, "", value)
+            print value
+        }
+    }'
+}
+
+scale_for_resolution() {
+    local width="$1"
+    local height="$2"
+    local short
+
+    [[ "$width" =~ ^[0-9]+$ ]] || { printf '1.0\n'; return; }
+    [[ "$height" =~ ^[0-9]+$ ]] || { printf '1.0\n'; return; }
+
+    if [ "$width" -lt "$height" ]; then
+        short="$width"
+    else
+        short="$height"
+    fi
+
+    if [ "$short" -ge 1800 ]; then
+        printf '2.0\n'
+    elif [ "$short" -ge 1600 ]; then
+        printf '1.5\n'
+    else
+        printf '1.0\n'
+    fi
+}
+
 kdl_escape() {
     local value="$1"
 
@@ -64,7 +107,7 @@ kdl_escape() {
 get_outputs_json() {
     local output
 
-    if ! output="$(niri msg -j outputs 2>&1)"; then
+    if ! output="$(niri msg --json outputs 2>&1)"; then
         notify "Could not read monitors" "$output"
         exit 1
     fi
@@ -97,17 +140,19 @@ build_monitor_options() {
     ' <<<"$json" | while IFS=$'\t' read -r name make model width height refresh; do
         local description
         local current
+        local label
 
         description="$(trim "$make $model")"
         [ -n "$description" ] || description="Unknown display"
 
         if [ -n "$width" ] && [ -n "$height" ] && [ -n "$refresh" ]; then
-            current="${width}x${height} @ $(format_rate "$refresh") Hz"
+            current="${width}x${height} @ $(display_rate "$refresh") Hz"
         else
             current="current mode unknown"
         fi
 
-        printf '%s\t%s\t%s\n' "$name" "$current" "$description"
+        label="$(printf '%-7s %-24s %s' "$name" "$description" "$current")"
+        printf '%s\t%s\n' "$name" "$label"
     done
 }
 
@@ -122,34 +167,56 @@ build_mode_options() {
           else
             ($selected.current_mode // -1) as $current
             | $selected.modes
-            | to_entries[]
+            | to_entries
+            | map({
+                width: .value.width,
+                height: .value.height,
+                refresh: .value.refresh_rate,
+                current: (.key == $current),
+                preferred: (.value.is_preferred // false)
+            })
+            | sort_by([.width, .height, .refresh])
+            | group_by([.width, .height, .refresh])
+            | map({
+                width: .[0].width,
+                height: .[0].height,
+                refresh: .[0].refresh,
+                current: any(.[]; .current),
+                preferred: any(.[]; .preferred)
+            })
+            | sort_by([(-.width), (-.height), (-.refresh)])
+            | .[]
             | [
-                (.value.width | tostring),
-                (.value.height | tostring),
-                (.value.refresh_rate | tostring),
-                (if .key == $current then "current" else "" end),
-                (if .value.is_preferred then "preferred" else "" end)
+                (.width | tostring),
+                (.height | tostring),
+                (.refresh | tostring),
+                (if .current then "current" else "" end),
+                (if .preferred then "preferred" else "" end)
             ]
             | @tsv
           end
     ' <<<"$json" | while IFS=$'\t' read -r width height refresh is_current is_preferred; do
-        local rate
+        local mode_rate
+        local label_rate
         local mode
         local label
         local status=""
+        local resolution
 
-        rate="$(format_rate "$refresh")"
-        mode="${width}x${height}@${rate}"
-        label="${width}x${height} @ ${rate} Hz"
+        mode_rate="$(format_rate "$refresh")"
+        label_rate="$(display_rate "$refresh")"
+        mode="${width}x${height}@${mode_rate}"
+        resolution="${width}x${height}"
 
         [ "$is_current" = "current" ] && status="current"
         if [ "$is_preferred" = "preferred" ]; then
             [ -n "$status" ] && status="$status, "
             status="${status}preferred"
         fi
-        [ -n "$status" ] && status="[$status]"
+        [ -n "$status" ] && status="  [$status]"
 
-        printf '%s\t%s %s\n' "$mode" "$label" "$status"
+        label="$(printf '%-11s %8s Hz%s' "$resolution" "$label_rate" "$status")"
+        printf '%s\t%s\n' "$mode" "$label"
     done
 }
 
@@ -158,7 +225,19 @@ choose_line() {
     local options="$2"
     local choice
 
-    choice="$(printf '%s\n' "$options" | fuzzel --dmenu -p "$prompt" || true)"
+    choice="$(
+        printf '%s\n' "$options" \
+            | fuzzel --dmenu \
+                --prompt "$prompt: " \
+                --width 58 \
+                --lines 14 \
+                --no-sort \
+                --only-match \
+                --with-nth 2 \
+                --accept-nth 1 \
+                --match-nth 2 \
+            || true
+    )"
     [ -n "$choice" ] || exit 0
 
     printf '%s' "$choice"
@@ -175,9 +254,21 @@ apply_mode() {
     fi
 }
 
+apply_scale() {
+    local output_name="$1"
+    local scale="$2"
+    local output
+
+    if ! output="$(niri msg output "$output_name" scale "$scale" 2>&1)"; then
+        notify "Could not set display scale" "$output"
+        exit 1
+    fi
+}
+
 write_config_mode() {
     local output_name="$1"
     local mode="$2"
+    local scale="$3"
     local config_dir
     local tmp_file
     local output_kdl
@@ -188,11 +279,12 @@ write_config_mode() {
     tmp_file="$(mktemp "$config_dir/.config.kdl.XXXXXX")"
 
     if [ -f "$CONFIG_FILE" ]; then
-        awk -v output="$output_kdl" -v mode="$mode" '
+        awk -v output="$output_kdl" -v mode="$mode" -v scale="$scale" '
             BEGIN {
                 in_output = 0
                 seen_output = 0
                 wrote_mode = 0
+                wrote_scale = 0
             }
 
             /^[[:space:]]*output[[:space:]]+"/ {
@@ -204,6 +296,7 @@ write_config_mode() {
                         in_output = 1
                         seen_output = 1
                         wrote_mode = 0
+                        wrote_scale = 0
                         print
                         next
                     }
@@ -223,10 +316,27 @@ write_config_mode() {
                 next
             }
 
+            in_output && /^[[:space:]]*scale[[:space:]]+/ {
+                indent = $0
+                sub(/[^[:space:]].*/, "", indent)
+                if (indent == "") {
+                    indent = "    "
+                }
+                if (!wrote_scale) {
+                    print indent "scale " scale
+                    wrote_scale = 1
+                }
+                next
+            }
+
             in_output && /^[[:space:]]*}[[:space:]]*$/ {
                 if (!wrote_mode) {
                     print "    mode \"" mode "\""
                     wrote_mode = 1
+                }
+                if (!wrote_scale) {
+                    print "    scale " scale
+                    wrote_scale = 1
                 }
                 in_output = 0
                 print
@@ -240,6 +350,7 @@ write_config_mode() {
                     print ""
                     print "output \"" output "\" {"
                     print "    mode \"" mode "\""
+                    print "    scale " scale
                     print "}"
                 }
             }
@@ -248,6 +359,7 @@ write_config_mode() {
         {
             printf 'output "%s" {\n' "$output_kdl"
             printf '    mode "%s"\n' "$mode"
+            printf '    scale %s\n' "$scale"
             printf '}\n'
         } >"$tmp_file"
     fi
@@ -264,11 +376,13 @@ write_config_mode() {
 main() {
     local outputs_json
     local monitor_options
-    local monitor_choice
     local output_name
     local mode_options
-    local mode_choice
     local mode
+    local mode_width
+    local mode_height
+    local mode_rest
+    local scale
 
     missing_commands
 
@@ -279,8 +393,7 @@ main() {
         exit 1
     fi
 
-    monitor_choice="$(choose_line "Monitor" "$monitor_options")"
-    output_name="${monitor_choice%%$'\t'*}"
+    output_name="$(choose_line "Monitor" "$monitor_options")"
 
     mode_options="$(build_mode_options "$outputs_json" "$output_name")"
     if [ -z "$mode_options" ]; then
@@ -288,12 +401,16 @@ main() {
         exit 1
     fi
 
-    mode_choice="$(choose_line "$output_name refresh" "$mode_options")"
-    mode="${mode_choice%%$'\t'*}"
+    mode="$(choose_line "$output_name refresh" "$mode_options")"
+    mode_width="${mode%%x*}"
+    mode_rest="${mode#*x}"
+    mode_height="${mode_rest%%@*}"
+    scale="$(scale_for_resolution "$mode_width" "$mode_height")"
 
     apply_mode "$output_name" "$mode"
-    write_config_mode "$output_name" "$mode"
-    notify "Monitor refresh saved" "$output_name is now $mode"
+    apply_scale "$output_name" "$scale"
+    write_config_mode "$output_name" "$mode" "$scale"
+    notify "Monitor refresh saved" "$output_name is now $mode at ${scale}x scale"
 }
 
 main "$@"
