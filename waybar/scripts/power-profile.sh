@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 if ! command -v powerprofilesctl >/dev/null 2>&1; then
     [[ "${1:-}" != "menu" ]] && echo '{"text": "", "tooltip": "power-profiles-daemon not installed", "class": "missing"}'
@@ -56,17 +58,17 @@ set_profile() {
 if [[ "${1:-}" == "menu" ]]; then
     command -v fuzzel >/dev/null 2>&1 || exit 0
     options="󰓅 Performance\n󰾅 Balanced\n󰾆 Power Saver"
-    choice=$(echo -e "$options" | fuzzel --dmenu -p "Power Profile")
-    
+    choice=$(echo -e "$options" | fuzzel --dmenu -p "Power Profile") || true
+
     case "$choice" in
         *"Performance"*)
-            set_profile "performance"
+            set_profile "performance" || true
             ;;
         *"Balanced"*)
-            set_profile "balanced"
+            set_profile "balanced" || true
             ;;
         *"Power Saver"*)
-            set_profile "power-saver"
+            set_profile "power-saver" || true
             ;;
     esac
     pkill -RTMIN+16 waybar || true

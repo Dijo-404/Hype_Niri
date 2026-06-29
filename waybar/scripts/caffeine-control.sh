@@ -14,7 +14,7 @@ ID=2002
 
 if command -v flock >/dev/null 2>&1; then
     exec 9>"$LOCK_FILE"
-    flock 9 || exit 0
+    flock -n 9 || exit 0
 fi
 
 notify() {
@@ -58,7 +58,8 @@ start_inhibitor() {
     fi
     rm -f "$PID_FILE"
 
-    systemd-inhibit --what=idle --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 &
+    # Close the lock FD so the long-lived child does not hold the flock.
+    systemd-inhibit --what=idle --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 9>&- &
     echo "$!" > "$PID_FILE"
 }
 
