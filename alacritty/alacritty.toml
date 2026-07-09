@@ -71,5 +71,5 @@ chars = "\u001B\r"
 
 [[keyboard.bindings]]
 key = "Back"
-mods = "Control"
-chars = "\x17"
+mods = "Control"	
+chars = "\u0017"
