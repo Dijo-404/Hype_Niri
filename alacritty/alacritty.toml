@@ -68,3 +68,8 @@ osc52 = "CopyPaste"
 key = "Return"
 mods = "Shift"
 chars = "\u001B\r"
+
+[[keyboard.bindings]]
+key = "Back"
+mods = "Control"
+chars = "\x17"
