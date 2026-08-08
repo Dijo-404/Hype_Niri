@@ -79,7 +79,8 @@ yay -Syu --aur
 ├── niri/            # Core Niri compositor settings and rules
 ├── polkit/          # Polkit rules for passwordless NetworkManager
 ├── Wallpapers/      # Default curated wallpapers
-├── waybar/          # Comprehensive status bar + utility scripts
+├── scripts/         # Desktop utility and control scripts
+├── waybar/          # Comprehensive status bar configuration
 ├── wlogout/         # Power menu configuration
 ├── zsh/             # Shell config (.zshrc) and Powerlevel10k theme
 ├── install.sh       # Automated installation script

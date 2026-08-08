@@ -82,14 +82,14 @@ Move the dotfiles to their respective locations in your home directory.
 ```bash
 mkdir -p ~/.config ~/.cache/cliphist ~/Pictures/Screenshots ~/Pictures/Wallpapers
 
-cp -r niri waybar alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
+cp -r niri waybar scripts alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
 
 [ -d Wallpapers ] && cp -r Wallpapers/* ~/Pictures/Wallpapers/
 
 cp zsh/.zshrc ~/
 cp zsh/.p10k.zsh ~/
 
-chmod +x ~/.config/waybar/scripts/*.sh
+chmod +x ~/.config/scripts/*.sh
 ```
 
 ### 4. Apply Dark Theme (GTK + Qt + dconf)
@@ -284,7 +284,7 @@ yay -S --needed ntfs-3g gvfs udisks2 lvm2 libblockdev-lvm
 - `udisks2` — the mount daemon Nautilus talks to.
 - `lvm2` and `libblockdev-lvm` — let encrypted LUKS drives reveal and mount LVM-backed filesystems.
 
-The `Super+U` keybinding runs `~/.config/waybar/scripts/open-drives.sh` before opening Nautilus. It mounts ordinary volumes, falls back to read-only for dirty Windows NTFS volumes, asks GVFS to unlock encrypted drives, mounts inner filesystems, and creates friendly links under `~/Drives`.
+The `Super+U` keybinding runs `~/.config/scripts/open-drives.sh` before opening Nautilus. It mounts ordinary volumes, falls back to read-only for dirty Windows NTFS volumes, asks GVFS to unlock encrypted drives, mounts inner filesystems, and creates friendly links under `~/Drives`.
 
 **2. Disable Windows Fast Startup** (this is the cause ~90% of the time).
 

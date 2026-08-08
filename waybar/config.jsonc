@@ -38,20 +38,20 @@
   },
 
   "custom/caffeine": {
-    "exec": "~/.config/waybar/scripts/caffeine-control.sh",
+    "exec": "~/.config/scripts/caffeine-control.sh",
     "return-type": "json",
     "interval": 5,
     "format": "{}",
-    "on-click": "~/.config/waybar/scripts/caffeine-control.sh toggle",
+    "on-click": "~/.config/scripts/caffeine-control.sh toggle",
     "signal": 15
   },
   "custom/power-profile": {
-    "exec": "~/.config/waybar/scripts/power-profile.sh",
+    "exec": "~/.config/scripts/power-profile.sh",
     "return-type": "json",
     "interval": 5,
     "format": "{icon}",
     "format-icons": ["󰾆", "󰾅", "󰓅"],
-    "on-click": "~/.config/waybar/scripts/power-profile.sh menu",
+    "on-click": "~/.config/scripts/power-profile.sh menu",
     "signal": 16
   },
 
@@ -96,7 +96,7 @@
     "format": "temp"
   },
   "custom/temperature": {
-    "exec": "~/.config/waybar/scripts/temperature-control.sh",
+    "exec": "~/.config/scripts/temperature-control.sh",
     "return-type": "json",
     "interval": 5,
     "format": "{text}",
@@ -107,8 +107,8 @@
     "format": "{icon}  {percent}%",
     "format-icons": ["󰃞", "󰃝", "󰃟", "󰃠"],
     "tooltip-format": "Brightness: {percent}%",
-    "on-scroll-up": "~/.config/waybar/scripts/brightness-control.sh up",
-    "on-scroll-down": "~/.config/waybar/scripts/brightness-control.sh down"
+    "on-scroll-up": "~/.config/scripts/brightness-control.sh up",
+    "on-scroll-down": "~/.config/scripts/brightness-control.sh down"
   },
 
   "tray": {
@@ -130,16 +130,16 @@
     },
     "tooltip": true,
     "tooltip-format": "Volume: {volume}%",
-    "on-click": "~/.config/waybar/scripts/volume-control.sh mute",
+    "on-click": "~/.config/scripts/volume-control.sh mute",
     "on-click-right": "pavucontrol",
-    "on-scroll-up": "~/.config/waybar/scripts/volume-control.sh up",
-    "on-scroll-down": "~/.config/waybar/scripts/volume-control.sh down"
+    "on-scroll-up": "~/.config/scripts/volume-control.sh up",
+    "on-scroll-down": "~/.config/scripts/volume-control.sh down"
   },
   "pulseaudio#microphone": {
     "format": "{format_source}",
     "format-source": "󰍬",
     "format-source-muted": "󰍭",
-    "on-click": "~/.config/waybar/scripts/mic-control.sh mute",
+    "on-click": "~/.config/scripts/mic-control.sh mute",
     "tooltip": true,
     "tooltip-format": "{source_desc} | Volume: {source_volume}%"
   },
