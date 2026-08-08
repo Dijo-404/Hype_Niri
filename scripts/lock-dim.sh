@@ -12,4 +12,4 @@ lockfile="${XDG_RUNTIME_DIR:-/tmp}/lock-dim.lock"
     pidof hyprlock >/dev/null 2>&1 && niri msg action power-off-monitors
 ) 9>"$lockfile" >/dev/null 2>&1 &
 
-exec "$HOME/.config/waybar/scripts/lock.sh"
+exec "$HOME/.config/scripts/lock.sh"

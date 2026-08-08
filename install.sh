@@ -396,6 +396,7 @@ backup_configs() {
     local configs_to_backup=(
         "niri"
         "waybar"
+        "scripts"
         "alacritty"
         "fuzzel"
         "mako"
@@ -458,6 +459,7 @@ copy_configs() {
     local configs=(
         "niri"
         "waybar"
+        "scripts"
         "alacritty"
         "fuzzel"
         "mako"
@@ -477,12 +479,12 @@ copy_configs() {
         fi
     done
 
-    chmod +x "$HOME/.config/waybar/scripts/"*.sh 2>/dev/null || true
-    print_done "Made waybar scripts executable"
+    chmod +x "$HOME/.config/scripts/"*.sh 2>/dev/null || true
+    print_done "Made scripts executable"
 
     # Seed outputs.kdl so niri's include resolves on first launch.
-    if [ -x "$HOME/.config/waybar/scripts/display-scale.sh" ]; then
-        "$HOME/.config/waybar/scripts/display-scale.sh" --no-reload >/dev/null 2>&1 || true
+    if [ -x "$HOME/.config/scripts/display-scale.sh" ]; then
+        "$HOME/.config/scripts/display-scale.sh" --no-reload >/dev/null 2>&1 || true
     fi
     if [ -d "$HOME/.config/niri" ] && [ ! -e "$HOME/.config/niri/outputs.kdl" ]; then
         : > "$HOME/.config/niri/outputs.kdl"
@@ -999,23 +1001,23 @@ validate() {
         "$HOME/.config/niri/config.kdl"
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
-        "$HOME/.config/waybar/scripts/brightness-control.sh"
-        "$HOME/.config/waybar/scripts/caffeine-control.sh"
-        "$HOME/.config/waybar/scripts/display-scale.sh"
-        "$HOME/.config/waybar/scripts/fullscreen-toggle.sh"
-        "$HOME/.config/waybar/scripts/lock-screen.sh"
-        "$HOME/.config/waybar/scripts/lock.sh"
-        "$HOME/.config/waybar/scripts/mic-control.sh"
-        "$HOME/.config/waybar/scripts/monitor-refresh.sh"
-        "$HOME/.config/waybar/scripts/open-drives.sh"
-        "$HOME/.config/waybar/scripts/power-profile.sh"
-        "$HOME/.config/waybar/scripts/prepare-sleep.sh"
-        "$HOME/.config/waybar/scripts/start-tray-applets.sh"
-        "$HOME/.config/waybar/scripts/start-waybar.sh"
-        "$HOME/.config/waybar/scripts/suspend-now.sh"
-        "$HOME/.config/waybar/scripts/temperature-control.sh"
-        "$HOME/.config/waybar/scripts/volume-control.sh"
-        "$HOME/.config/waybar/scripts/wallpaper.sh"
+        "$HOME/.config/scripts/brightness-control.sh"
+        "$HOME/.config/scripts/caffeine-control.sh"
+        "$HOME/.config/scripts/display-scale.sh"
+        "$HOME/.config/scripts/fullscreen-toggle.sh"
+        "$HOME/.config/scripts/lock-screen.sh"
+        "$HOME/.config/scripts/lock.sh"
+        "$HOME/.config/scripts/mic-control.sh"
+        "$HOME/.config/scripts/monitor-refresh.sh"
+        "$HOME/.config/scripts/open-drives.sh"
+        "$HOME/.config/scripts/power-profile.sh"
+        "$HOME/.config/scripts/prepare-sleep.sh"
+        "$HOME/.config/scripts/start-tray-applets.sh"
+        "$HOME/.config/scripts/start-waybar.sh"
+        "$HOME/.config/scripts/suspend-now.sh"
+        "$HOME/.config/scripts/temperature-control.sh"
+        "$HOME/.config/scripts/volume-control.sh"
+        "$HOME/.config/scripts/wallpaper.sh"
         "$HOME/.config/alacritty/alacritty.toml"
         "$HOME/.config/fuzzel/fuzzel.ini"
         "$HOME/.config/mako/config"
@@ -1047,7 +1049,7 @@ validate() {
     done
 
     local script
-    for script in "$HOME/.config/waybar/scripts/"*.sh; do
+    for script in "$HOME/.config/scripts/"*.sh; do
         [ -e "$script" ] || continue
         if [ -x "$script" ]; then
             print_done "Script executable: $(basename "$script")"
@@ -1185,6 +1187,7 @@ print_summary() {
     echo -e "  ${BOLD}Key files${NC}"
     echo -e "    ${GREY}niri  ${NC}  ~/.config/niri/config.kdl"
     echo -e "    ${GREY}waybar${NC}  ~/.config/waybar/"
+    echo -e "    ${GREY}scripts${NC}  ~/.config/scripts/"
     echo -e "    ${GREY}zsh   ${NC}  ~/.zshrc"
     echo -e "    ${GREY}keys  ${NC}  $SCRIPT_DIR/keybindings.md"
     echo ""
