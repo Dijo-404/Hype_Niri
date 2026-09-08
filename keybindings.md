@@ -14,6 +14,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Alt + F4` | `close-window` | Close active window |
 | `Super + Delete` | `quit` | Exit Niri completely |
 | `Super + W` | `toggle-column-tabbed-display` | Toggle tabbed column view |
+| `Super + Shift + S` | `opacity-toggle` | Toggle window transparency (90%/80% or fully opaque) |
 | `Super + Shift + F` | `fullscreen-toggle` | Toggle fullscreen with waybar animation |
 | `Super + F` | `maximize-column` | Maximize the current column |
 | `Super + O` | `toggle-overview` | Toggle window overview |

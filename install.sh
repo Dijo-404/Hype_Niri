@@ -999,6 +999,7 @@ validate() {
 
     local critical_files=(
         "$HOME/.config/niri/config.kdl"
+        "$HOME/.config/niri/opacity.kdl"
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/scripts/brightness-control.sh"
@@ -1010,6 +1011,7 @@ validate() {
         "$HOME/.config/scripts/mic-control.sh"
         "$HOME/.config/scripts/monitor-refresh.sh"
         "$HOME/.config/scripts/open-drives.sh"
+        "$HOME/.config/scripts/opacity-toggle.sh"
         "$HOME/.config/scripts/power-profile.sh"
         "$HOME/.config/scripts/prepare-sleep.sh"
         "$HOME/.config/scripts/start-tray-applets.sh"

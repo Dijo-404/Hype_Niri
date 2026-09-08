@@ -99,17 +99,8 @@ window-rule {
     clip-to-geometry true
 }
 
-window-rule {
-    match is-active=true
-    draw-border-with-background false
-    opacity 0.90
-}
-
-window-rule {
-    match is-active=false
-    draw-border-with-background false
-    opacity 0.80
-}
+// Kept separate so opacity-toggle.sh can switch it without rewriting this file.
+include "opacity.kdl"
 
 window-rule {
     match app-id="blueman-manager"
@@ -142,6 +133,7 @@ binds {
     Mod+Shift+Delete { spawn-sh "~/.config/scripts/wallpaper.sh current; wlogout --protocol layer-shell -b 5 --margin-top 350 --margin-bottom 350 --margin-left 200 --margin-right 300 -l ~/.config/wlogout/layout -C ~/.config/wlogout/style.css"; }
 
     Mod+W { toggle-column-tabbed-display; }
+    Mod+Shift+S repeat=false hotkey-overlay-title="Toggle Window Opacity" { spawn-sh "~/.config/scripts/opacity-toggle.sh"; }
     Mod+Shift+F { spawn-sh "~/.config/scripts/fullscreen-toggle.sh"; }
     Mod+F { maximize-column; }
     Mod+O repeat=false { toggle-overview; }

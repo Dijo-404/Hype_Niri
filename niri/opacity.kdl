@@ -1,0 +1,11 @@
+window-rule {
+    match is-active=true
+    draw-border-with-background false
+    opacity 0.90
+}
+
+window-rule {
+    match is-active=false
+    draw-border-with-background false
+    opacity 0.80
+}
