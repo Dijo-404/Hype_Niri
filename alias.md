@@ -82,3 +82,10 @@ Aliases to speed up your terminal workflow in Hype Niri.
 - `psg`: Search process list visually
 - `ports`: Show open ports natively (`netstat`)
 - `ff`: Run `fastfetch` system info
+
+## Stealth (Tor)
+- `stealth-start`: Start transparent Tor routing and verify a normal TCP request uses Tor
+- `stealth-status`: Show service, firewall, MAC, and live Tor verification
+- `stealth-stop`: Restore the original Wi-Fi MAC and connection when needed, then remove the Stealth firewall
+
+These are Zsh functions loaded from `~/.local/share/stealth/stealth.zsh`. See [installation and traffic limits](INSTALL.md#stealth-tor-routing).

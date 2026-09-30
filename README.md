@@ -80,9 +80,10 @@ yay -Syu --aur
 ├── polkit/          # Polkit rules for passwordless NetworkManager
 ├── Wallpapers/      # Default curated wallpapers
 ├── scripts/         # Desktop utility and control scripts
+├── stealth/         # Optional transparent Tor service and installer
 ├── waybar/          # Comprehensive status bar configuration
 ├── wlogout/         # Power menu configuration
-├── zsh/             # Shell config (.zshrc) and Powerlevel10k theme
+├── zsh/             # Shell config, Stealth commands, and Powerlevel10k theme
 ├── install.sh       # Automated installation script
 ├── pkglist.txt      # Master list of required packages
 └── *.md             # Documentation files
@@ -94,4 +95,5 @@ yay -Syu --aur
 
 - **[Keybindings Reference](keybindings.md)** - Learn how to navigate and manage windows
 - **[Zsh Aliases](alias.md)** - Shell aliases
+- **[Stealth Tor Routing](INSTALL.md#stealth-tor-routing)** - Optional Tor routing commands
 - **[Installation Guide](INSTALL.md)** - Detailed setup instructions

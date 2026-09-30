@@ -23,7 +23,7 @@
     "pulseaudio",
     "backlight",
     "battery",
-    "tray",
+    "group/connectivity",
     "custom/power"
   ],
 
@@ -114,6 +114,16 @@
   "tray": {
     "icon-size": 16,
     "spacing": 8
+  },
+
+  "group/connectivity": {
+    "orientation": "horizontal",
+    "modules": ["tray", "image#stealth"]
+  },
+  "image#stealth": {
+    "exec": "~/.config/scripts/stealth-indicator.sh",
+    "interval": 3,
+    "size": 16
   },
 
   "pulseaudio": {

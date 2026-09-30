@@ -12,7 +12,7 @@ BOLD='\033[1m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR=""
-PHASE_TOTAL=15
+PHASE_TOTAL=16
 PHASE_CURRENT=0
 
 # Visual layout: 2-space indent, fixed inner box width (columns between borders).
@@ -423,6 +423,8 @@ backup_configs() {
             break
         fi
     done
+    [ -d "$HOME/.local/share/stealth" ] && has_existing=true
+    [ -d "$HOME/.local/share/privacy-shield" ] && has_existing=true
 
     if $has_existing; then
         print_warn "Existing configs found"
@@ -437,6 +439,8 @@ backup_configs() {
             [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
             [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/.bashrc"
             [ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
+            [ -d "$HOME/.local/share/stealth" ] && \
+                cp -r "$HOME/.local/share/stealth" "$BACKUP_DIR/stealth"
             [ -d "$HOME/.local/share/nautilus" ] && \
                 cp -r "$HOME/.local/share/nautilus" "$BACKUP_DIR/nautilus-share"
             [ -d "$HOME/.config/nautilus" ] && \
@@ -934,6 +938,37 @@ setup_cloudflare() {
     fi
 }
 
+setup_stealth() {
+    print_header "Stealth Tor Routing" "optional transparent Tor for host TCP and DNS"
+
+    if ! confirm "Install Stealth routing? It stays off until stealth-start and supports NetworkManager Wi-Fi or Ethernet."; then
+        print_warn "Stealth installation skipped"
+        return 0
+    fi
+
+    if [ ! -f "$SCRIPT_DIR/zsh/stealth.zsh" ] || [ ! -f "$SCRIPT_DIR/stealth/install-stealth.sh" ]; then
+        print_error "Stealth files are missing from $SCRIPT_DIR"
+        return 1
+    fi
+
+    print_step "Installing Stealth packages..."
+    sudo pacman -S --needed --noconfirm tor nftables iproute2 curl
+
+    mkdir -p "$HOME/.local/share/stealth"
+    cp "$SCRIPT_DIR/zsh/stealth.zsh" "$HOME/.local/share/stealth/stealth.zsh"
+    cp -r "$SCRIPT_DIR/stealth/." "$HOME/.local/share/stealth/"
+    print_done "Staged Stealth commands and installer -> ~/.local/share/stealth/"
+
+    local installer="$HOME/.local/share/stealth/install-stealth.sh"
+    sudo bash "$installer"
+    if [ -d "$HOME/.local/share/privacy-shield" ]; then
+        mv "$HOME/.local/share/privacy-shield" "$BACKUP_DIR/stealth-legacy-staging"
+        print_done "Archived previous Stealth staging -> $BACKUP_DIR/stealth-legacy-staging"
+    fi
+    print_done "Stealth service installed but inactive"
+    print_warn "Open a new terminal, then use stealth-start, stealth-status, and stealth-stop"
+}
+
 validate() {
     print_header "Validating Installation" "check commands, configs, fonts and services"
 
@@ -1242,6 +1277,7 @@ main() {
     run_phase "Lid switch behavior" setup_logind
     run_phase "Firewall setup" setup_firewall
     run_phase "Cloudflare WARP" setup_cloudflare
+    run_phase "Stealth Tor routing" setup_stealth
     if run_phase "Validation" validate; then
         print_summary
         prompt_reboot
