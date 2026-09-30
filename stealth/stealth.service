@@ -1,0 +1,20 @@
+[Unit]
+Description=Stealth (transparent Tor for host TCP and DNS)
+Wants=network-online.target
+After=NetworkManager.service network-online.target
+Requires=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/stealth start
+ExecStop=/usr/local/bin/stealth stop
+RemainAfterExit=yes
+TimeoutStartSec=4min
+TimeoutStopSec=2min
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=stealth
+
+[Install]
+WantedBy=multi-user.target

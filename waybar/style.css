@@ -38,7 +38,7 @@ window#waybar.hidden {
 #pulseaudio,
 #backlight,
 #battery,
-#tray,
+#connectivity,
 #custom-power {
   background-color: #2d2d2d;
   color: #ffffff;
@@ -51,6 +51,24 @@ window#waybar.hidden {
   margin-right: 3px;
   font-weight: 500;
   transition: all 0.15s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+#connectivity #tray {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+#connectivity #image.stealth {
+  padding: 0;
+  margin: 0 0 0 8px;
+}
+
+#connectivity #image.stealth.empty {
+  padding: 0;
+  margin: 0;
 }
 
 #cpu-group,
@@ -108,7 +126,7 @@ window#waybar.hidden {
 #pulseaudio:hover,
 #backlight:hover,
 #battery:hover,
-#tray:hover,
+#connectivity:hover,
 #custom-power:hover {
   background-color: #404040;
 }

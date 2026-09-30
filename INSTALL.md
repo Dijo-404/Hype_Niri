@@ -27,7 +27,7 @@ If you prefer to understand what is happening under the hood or selectively appl
 
 ### 1. Install Required Packages
 
-The repository contains a `pkglist.txt` file listing all necessary dependencies.
+The repository contains a `pkglist.txt` file for the base desktop packages. Stealth packages are installed separately when you choose that option.
 
 For smoother downloads, refresh mirrors before installing packages. If `reflector` is already installed, use it:
 
@@ -170,9 +170,9 @@ EOF
 chsh -s /usr/bin/zsh
 ```
 
-### 7. Optional: Privacy Networking
+### 7. Optional Networking
 
-Both ufw and Cloudflare WARP are **opt-in** — skip this section if you don't want them.
+ufw, Cloudflare WARP, and Stealth Tor routing are **opt-in**. The automated installer asks before configuring each one.
 
 #### Firewall (ufw)
 
@@ -212,6 +212,23 @@ warp-cli --accept-tos status
 ```
 
 Disconnect anytime with `warp-cli disconnect`. Inspect logs with `journalctl -u warp-svc`.
+
+#### Stealth Tor routing
+
+The installer asks whether to install Stealth. Choosing Yes installs its packages, stages the commands in `~/.local/share/stealth/`, and installs the system service. Choosing No skips those steps. It does not start Tor or change your network until you run `stealth-start`. For a manual install from this repository:
+
+```bash
+mkdir -p ~/.local/share/stealth
+sudo pacman -S --needed tor nftables iproute2 curl jq util-linux networkmanager
+cp zsh/stealth.zsh stealth/* ~/.local/share/stealth/
+sudo bash ~/.local/share/stealth/install-stealth.sh
+```
+
+Open a new Zsh terminal after installing. The commands are `stealth-start`, `stealth-status`, and `stealth-stop`. If you use your own `.zshrc`, source `~/.local/share/stealth/stealth.zsh` from it. The direct commands `sudo stealth start`, `sudo stealth status`, and `sudo stealth stop` also work; a direct start leaves the systemd service inactive even while routing is active. When upgrading an earlier installation, stop its routing service first; the installer migrates its inactive system files.
+
+While Stealth is active, a green Stealth icon appears beside the Wi-Fi and Bluetooth icons in Waybar's tray pill. It disappears after Stealth stops.
+
+This version requires a NetworkManager-managed Wi-Fi or Ethernet default IPv4 route and a Tor service account. The optional installer step installs `tor`, `nftables`, `iproute2`, and `curl`; the main package list includes `jq` and `util-linux`. While active, host IPv4 TCP and DNS go through Tor; IPv6, other UDP, ICMP, and forwarded/container traffic are blocked. Tor's relay connections and DHCP still use the selected physical connection. Wi-Fi mode temporarily spoofs the MAC address and reconnects; Ethernet mode keeps its existing connection and MAC. If startup fails after the firewall is installed, run `stealth-stop` to recover it. Stealth is not a full IP VPN.
 
 ### 8. Reboot Your System
 
@@ -253,7 +270,7 @@ yay -Syu --aur
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
 - **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/niri/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
 - **Lock Screen**: `Super+L` locks via hyprlock and uses the saved wallpaper pointer from `~/.local/state/niri/current_wallpaper`.
-- **Firewall / WARP**: If you skipped step 7 and want them later, just run the relevant commands above — both are idempotent.
+- **Firewall / WARP / Stealth**: If you skipped step 7, use the relevant commands above later. Stealth remains off until `stealth-start`.
 
 ## Troubleshooting
 

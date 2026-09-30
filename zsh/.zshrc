@@ -193,3 +193,6 @@ if [[ -d "$HOME/.bun" ]]; then
     export PATH="$BUN_INSTALL/bin:$PATH"
     [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 fi
+
+[[ -f "$HOME/.local/share/stealth/stealth.zsh" ]] && \
+    source "$HOME/.local/share/stealth/stealth.zsh"
