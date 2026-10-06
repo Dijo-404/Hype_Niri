@@ -20,6 +20,8 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 | **Bar** | [Waybar](https://github.com/Alexays/Waybar) |
 | **Terminal** | [Alacritty](https://github.com/alacritty/alacritty) |
 | **Shell** | [Zsh](https://www.zsh.org/) + [Powerlevel10k](https://github.com/romkatv/powerlevel10k) |
+| **Text Font** | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) |
+| **Waybar Font** | Roboto with Material Design Icons |
 | **Launcher** | [Fuzzel](https://codeberg.org/dnkl/fuzzel) |
 | **Notifications** | [Mako](https://github.com/emersion/mako) |
 | **Lock Screen** | [Hyprlock](https://github.com/hyprwm/hyprlock) |
@@ -57,7 +59,7 @@ git pull
 ./install.sh
 ```
 
-The installer optionally refreshes Arch mirrors, requires a full system upgrade before installing packages, and backs up existing user configurations before replacing them. It uses `pacman` for official repository packages and `yay` for AUR packages. Run it as your regular user with sudo access, and install `yay` first with your preferred method.
+The installer optionally refreshes Arch mirrors, requires a full system upgrade before installing packages, and backs up existing user configurations before replacing them. It uses `pacman` for official repository packages and `yay` for missing AUR packages, retaining installed AUR packages and providers. It checks exact missing AUR package names before installing; a failed lookup stops the package phase. Missing AUR packages require a terminal so you can review provider and conflict choices. Run it as your regular user with sudo access, and install `yay` first with your preferred method.
 
 To update only packages without re-running the full script:
 

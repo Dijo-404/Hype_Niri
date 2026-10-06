@@ -164,11 +164,14 @@ confirm() {
 }
 
 save_install_log() {
-    local install_log="$1"
+    local install_log="$1" source="${2:-repo}"
     print_error "Package installation failed. Last 40 log lines:"
     tail -n 40 "$install_log" | sed 's/^/    /'
 
-    if grep -Eqi 'xwayland-satellite|failed retrieving file|404 Not Found|Could not resolve host|Connection timed out|SSL certificate problem|invalid or corrupted package' "$install_log"; then
+    if [ "$source" = aur ]; then
+        print_warn "AUR installation failed. Check package lookup, provider choices, and conflicts above."
+        print_warn "Check the AUR error above and rerun ./install.sh when it is resolved."
+    elif [ "$source" = repo ] && grep -Eqi 'failed retrieving file|404 Not Found|Could not resolve host|Connection timed out|SSL certificate problem|invalid or corrupted package' "$install_log"; then
         print_warn "If xwayland-satellite failed, it is an official Arch extra package, not an AUR package."
         print_warn "Rerun this installer and allow the mirror refresh step, or refresh manually:"
         print_warn "  sudo reflector --protocol https --latest 30 --sort rate --save /etc/pacman.d/mirrorlist"
@@ -327,6 +330,16 @@ preflight() {
     local required_files=(
         pkglist.txt zsh/.zshrc zsh/.p10k.zsh
         niri/config.kdl niri/opacity.kdl waybar/config.jsonc waybar/style.css
+        fontconfig/60-hype-niri-fonts.conf
+        waybar/icons/16x16/panel/blueman-tray.svg
+        waybar/icons/16x16/panel/blueman-disabled.svg
+        waybar/icons/16x16/panel/blueman-active.svg
+        waybar/icons/16x16/panel/nm-signal-00.svg
+        waybar/icons/16x16/panel/nm-signal-25.svg
+        waybar/icons/16x16/panel/nm-signal-50.svg
+        waybar/icons/16x16/panel/nm-signal-75.svg
+        waybar/icons/16x16/panel/nm-signal-100.svg
+        waybar/icons/16x16/panel/nm-no-connection.svg
         scripts/display-scale.sh
         systemd/setup-oomd.sh systemd/user@.service.d/60-hype-niri-oomd.conf
         polkit/49-udisks2.rules polkit/50-network-manager.rules
@@ -358,6 +371,7 @@ install_packages() {
     local packages=()
     local pacman_packages=()
     local aur_packages=()
+    local retained_packages=()
     local total
     local pkg i
     local install_log
@@ -383,13 +397,19 @@ install_packages() {
     for pkg in "${packages[@]}"; do
         if pacman -Si "$pkg" >/dev/null 2>&1; then
             pacman_packages+=("$pkg")
+        elif pacman -T "$pkg" >/dev/null 2>&1; then
+            # Foreign packages and their installed providers already satisfy the
+            # requirement. AUR lookup failures must not select replacements.
+            retained_packages+=("$pkg")
+            print_done "Retaining installed package/provider: $pkg"
         else
-            aur_packages+=("$pkg")
+            aur_packages+=("aur/$pkg")
         fi
     done
 
     print_step "Pacman packages: ${#pacman_packages[@]}"
-    print_step "AUR packages: ${#aur_packages[@]}"
+    print_step "AUR packages to install: ${#aur_packages[@]}"
+    print_step "Installed AUR requirements retained: ${#retained_packages[@]}"
 
     if [ "${#aur_packages[@]}" -gt 0 ]; then
         ensure_yay
@@ -398,9 +418,23 @@ install_packages() {
     install_log="$(mktemp)" || { print_error "Failed to create temp log"; exit 1; }
     _tmp_resources+=("$install_log")
 
+    if [ "${#aur_packages[@]}" -gt 0 ]; then
+        if ! test -t 0; then
+            print_error "Missing AUR packages require interactive input; rerun ./install.sh in a terminal."
+            exit 1
+        fi
+        # yay's install resolver can search alternate providers after an RPC
+        # error. Its info operation checks exact names and fails on that error.
+        print_step "Checking missing AUR package metadata..."
+        if ! yay -Si --aur "${aur_packages[@]}" >> "$install_log" 2>&1; then
+            save_install_log "$install_log" aur
+            exit 1
+        fi
+    fi
+
     if [ "${#pacman_packages[@]}" -gt 0 ]; then
         print_step "Installing official repository packages with pacman..."
-        if ! stdbuf -oL -eL sudo pacman -S --needed --noconfirm "${pacman_packages[@]}" 2>&1 | tee "$install_log"; then
+        if ! stdbuf -oL -eL sudo pacman -S --needed --noconfirm "${pacman_packages[@]}" 2>&1 | tee -a "$install_log"; then
             save_install_log "$install_log"
             exit 1
         fi
@@ -408,10 +442,18 @@ install_packages() {
 
     if [ "${#aur_packages[@]}" -gt 0 ]; then
         print_step "Installing AUR packages with yay..."
-        if ! stdbuf -oL -eL yay -S --needed --noconfirm "${aur_packages[@]}" 2>&1 | tee -a "$install_log"; then
-            save_install_log "$install_log"
+        print_step "If a provider menu appears, select the package name from the queue above."
+        if ! stdbuf -oL -eL yay -S --aur --needed --noconfirm=false --confirm "${aur_packages[@]}" 2>&1 | tee -a "$install_log"; then
+            save_install_log "$install_log" aur
             exit 1
         fi
+    fi
+
+    # Do not report success if a helper skipped an unavailable target.
+    if ! pacman -T "${packages[@]}" >> "$install_log" 2>&1; then
+        print_error "Required packages remain unsatisfied; installation stopped."
+        save_install_log "$install_log" verification
+        exit 1
     fi
 
     print_done "All packages installed"
@@ -422,7 +464,8 @@ backup_configs() {
 
     local targets=(
         .zshrc .p10k.zsh
-        .config/gtk-3.0 .config/gtk-4.0 .config/autostart
+        .config/gtk-3.0 .config/gtk-4.0 .config/autostart .config/fontconfig
+        .local/share/icons/Papirus-Dark
         .local/share/stealth .local/share/privacy-shield
     )
     local config target
@@ -607,6 +650,36 @@ setup_shell() {
     fi
 }
 
+setup_tray_icons() {
+    local theme="$HOME/.local/share/icons/Papirus-Dark" size icon tmp
+    prepare_generated_config_dir "$theme"
+    if [ ! -f "$theme/index.theme" ]; then
+        cp -- /usr/share/icons/Papirus-Dark/index.theme "$theme/index.theme"
+    fi
+    prepare_generated_config_dir "$theme/16x16"
+    if [ ! -e "$theme/16x16@2x" ] && [ ! -L "$theme/16x16@2x" ]; then
+        ln -s 16x16 "$theme/16x16@2x"
+    elif [ "$(readlink "$theme/16x16@2x" || true)" != 16x16 ]; then
+        prepare_generated_config_dir "$theme/16x16@2x"
+    fi
+    for size in 16x16 16x16@2x; do
+        prepare_generated_config_dir "$theme/$size/panel"
+        for icon in blueman-tray blueman-disabled blueman-active \
+            nm-signal-00 nm-signal-25 nm-signal-50 nm-signal-75 nm-signal-100 nm-no-connection; do
+            tmp="$(mktemp "$theme/$size/panel/.${icon}.XXXXXX")"
+            _tmp_resources+=("$tmp")
+            cp -- "$SCRIPT_DIR/waybar/icons/16x16/panel/$icon.svg" "$tmp"
+            chmod 644 "$tmp"
+            # Replace only the applet alias, preserving shared theme icons.
+            mv -fT -- "$tmp" "$theme/$size/panel/$icon.svg"
+        done
+    done
+    if command -v gtk-update-icon-cache &>/dev/null; then
+        gtk-update-icon-cache -f -t "$theme" || print_warn "Could not refresh the user icon cache"
+    fi
+    print_done "Applied matching Wi-Fi and Bluetooth outline icons (Bluetooth remains 14px)"
+}
+
 setup_gtk() {
     print_header "GTK Theme Setup" "dark GTK and icon theming"
 
@@ -621,13 +694,22 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-font-name=JetBrains Mono 10
 gtk-application-prefer-dark-theme=true
 EOF
         chmod 644 "$tmp"
         mv -fT -- "$tmp" "$HOME/.config/$gtk_dir/settings.ini"
         print_done "Created $gtk_dir settings"
     done
+
+    prepare_generated_config_dir "$HOME/.config/fontconfig"
+    prepare_generated_config_dir "$HOME/.config/fontconfig/conf.d"
+    tmp="$(mktemp "$HOME/.config/fontconfig/conf.d/.hype-niri-fonts.XXXXXX")"
+    _tmp_resources+=("$tmp")
+    cp -- "$SCRIPT_DIR/fontconfig/60-hype-niri-fonts.conf" "$tmp"
+    chmod 644 "$tmp"
+    mv -fT -- "$tmp" "$HOME/.config/fontconfig/conf.d/60-hype-niri-fonts.conf"
+    print_done "Set default desktop and monospace fonts to JetBrains Mono"
 
     if command -v papirus-folders &>/dev/null; then
         print_step "Setting Papirus-Dark folder color to grey..."
@@ -640,6 +722,8 @@ EOF
         print_warn "papirus-folders not found -- install 'papirus-folders-catppuccin-git' from AUR to recolor folders"
     fi
 
+    setup_tray_icons
+
     if command -v dconf &>/dev/null; then
         print_step "Applying dark theme via dconf..."
         if dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null &&
@@ -647,7 +731,9 @@ EOF
            dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" 2>/dev/null &&
            dconf write /org/gnome/desktop/interface/cursor-theme "'Adwaita'" 2>/dev/null &&
            dconf write /org/gnome/desktop/interface/cursor-size "24" 2>/dev/null &&
-           dconf write /org/gnome/desktop/interface/font-name "'JetBrainsMono Nerd Font 10'" 2>/dev/null; then
+           dconf write /org/gnome/desktop/interface/font-name "'JetBrains Mono 10'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/monospace-font-name "'JetBrains Mono 10'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/document-font-name "'JetBrains Mono 10'" 2>/dev/null; then
             print_done "Dark theme applied via dconf"
         else
             print_warn "Could not apply all dconf settings; GTK settings.ini files will still apply"
@@ -659,7 +745,9 @@ EOF
            gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null &&
            gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita' 2>/dev/null &&
            gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null &&
-           gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null; then
+           gsettings set org.gnome.desktop.interface font-name 'JetBrains Mono 10' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface monospace-font-name 'JetBrains Mono 10' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface document-font-name 'JetBrains Mono 10' 2>/dev/null; then
             print_done "Dark theme applied via gsettings"
         else
             print_warn "Could not apply all gsettings values; GTK settings.ini files will still apply"
@@ -932,6 +1020,15 @@ setup_firewall() {
     sudo ufw status verbose | sed 's/^/    /'
 }
 
+warn_cloudflare_setup() {
+    print_warn "$1"
+    if [ -n "${2:-}" ]; then
+        printf '%s\n' "$2" | sed -n '1,20s/^/    /p'
+    fi
+    print_warn "Cloudflare WARP setup incomplete; continuing installation"
+    print_warn "Inspect WARP logs with: journalctl -u warp-svc"
+}
+
 setup_cloudflare() {
     print_header "Cloudflare WARP" "optional DNS-over-HTTPS or full VPN"
 
@@ -945,17 +1042,32 @@ setup_cloudflare() {
         return 0
     fi
 
-    if ! sudo systemctl enable --now warp-svc; then
-        print_error "Could not enable and start warp-svc"
-        return 1
+    local warp_output attempt warp_ready=false
+    if ! warp_output=$(sudo systemctl enable --now warp-svc 2>&1); then
+        warn_cloudflare_setup "Could not enable and start warp-svc" "$warp_output"
+        return 0
     fi
     print_done "warp-svc enabled and running"
 
+    # A Type=simple service can be active before its CLI socket is ready.
+    # Missing registration still returns a successful status query.
+    for attempt in {1..10}; do
+        if warp_output=$(warp-cli --accept-tos status 2>&1); then
+            warp_ready=true
+            break
+        fi
+        if [ "$attempt" -lt 10 ]; then sleep 1; fi
+    done
+    if ! $warp_ready; then
+        warn_cloudflare_setup "WARP daemon did not become ready for CLI requests" "$warp_output"
+        return 0
+    fi
+
     if ! warp-cli --accept-tos registration show >/dev/null 2>&1; then
-        if ! warp-cli --accept-tos registration new >/dev/null 2>&1; then
-            print_warn "WARP registration failed (may need re-run after reboot)"
+        if ! warp_output=$(warp-cli --accept-tos registration new 2>&1); then
+            warn_cloudflare_setup "WARP registration failed; mode and connection were not changed" "$warp_output"
             print_warn "Manually retry with: warp-cli --accept-tos registration new"
-            return 1
+            return 0
         fi
         print_done "Device registered with Cloudflare"
     fi
@@ -969,33 +1081,33 @@ setup_cloudflare() {
     read -rp "  Mode [1/2/3]: " mode_choice || mode_choice=""
     case "${mode_choice:-1}" in
         2)
-            if warp-cli --accept-tos mode warp >/dev/null 2>&1; then
+            if warp_output=$(warp-cli --accept-tos mode warp 2>&1); then
                 print_done "Mode: WARP (VPN)"
             else
-                print_error "Failed to set WARP mode; connection was not changed"
-                return 1
+                warn_cloudflare_setup "Failed to set WARP mode; connection was not changed" "$warp_output"
+                return 0
             fi
             ;;
         3) print_warn "WARP mode and connection preserved"; return 0 ;;
         1|"")
-            if warp-cli --accept-tos mode doh >/dev/null 2>&1; then
+            if warp_output=$(warp-cli --accept-tos mode doh 2>&1); then
                 print_done "Mode: DoH"
             else
-                print_error "Failed to set DoH mode; connection was not changed"
-                return 1
+                warn_cloudflare_setup "Failed to set DoH mode; connection was not changed" "$warp_output"
+                return 0
             fi
             ;;
-        *) print_error "Invalid WARP mode; connection was not changed"; return 1 ;;
+        *) warn_cloudflare_setup "Invalid WARP mode; connection was not changed"; return 0 ;;
     esac
 
-    if warp-cli --accept-tos connect >/dev/null 2>&1; then
+    if warp_output=$(warp-cli --accept-tos connect 2>&1); then
         sleep 1
         local status
         status=$(warp-cli --accept-tos status 2>/dev/null || echo "unknown")
         print_done "WARP: $status"
     else
-        print_error "warp-cli connect failed -- check 'warp-cli status' manually"
-        return 1
+        warn_cloudflare_setup "WARP connection failed; check 'warp-cli status' manually" "$warp_output"
+        return 0
     fi
 }
 
@@ -1139,6 +1251,7 @@ validate() {
         "$HOME/.config/wlogout/icons/suspend.png"
         "$HOME/.config/gtk-3.0/settings.ini"
         "$HOME/.config/gtk-4.0/settings.ini"
+        "$HOME/.config/fontconfig/conf.d/60-hype-niri-fonts.conf"
         "$HOME/.zshrc"
         "$HOME/.p10k.zsh"
     )
@@ -1172,9 +1285,16 @@ validate() {
 
     if command -v fc-match &>/dev/null; then
         local font_match
+        font_match=$(fc-match -f '%{family}\n' 'JetBrains Mono' 2>/dev/null | head -n 1 || true)
+        if [[ "$font_match" == *"JetBrains Mono"* ]]; then
+            print_done "Font: JetBrains Mono"
+        else
+            print_warn "JetBrains Mono font not resolving -- install ttf-jetbrains-mono"
+        fi
+
         font_match=$(fc-match -f '%{family}\n' 'Roboto' 2>/dev/null | head -n 1 || true)
         if [[ "$font_match" == *"Roboto"* ]]; then
-            print_done "Font: Roboto"
+            print_done "Waybar font: Roboto"
         else
             print_warn "Roboto font not resolving -- install ttf-roboto"
         fi

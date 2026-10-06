@@ -62,7 +62,8 @@ BACKUP_DIR="$(mktemp -d "$HOME/.config-backup-$(date +%Y%m%d-%H%M%S).XXXXXX")"
 for target in \
     .config/niri .config/waybar .config/scripts .config/alacritty \
     .config/fuzzel .config/mako .config/fastfetch .config/wlogout .config/hypr \
-    .config/gtk-3.0 .config/gtk-4.0 .config/autostart \
+    .config/gtk-3.0 .config/gtk-4.0 .config/autostart .config/fontconfig \
+    .local/share/icons/Papirus-Dark \
     .zshrc .p10k.zsh .local/share/stealth .local/share/privacy-shield; do
     if [ -e "$HOME/$target" ] || [ -L "$HOME/$target" ]; then
         mkdir -p "$BACKUP_DIR/$(dirname "$target")"
@@ -102,7 +103,7 @@ gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
 gtk-cursor-theme-name=Adwaita
 gtk-cursor-theme-size=24
-gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-font-name=JetBrains Mono 10
 gtk-application-prefer-dark-theme=true
 EOF
 
@@ -113,9 +114,17 @@ dconf write /org/gnome/desktop/interface/gtk-theme      "'Adwaita-dark'"
 dconf write /org/gnome/desktop/interface/icon-theme     "'Papirus-Dark'"
 dconf write /org/gnome/desktop/interface/cursor-theme   "'Adwaita'"
 dconf write /org/gnome/desktop/interface/cursor-size    "24"
-dconf write /org/gnome/desktop/interface/font-name      "'JetBrainsMono Nerd Font 10'"
+dconf write /org/gnome/desktop/interface/font-name      "'JetBrains Mono 10'"
+dconf write /org/gnome/desktop/interface/monospace-font-name "'JetBrains Mono 10'"
+dconf write /org/gnome/desktop/interface/document-font-name  "'JetBrains Mono 10'"
+
+mkdir -p ~/.config/fontconfig/conf.d
+cp fontconfig/60-hype-niri-fonts.conf ~/.config/fontconfig/conf.d/
 
 papirus-folders -C grey --theme Papirus-Dark
+
+# Apply matching Wi-Fi and Bluetooth outline icons in the user theme.
+bash -c 'source ./install.sh; setup_tray_icons'
 ```
 
 ### 5. System-Wide Setup
@@ -221,7 +230,7 @@ Disable later with `sudo ufw disable`. The installer never opens SSH or any othe
 
 #### Cloudflare WARP
 
-The `cloudflare-warp-bin` AUR package ships a system service (`warp-svc`) and a user CLI (`warp-cli`). DoH (DNS-over-HTTPS) is the safe default; full WARP is a VPN tunnel.
+The `cloudflare-warp-bin` AUR package ships a system service (`warp-svc`) and a user CLI (`warp-cli`). DoH (DNS-over-HTTPS) is the safe default; full WARP is a VPN tunnel. The installer waits for the daemon's CLI socket before registering. If optional WARP setup fails, it shows the error and continues installation. A failed registration or mode change stops WARP setup before connecting.
 
 ```bash
 sudo systemctl enable --now warp-svc
