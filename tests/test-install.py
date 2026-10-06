@@ -67,6 +67,103 @@ stdbuf() {{ shift 2; "$@"; }}
     def commands(self):
         return self.log.read_text().splitlines() if self.log.exists() else []
 
+    def package_fixture(self, packages, *, repository=(), installed=(), provided=()):
+        """Model package availability and dependency satisfaction without pacman."""
+        fixture = self.root / "packages"
+        fixture.mkdir()
+        for name, values in (
+            ("pkglist.txt", packages),
+            ("repository", repository),
+            ("installed", installed),
+            ("satisfied", (*installed, *provided)),
+        ):
+            (fixture / name).write_text("".join(f"{value}\n" for value in values))
+        return f"SCRIPT_DIR={shlex.quote(str(fixture))}\n" + r"""
+test() {
+    # Package mocks simulate a terminal without changing other shell tests.
+    if [[ $# == 2 && $1 == -t && $2 == 0 ]]; then
+        [[ ${MOCK_HAS_TTY:-1} == 1 ]]
+    else
+        builtin test "$@"
+    fi
+}
+mock_contains() {
+    local line
+    while IFS= read -r line; do
+        [[ $line != "$2" ]] || return 0
+    done < "$SCRIPT_DIR/$1"
+    return 1
+}
+mock_install_targets() {
+    local target
+    for target in "$@"; do
+        case "$target" in
+            -*) ;;
+            *)
+                printf '%s\n' "${target#aur/}" >> "$SCRIPT_DIR/installed"
+                printf '%s\n' "${target#aur/}" >> "$SCRIPT_DIR/satisfied"
+                ;;
+        esac
+    done
+}
+pacman() {
+    printf 'pacman %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    case "$1" in
+        -Si) mock_contains repository "$2" ;;
+        -Q|-Qi|-Qq) mock_contains installed "$2" ;;
+        -T)
+            shift
+            local target status=0
+            for target in "$@"; do
+                if ! mock_contains satisfied "$target"; then
+                    printf '%s\n' "$target"
+                    status=127
+                fi
+            done
+            return "$status"
+            ;;
+        *) printf 'Unexpected pacman call: %s\n' "$*" >&2; return 99 ;;
+    esac
+}
+sudo() {
+    printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"
+    [[ $1 == pacman && $2 == -S ]] || return 99
+    [[ -z ${MOCK_PACMAN_OUTPUT:-} ]] || printf '%s\n' "$MOCK_PACMAN_OUTPUT"
+    shift 2
+    mock_install_targets "$@"
+}
+ensure_yay() {
+    printf 'ensure_yay\n' >> "$INSTALL_TEST_LOG"
+    return "${MOCK_ENSURE_YAY_STATUS:-0}"
+}
+yay() {
+    printf 'yay %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    case "$1" in
+        -Si)
+            [[ -z ${MOCK_YAY_QUERY_OUTPUT:-} ]] || printf '%s\n' "$MOCK_YAY_QUERY_OUTPUT"
+            return "${MOCK_YAY_QUERY_STATUS:-0}"
+            ;;
+        -S) ;;
+        *) return 99 ;;
+    esac
+    [[ -z ${MOCK_YAY_OUTPUT:-} ]] || printf '%s\n' "$MOCK_YAY_OUTPUT"
+    [[ ${MOCK_YAY_STATUS:-0} == 0 ]] || return "$MOCK_YAY_STATUS"
+    if [[ ${MOCK_YAY_INSTALLS:-1} == 1 ]]; then
+        shift
+        mock_install_targets "$@"
+    fi
+    return 0
+}
+mktemp() {
+    # Failure logs are deliberately preserved; keep them inside this fixture.
+    if [[ ${1:-} == /tmp/hype-niri-install-* ]]; then
+        command mktemp "$INSTALL_TEST_HOME/hype-niri-install-XXXXXXXX.log"
+    else
+        command mktemp "$INSTALL_TEST_HOME/tmp-XXXXXXXX"
+    fi
+}
+"""
+
     def validation_fixture(self):
         """Provide valid files while varying only the service state under test."""
         source = self.source.read_text()
@@ -204,6 +301,160 @@ install_packages
 """)
         self.assertEqual(self.commands(), ["pacman -S --needed --noconfirm niri waybar"])
 
+    def test_installed_foreign_packages_are_retained_without_aur_lookup(self):
+        packages = ("bemoji", "wlogout", "cloudflare-warp-bin")
+        self.run_installer(
+            self.package_fixture(packages, installed=packages)
+            + "MOCK_HAS_TTY=0; MOCK_ENSURE_YAY_STATUS=99; install_packages"
+        )
+        commands = self.commands()
+        self.assertNotIn("ensure_yay", commands)
+        self.assertFalse(any(command.startswith("yay ") for command in commands))
+        self.assertEqual(commands[-1], "pacman -T bemoji wlogout cloudflare-warp-bin")
+
+    def test_installed_foreign_provider_satisfies_requested_package(self):
+        self.run_installer(
+            self.package_fixture(
+                ("wlogout",), installed=("wlogout-git",), provided=("wlogout",)
+            )
+            + "MOCK_ENSURE_YAY_STATUS=99; install_packages"
+        )
+        self.assertNotIn("ensure_yay", self.commands())
+        self.assertFalse(any(command.startswith("yay ") for command in self.commands()))
+        self.assertEqual(self.commands()[-1], "pacman -T wlogout")
+
+    def test_installed_repository_packages_remain_upgrade_eligible(self):
+        self.run_installer(
+            self.package_fixture(
+                ("niri", "waybar"), repository=("niri", "waybar"), installed=("niri", "waybar")
+            )
+            + "install_packages"
+        )
+        self.assertIn("pacman -S --needed --noconfirm niri waybar", self.commands())
+        self.assertNotIn("ensure_yay", self.commands())
+        self.assertEqual(self.commands()[-1], "pacman -T niri waybar")
+
+    def test_only_missing_foreign_packages_are_exact_aur_targets(self):
+        self.run_installer(
+            self.package_fixture(
+                ("niri", "bemoji", "wlogout", "cloudflare-warp-bin", "fzf-tab", "brave-bin"),
+                repository=("niri",),
+                installed=("niri", "bemoji", "wlogout", "cloudflare-warp-bin"),
+            )
+            + "install_packages"
+        )
+        commands = self.commands()
+        self.assertIn("pacman -S --needed --noconfirm niri", commands)
+        self.assertEqual(
+            [command for command in commands if command.startswith("yay ")],
+            [
+                "yay -Si --aur aur/fzf-tab aur/brave-bin",
+                "yay -S --aur --needed --noconfirm=false --confirm aur/fzf-tab aur/brave-bin",
+            ],
+        )
+        self.assertEqual(
+            commands[-1], "pacman -T niri bemoji wlogout cloudflare-warp-bin fzf-tab brave-bin"
+        )
+
+    def test_failed_aur_preflight_stops_before_repository_installation(self):
+        result = self.run_installer(
+            self.package_fixture(("niri", "bemoji"), repository=("niri",))
+            + "MOCK_YAY_QUERY_STATUS=1; install_packages; printf 'unexpected next phase\\n'",
+            succeeds=False,
+        )
+        commands = self.commands()
+        self.assertIn("yay -Si --aur aur/bemoji", commands)
+        self.assertFalse(any(command.startswith("pacman -S ") for command in commands))
+        self.assertFalse(any(command.startswith("yay -S ") for command in commands))
+        self.assertNotIn("unexpected next phase", result.stdout)
+
+    def test_missing_aur_without_terminal_stops_before_any_installation(self):
+        result = self.run_installer(
+            self.package_fixture(("niri", "bemoji"), repository=("niri",))
+            + "MOCK_HAS_TTY=0; install_packages; printf 'unexpected next phase\\n'",
+            succeeds=False,
+        )
+        commands = self.commands()
+        self.assertIn("Missing AUR packages require interactive input", result.stdout)
+        self.assertFalse(any(command.startswith("pacman -S ") for command in commands))
+        self.assertFalse(any(command.startswith("yay ") for command in commands))
+        self.assertNotIn("unexpected next phase", result.stdout)
+
+    def test_aur_preflight_eof_stops_before_repository_installation(self):
+        result = self.run_installer(
+            self.package_fixture(("niri", "wlogout"), repository=("niri",))
+            + r"""
+MOCK_YAY_QUERY_OUTPUT='request failed: Get https://aur.archlinux.org/rpc: EOF'
+MOCK_YAY_QUERY_STATUS=1
+install_packages
+printf 'unexpected next phase\n'
+""",
+            succeeds=False,
+        )
+        commands = self.commands()
+        self.assertIn("yay -Si --aur aur/wlogout", commands)
+        self.assertFalse(any(command.startswith("pacman -S ") for command in commands))
+        self.assertFalse(any(command.startswith("yay -S ") for command in commands))
+        self.assertIn("request failed: Get https://aur.archlinux.org/rpc: EOF", result.stdout)
+        self.assertNotIn("unexpected next phase", result.stdout)
+
+    def test_failed_aur_helper_stops_installation(self):
+        result = self.run_installer(
+            self.package_fixture(("bemoji",))
+            + "MOCK_YAY_STATUS=42; install_packages; printf 'unexpected next phase\\n'",
+            succeeds=False,
+        )
+        self.assertNotIn("unexpected next phase", result.stdout)
+        self.assertNotEqual(self.commands()[-1], "pacman -T bemoji")
+
+    def test_successful_helper_with_unsatisfied_targets_stops_installation(self):
+        result = self.run_installer(
+            self.package_fixture(("bemoji",))
+            + "MOCK_YAY_INSTALLS=0; install_packages; printf 'unexpected next phase\\n'",
+            succeeds=False,
+        )
+        self.assertIn("Required packages remain unsatisfied", result.stdout)
+        self.assertNotIn("unexpected next phase", result.stdout)
+        self.assertEqual(self.commands()[-1], "pacman -T bemoji")
+
+    def test_aur_failure_does_not_reuse_official_package_mirror_advice(self):
+        result = self.run_installer(
+            self.package_fixture(
+                ("xwayland-satellite", "bemoji"), repository=("xwayland-satellite",)
+            )
+            + r"""
+print_warn() { printf '%s\n' "$*"; }
+MOCK_PACMAN_OUTPUT='warning: xwayland-satellite is up to date -- skipping'
+MOCK_YAY_OUTPUT='error: AUR helper failed'
+MOCK_YAY_STATUS=1
+install_packages
+""",
+            succeeds=False,
+        )
+        self.assertIn("AUR helper failed", result.stdout)
+        self.assertNotIn("refresh manually", result.stdout)
+        self.assertNotIn("official Arch extra package", result.stdout)
+        self.assertNotIn("sudo reflector", result.stdout)
+        self.assertNotIn("sudo pacman -Syu", result.stdout)
+
+    def test_official_download_failure_keeps_mirror_recovery_advice(self):
+        result = self.run_installer(
+            self.package_fixture(("xwayland-satellite",), repository=("xwayland-satellite",))
+            + r"""
+print_warn() { printf '%s\n' "$*"; }
+sudo() {
+    printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"
+    printf 'error: failed retrieving file xwayland-satellite.pkg.tar.zst: 404 Not Found\n'
+    return 1
+}
+install_packages
+""",
+            succeeds=False,
+        )
+        self.assertIn("official Arch extra package", result.stdout)
+        self.assertIn("sudo reflector", result.stdout)
+        self.assertIn("sudo pacman -Syu", result.stdout)
+
     def test_wallpaper_selection_handles_large_collection_and_preserves_files(self):
         fixture = self.root / "configs"
         for directory in ("niri", "waybar", "scripts", "alacritty", "fuzzel", "mako", "fastfetch", "wlogout", "hypr", "Wallpapers"):
@@ -250,9 +501,134 @@ warp-cli() {
     [[ $* != '--accept-tos mode doh' ]]
 }
 setup_cloudflare
-""", input_text="1\n", succeeds=False)
+""", input_text="1\n")
         self.assertNotIn("warp-cli --accept-tos connect", self.commands())
         self.assertTrue(any("enable --now warp-svc" in command for command in self.commands()))
+
+    def test_warp_registration_failure_continues_installation_with_diagnostic(self):
+        result = self.run_installer(r"""
+print_warn() { printf '%s\n' "$*"; }
+sudo() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+warp-cli() {
+    printf 'warp-cli %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    case "$*" in
+        '--accept-tos registration show') return 1 ;;
+        '--accept-tos registration new')
+            printf '%s\n' 'Registration request failed: network unavailable' >&2
+            return 7 ;;
+    esac
+    return 0
+}
+following_phase() { printf '%s\n' 'following phase reached'; }
+run_phase setup_cloudflare
+run_phase following_phase
+""")
+        self.assertIn("Registration request failed: network unavailable", result.stdout)
+        self.assertIn("continuing installation", result.stdout)
+        self.assertIn("following phase reached", result.stdout)
+        self.assertNotIn("Installation failed", result.stdout)
+        self.assertIn("warp-cli --accept-tos registration new", self.commands())
+        self.assertFalse(any(
+            " mode " in command or command.endswith((" connect", " disconnect"))
+            for command in self.commands()
+        ))
+
+    def test_warp_waits_for_daemon_readiness_before_registration(self):
+        self.run_installer(r"""
+sudo() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+warp-cli() {
+    printf 'warp-cli %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    case "$*" in
+        '--accept-tos status')
+            local attempts=0
+            if [ -f "$INSTALL_TEST_LOG.status-count" ]; then
+                read -r attempts < "$INSTALL_TEST_LOG.status-count"
+            fi
+            attempts=$((attempts + 1))
+            printf '%s\n' "$attempts" > "$INSTALL_TEST_LOG.status-count"
+            if [ "$attempts" -lt 3 ]; then
+                printf '%s\n' 'Daemon socket is not ready' >&2
+                return 1
+            fi
+            ;;
+        '--accept-tos registration show') return 1 ;;
+    esac
+    return 0
+}
+setup_cloudflare
+""", input_text="3\n")
+        commands = self.commands()
+        self.assertEqual(commands.count("warp-cli --accept-tos status"), 3)
+        self.assertEqual(commands[-2:], [
+            "warp-cli --accept-tos registration show",
+            "warp-cli --accept-tos registration new",
+        ])
+        self.assertFalse(any(command.endswith((" connect", " disconnect")) for command in commands))
+
+    def test_warp_unready_daemon_continues_without_registration_or_connection(self):
+        result = self.run_installer(r"""
+print_warn() { printf '%s\n' "$*"; }
+sudo() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+warp-cli() {
+    printf 'warp-cli %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    printf '%s\n' 'Daemon socket is unavailable' >&2
+    return 1
+}
+following_phase() { printf '%s\n' 'following phase reached'; }
+run_phase setup_cloudflare
+run_phase following_phase
+""")
+        self.assertIn("Daemon socket is unavailable", result.stdout)
+        self.assertIn("continuing installation", result.stdout)
+        self.assertIn("following phase reached", result.stdout)
+        commands = self.commands()
+        self.assertEqual(commands.count("warp-cli --accept-tos status"), 10)
+        self.assertFalse(any(
+            " registration " in command or " mode " in command
+            or command.endswith((" connect", " disconnect"))
+            for command in commands
+        ))
+
+    def test_warp_service_failure_continues_without_cli_requests(self):
+        result = self.run_installer(r"""
+print_warn() { printf '%s\n' "$*"; }
+sudo() {
+    printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"
+    printf '%s\n' 'warp-svc could not be started' >&2
+    return 1
+}
+warp-cli() { printf 'warp-cli %s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+following_phase() { printf '%s\n' 'following phase reached'; }
+run_phase setup_cloudflare
+run_phase following_phase
+""")
+        self.assertIn("warp-svc could not be started", result.stdout)
+        self.assertIn("continuing installation", result.stdout)
+        self.assertIn("following phase reached", result.stdout)
+        self.assertEqual(self.commands(), ["systemctl enable --now warp-svc"])
+
+    def test_warp_connection_failure_continues_installation_with_diagnostic(self):
+        result = self.run_installer(r"""
+print_warn() { printf '%s\n' "$*"; }
+sudo() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+warp-cli() {
+    printf 'warp-cli %s\n' "$*" >> "$INSTALL_TEST_LOG"
+    if [[ $* == '--accept-tos connect' ]]; then
+        printf '%s\n' 'Connection failed: tunnel unavailable' >&2
+        return 2
+    fi
+    return 0
+}
+following_phase() { printf '%s\n' 'following phase reached'; }
+run_phase setup_cloudflare
+run_phase following_phase
+""", input_text="1\n")
+        self.assertIn("Connection failed: tunnel unavailable", result.stdout)
+        self.assertIn("continuing installation", result.stdout)
+        self.assertIn("following phase reached", result.stdout)
+        self.assertIn("warp-cli --accept-tos mode doh", self.commands())
+        self.assertIn("warp-cli --accept-tos connect", self.commands())
+        self.assertNotIn("warp-cli --accept-tos disconnect", self.commands())
 
     def test_warp_skip_keeps_current_connection(self):
         self.run_installer("""

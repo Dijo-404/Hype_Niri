@@ -5,7 +5,7 @@ program = "/bin/zsh"
 size = 10.0
 
 [font.normal]
-family = "JetBrainsMono Nerd Font"
+family = "JetBrains Mono"
 style = "Regular"
 
 [font.bold]

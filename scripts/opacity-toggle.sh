@@ -40,8 +40,8 @@ fi
 
 if grep -Eq '^[[:space:]]*opacity[[:space:]]+1([.]0+)?[[:space:]]*$' "$OPACITY_FILE" 2>/dev/null; then
     state="enabled"
-    active_opacity="0.90"
-    inactive_opacity="0.80"
+    active_opacity="0.95"
+    inactive_opacity="0.90"
 else
     state="disabled"
     active_opacity="1.0"
@@ -79,5 +79,5 @@ fi
 if [ "$state" = "disabled" ]; then
     notify "Window opacity disabled" "Windows are now fully opaque."
 else
-    notify "Window opacity enabled" "Active: 90% · Inactive: 80%"
+    notify "Window opacity enabled" "Active: 95% · Inactive: 90%"
 fi
