@@ -1,0 +1,209 @@
+--- a/src/exec_iolog.c
++++ b/src/exec_iolog.c
+@@ -30,6 +30,7 @@
+ #include <errno.h>
+ #include <fcntl.h>
+ #include <signal.h>
++#include <time.h>
+ 
+ #include <sudo.h>
+ #include <sudo_exec.h>
+@@ -177,19 +178,61 @@
+     debug_return;
+ }
+ 
++static bool
++flush_nonblocking(struct sudo_event *ev)
++{
++    const int fd = sudo_ev_get_fd(ev);
++    int flags = fcntl(fd, F_GETFL, 0);
++
++    return flags != -1 && (ISSET(flags, O_NONBLOCK) ||
++	fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1);
++}
++
++static bool
++flush_interrupted(struct exec_closure *ec)
++{
++    return ec->evbase->signal_pending[SIGHUP] ||
++	ec->evbase->signal_pending[SIGINT] ||
++	ec->evbase->signal_pending[SIGQUIT] ||
++	ec->evbase->signal_pending[SIGTERM] ||
++	ec->evbase->signal_pending[SIGALRM] ||
++	ec->evbase->signal_pending[SIGUSR1] ||
++	ec->evbase->signal_pending[SIGUSR2];
++}
++
+ /*
+  * Flush any output buffered in iobufs or readable from fds other
+  * than /dev/tty.  Removes I/O events from the event base when done.
+  */
+ void
+-del_io_events(bool nonblocking)
++del_io_events(struct exec_closure *ec, bool nonblocking)
+ {
+     struct io_buffer *iob;
+     struct sudo_event_base *evbase;
++    struct timespec deadline, now;
++    const struct timespec pause = { 0, 10000000 };
++    bool clock_ok = false;
+     debug_decl(del_io_events, SUDO_DEBUG_EXEC);
++
++    if (!nonblocking) {
++	clock_ok = sudo_gettime_mono(&deadline) == 0;
++	if (clock_ok)
++	    deadline.tv_sec += 2;
++    }
+ 
+     /* Remove iobufs from existing event base. */
+     SLIST_FOREACH(iob, &iobufs, entries) {
++	/* A timer cannot interrupt a blocking relay callback. */
++	if (!nonblocking) {
++	    if (iob->revent != NULL && !flush_nonblocking(iob->revent)) {
++		sudo_ev_free(iob->revent);
++		iob->revent = NULL;
++	    }
++	    if (iob->wevent != NULL && !flush_nonblocking(iob->wevent)) {
++		sudo_ev_free(iob->wevent);
++		iob->wevent = NULL;
++	    }
++	}
+ 	if (iob->revent != NULL) {
+ 	    sudo_debug_printf(SUDO_DEBUG_INFO,
+ 		"deleted I/O revent %p, fd %d, events %d",
+@@ -228,36 +271,31 @@
+     }
+     sudo_debug_printf(SUDO_DEBUG_INFO,
+ 	"%s: flushing remaining I/O buffers (nonblocking)", __func__);
+-    (void) sudo_ev_loop(evbase, SUDO_EVLOOP_NONBLOCK);
+-
+-    /*
+-     * If not in non-blocking mode, make sure we flush write buffers.
+-     * We don't want to read from the pty or stdin since that might block
+-     * and the command is no longer running anyway.
+-     */
++    if (nonblocking) {
++	(void) sudo_ev_loop(evbase, SUDO_EVLOOP_NONBLOCK);
++    } else {
++	while (clock_ok && !flush_interrupted(ec)) {
++	    bool pending = false;
++
++	    if (sudo_gettime_mono(&now) == -1 ||
++		sudo_timespeccmp(&now, &deadline, >=))
++		break;
++	    ec->io_flush_ready = false;
++	    if (sudo_ev_loop(evbase, SUDO_EVLOOP_ONCE|SUDO_EVLOOP_NONBLOCK) != 0 ||
++		sudo_ev_got_break(evbase))
++		break;
++	    SLIST_FOREACH(iob, &iobufs, entries) {
++		if (iob->wevent != NULL && iob->len > iob->off)
++		    pending = true;
++	    }
++	    if (!ec->io_flush_ready && !pending)
++		break;
++	    (void)nanosleep(&pause, NULL);
++	}
++    }
++
+     if (!nonblocking) {
+-	/* Clear out iobufs from event base. */
+-	SLIST_FOREACH(iob, &iobufs, entries) {
+-	    if (iob->revent != NULL && !USERTTY_EVENT(iob->revent))
+-		sudo_ev_del(evbase, iob->revent);
+-	    if (iob->wevent != NULL)
+-		sudo_ev_del(evbase, iob->wevent);
+-	}
+-
+-	SLIST_FOREACH(iob, &iobufs, entries) {
+-	    /* Flush any write buffers with data in them. */
+-	    if (iob->wevent != NULL) {
+-		if (iob->len > iob->off) {
+-		    if (sudo_ev_add(evbase, iob->wevent, NULL, false) == -1)
+-			sudo_fatal("%s", U_("unable to add event to queue"));
+-		}
+-	    }
+-	}
+-	sudo_debug_printf(SUDO_DEBUG_INFO,
+-	    "%s: flushing remaining write buffers (blocking)", __func__);
+-	(void) sudo_ev_dispatch(evbase);
+-     
+-	/* We should now have flushed all write buffers. */
++	/* Record any output left after the bounded flush. */
+ 	SLIST_FOREACH(iob, &iobufs, entries) {
+ 	    if (iob->wevent != NULL) {
+ 		if (iob->len > iob->off) {
+--- a/src/exec_pty.c
++++ b/src/exec_pty.c
+@@ -254,7 +254,7 @@
+     case SIGTSTP:
+     default:
+ 	/* Flush any remaining output and deschedule I/O events. */
+-	del_io_events(true);
++	del_io_events(ec, true);
+ 
+ 	/* Restore original tty mode before suspending. */
+ 	if (ec->term_raw) {
+@@ -378,6 +378,8 @@
+     ssize_t n;
+     debug_decl(read_callback, SUDO_DEBUG_EXEC);
+ 
++    iob->ec->io_flush_ready = true;
++
+     /*
+      * We ignore SIGTTIN by default but we need to handle it when reading
+      * from the terminal.  A signal event won't work here because the
+@@ -476,6 +478,8 @@
+     int saved_errno;
+     ssize_t n;
+     debug_decl(write_callback, SUDO_DEBUG_EXEC);
++
++    iob->ec->io_flush_ready = true;
+ 
+     /*
+      * We ignore SIGTTOU by default but we need to handle it when writing
+@@ -577,6 +581,7 @@
+     debug_decl(pty_finish, SUDO_DEBUG_EXEC);
+ 
+     /* Flush any remaining output (the plugin already got it) and free bufs. */
++    del_io_events(ec, false);
+     if (io_fds[SFD_USERTTY] != -1) {
+ 	flags = fcntl(io_fds[SFD_USERTTY], F_GETFL, 0);
+ 	if (flags != -1 && ISSET(flags, O_NONBLOCK)) {
+@@ -584,7 +589,6 @@
+ 	    (void) fcntl(io_fds[SFD_USERTTY], F_SETFL, flags);
+ 	}
+     }
+-    del_io_events(false);
+     free_io_bufs();
+ 
+     /* Restore terminal settings and update utmp. */
+--- a/src/exec_nopty.c
++++ b/src/exec_nopty.c
+@@ -722,7 +722,7 @@
+ #endif
+ 
+     /* Flush any remaining output. */
+-    del_io_events(true);
++    del_io_events(&ec, true);
+ 
+     /* Free things up. */
+     free_io_bufs();
+--- a/src/sudo_exec.h
++++ b/src/sudo_exec.h
+@@ -80,6 +80,7 @@
+     int cols;
+     bool foreground;
+     bool term_raw;
++    bool io_flush_ready;
+ };
+ 
+ /*
+@@ -203,7 +204,7 @@
+ void ev_free_by_fd(struct sudo_event_base *evbase, int fd);
+ void free_io_bufs(void);
+ void add_io_events(struct exec_closure *ec);
+-void del_io_events(bool nonblocking);
++void del_io_events(struct exec_closure *ec, bool nonblocking);
+ void init_ttyblock(void);
+ 
+ /* exec_nopty.c */

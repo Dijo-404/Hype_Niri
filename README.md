@@ -24,6 +24,7 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 | **Notifications** | [Mako](https://github.com/emersion/mako) |
 | **Lock Screen** | [Hyprlock](https://github.com/hyprwm/hyprlock) |
 | **Idle Daemon** | [Hypridle](https://github.com/hyprwm/hypridle) |
+| **Memory Protection** | [systemd-oomd](INSTALL.md#memory-pressure-protection-systemd-oomd) |
 | **Wallpaper** | [Awww](https://codeberg.org/LGFae/awww) |
 | **Login Manager** | [Ly](https://github.com/fairyglade/ly) |
 | **Fetch App** | [Fastfetch](https://github.com/fastfetch-cli/fastfetch) |
@@ -80,6 +81,7 @@ yay -Syu --aur
 ├── polkit/          # Polkit rules for passwordless NetworkManager
 ├── Wallpapers/      # Default curated wallpapers
 ├── scripts/         # Desktop utility and control scripts
+├── systemd/         # OOM protection policy and standalone setup
 ├── stealth/         # Optional transparent Tor service and installer
 ├── waybar/          # Comprehensive status bar configuration
 ├── wlogout/         # Power menu configuration
