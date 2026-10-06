@@ -1,0 +1,23 @@
+[Unit]
+Description=Automatic laptop power profile
+PartOf=graphical-session.target
+After=graphical-session.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+ExecStart=/usr/bin/python3 %h/.config/scripts/auto-power-profile.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=5
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=%t
+ProtectHome=read-only
+PrivateTmp=true
+RestrictAddressFamilies=AF_UNIX
+MemoryMax=96M
+TasksMax=8
+
+[Install]
+WantedBy=graphical-session.target

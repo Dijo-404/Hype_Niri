@@ -68,6 +68,10 @@ sudo pacman -Syu
 yay -Syu --aur
 ```
 
+Power profiles switch automatically: Performance on AC, Balanced on battery at 30% or above, and Power Saver below 30%. Manual selections last until the next charger or threshold change. The controller uses D-Bus events and stops at logout; hardware without Performance support uses Balanced.
+
+Docker starts on demand, idle audio devices suspend after five seconds, and file indexing skips dependency/cache directories. Startup and control scripts use locks and atomic writes to prevent duplicate processes and partial configurations.
+
 <br/>
 
 ## Repository Structure
@@ -83,11 +87,12 @@ yay -Syu --aur
 ├── polkit/          # Polkit rules for NetworkManager and drive access
 ├── Wallpapers/      # Default curated wallpapers
 ├── scripts/         # Desktop utility and control scripts
-├── systemd/         # OOM protection policy and standalone setup
+├── systemd/         # Automatic power service and OOM protection
 ├── stealth/         # Optional transparent Tor service and installer
-├── tests/           # Installer regression checks
+├── tests/           # Installer, runtime and power-policy regression checks
 ├── waybar/          # Comprehensive status bar configuration
 ├── wlogout/         # Power menu configuration
+├── wireplumber/     # Audio routing and idle suspension
 ├── zsh/             # Shell config, Stealth commands, and Powerlevel10k theme
 ├── install.sh       # Automated installation script
 ├── pkglist.txt      # Master list of required packages
@@ -109,6 +114,8 @@ These checks use temporary fixtures and mocked system commands:
 
 ```bash
 python3 tests/test-install.py
+python3 tests/test-runtime.py
+python3 tests/test-auto-power-profile.py
 bash stealth/test-stealth.sh
 bash stealth/test-install-stealth.sh
 shellcheck install.sh scripts/*.sh stealth/*.sh systemd/*.sh

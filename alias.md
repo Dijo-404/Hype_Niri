@@ -24,8 +24,8 @@ Aliases to speed up your terminal workflow in Hype Niri.
 
 ## Search & Grep
 - `grep`: Colorized `grep`
-- `fgrep`: Colorized `fgrep`
-- `egrep`: Colorized `egrep`
+- `fgrep`: Colorized fixed-string search (`grep -F`)
+- `egrep`: Colorized extended-regex search (`grep -E`)
 
 ## Git
 - `g`: `git`

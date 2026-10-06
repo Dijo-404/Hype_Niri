@@ -35,6 +35,7 @@ cat > "$TEST_ROOT/bin/mock-command" <<'MOCK'
 #!/usr/bin/env bash
 set -euo pipefail
 root=$STEALTH_TEST_ROOT
+printf '%s\n' "$*" >> "$root/mock_calls"
 case "${0##*/}" in
     nft)
         [[ $* == '-c -D uplink="wlan0" -f '* ]] && exit 0
@@ -103,6 +104,31 @@ assert_legacy_restored() {
     rg -Fq 'privacy-shield.conf' "$TEST_ROOT/live/etc/tor/torrc"
 }
 
+exec 9>"$TEST_ROOT/live/run/stealth.lock"
+flock -n 9
+if run_install 9>&- > "$TEST_ROOT/locked-install.out" 2>&1; then
+    printf 'Expected installer to reject a concurrent Stealth operation.\n' >&2
+    exit 1
+fi
+rg -Fq 'Another Stealth operation is in progress; retry after it finishes.' "$TEST_ROOT/locked-install.out"
+assert_legacy_restored
+[[ ! -e $TEST_ROOT/mock_calls && ! -e $TEST_ROOT/live/var/backups ]]
+flock -u 9
+exec 9>&-
+
+exec 8>"$TEST_ROOT/live/run/privacy-shield.lock"
+flock -n 8
+if run_install 8>&- > "$TEST_ROOT/legacy-locked-install.out" 2>&1; then
+    printf 'Expected installer to reject a concurrent legacy operation.\n' >&2
+    exit 1
+fi
+rg -Fq 'The previous backend is changing state; retry after it finishes.' "$TEST_ROOT/legacy-locked-install.out"
+assert_legacy_restored
+[[ ! -e $TEST_ROOT/mock_calls && ! -e $TEST_ROOT/live/var/backups ]]
+flock -n "$TEST_ROOT/live/run/stealth.lock" true
+flock -u 8
+exec 8>&-
+
 # A failure after old files and log are migrated must restore the old installation.
 MOCK_TOR_FAIL_AT=3
 export MOCK_TOR_FAIL_AT
@@ -146,4 +172,4 @@ run_install > "$TEST_ROOT/reinstall.out"
 [[ $(rg -c '^%include ' "$TEST_ROOT/live/etc/tor/torrc") == 1 ]]
 [[ $(stat -c '%a' "$TEST_ROOT/live/var/log/stealth.log") == 600 ]]
 
-printf 'PASS: migration, rollback after legacy cleanup or sudoers failure, backups, Tor include, sudoers drop-in, log permissions, and reinstall\n'
+printf 'PASS: concurrency lock, migration, rollback after legacy cleanup or sudoers failure, backups, Tor include, sudoers drop-in, log permissions, and reinstall\n'

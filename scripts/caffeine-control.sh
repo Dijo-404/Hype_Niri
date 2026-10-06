@@ -2,11 +2,7 @@
 
 set -euo pipefail
 
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
-if [ ! -d "$RUNTIME_DIR" ] || [ ! -w "$RUNTIME_DIR" ]; then
-    echo '{"text": "", "tooltip": "runtime dir unavailable", "class": "deactivated"}'
-    exit 0
-fi
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 STATE_FILE="$RUNTIME_DIR/caffeine_state"
 PID_FILE="$RUNTIME_DIR/caffeine_pid"
 LOCK_FILE="$RUNTIME_DIR/caffeine.lock"
@@ -14,7 +10,7 @@ ID=2002
 
 if command -v flock >/dev/null 2>&1; then
     exec 9>"$LOCK_FILE"
-    flock -n 9 || exit 0
+    flock -w 2 9 || exit 0
 fi
 
 notify() {
@@ -33,40 +29,59 @@ read_pid_file() {
 
 is_inhibitor_pid() {
     local pid="$1"
-    local cmdline
+    local -a cmdline=()
+    local arg found_who=0 found_sleep=0
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    [ -O "/proc/$pid" ] || return 1
     [ -r "/proc/$pid/cmdline" ] || return 1
-
-    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    [[ "$cmdline" == *"systemd-inhibit"* && "$cmdline" == *"sleep infinity"* ]]
+    mapfile -d '' -t cmdline < "/proc/$pid/cmdline" 2>/dev/null || return 1
+    (( ${#cmdline[@]} >= 2 )) || return 1
+    [[ "${cmdline[0]##*/}" == systemd-inhibit ]] || return 1
+    INHIBITOR_WHAT=""
+    for arg in "${cmdline[@]}"; do
+        [[ "$arg" != '--who=Caffeine Mode' ]] || found_who=1
+        [[ "$arg" != --what=* ]] || INHIBITOR_WHAT="${arg#--what=}"
+    done
+    if (( ${#cmdline[@]} >= 2 )); then
+        [[ "${cmdline[-2]}" != sleep || "${cmdline[-1]}" != infinity ]] || found_sleep=1
+    fi
+    (( found_who && found_sleep ))
 }
 
 is_current_inhibitor_pid() {
     local pid="$1"
-    local cmdline
     is_inhibitor_pid "$pid" || return 1
-
-    cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-    [[ "$cmdline" == *"--what=idle "* ]]
+    [[ "$INHIBITOR_WHAT" == idle ]]
 }
 
 start_inhibitor() {
-    local existing_pid
-    existing_pid=$(read_pid_file)
-    if [ -n "$existing_pid" ] && is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
-        kill "$existing_pid" 2>/dev/null || true
-    fi
-    rm -f "$PID_FILE"
+    stop_inhibitor
+    command -v systemd-inhibit >/dev/null 2>&1 || return 1
 
-    # Close the lock FD so the long-lived child does not hold the flock.
     systemd-inhibit --what=idle --who="Caffeine Mode" --why="User requested stay awake" --mode=block -- sleep infinity >/dev/null 2>&1 9>&- &
-    echo "$!" > "$PID_FILE"
+    local pid=$!
+    printf '%s\n' "$pid" > "$PID_FILE"
+    sleep 0.05
+    if ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$PID_FILE" "$STATE_FILE"
+        return 1
+    fi
 }
 
 stop_inhibitor() {
-    local existing_pid
+    local existing_pid child
+    local -a child_cmd=() children=()
     existing_pid=$(read_pid_file)
     if [ -n "$existing_pid" ] && is_inhibitor_pid "$existing_pid" && kill -0 "$existing_pid" 2>/dev/null; then
+        read -r -a children < "/proc/$existing_pid/task/$existing_pid/children" 2>/dev/null || true
+        for child in "${children[@]}"; do
+            [ -O "/proc/$child" ] && [ -r "/proc/$child/cmdline" ] || continue
+            mapfile -d '' -t child_cmd < "/proc/$child/cmdline" 2>/dev/null || continue
+            (( ${#child_cmd[@]} >= 2 )) || continue
+            if [[ "${child_cmd[0]##*/}" == sleep && "${child_cmd[1]:-}" == infinity ]]; then
+                kill "$child" 2>/dev/null || true
+            fi
+        done
         kill "$existing_pid" 2>/dev/null || true
     fi
     rm -f "$PID_FILE"
@@ -85,17 +100,25 @@ elif [ "$action" == "toggle" ]; then
         notify "󰾪  Caffeine Mode Deactivated" "Idle lock and display sleep restored"
         echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
     else
-        touch "$STATE_FILE"
-        start_inhibitor
-        notify "󰅶  Caffeine Mode Active" "Idle lock and display sleep paused"
-        echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
+        if start_inhibitor; then
+            : > "$STATE_FILE"
+            notify "󰅶  Caffeine Mode Active" "Idle lock and display sleep paused"
+            echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
+        else
+            notify "Caffeine unavailable" "Could not acquire the idle inhibitor"
+            echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
+        fi
     fi
     pkill -RTMIN+15 waybar || true
 else
     if [ -f "$STATE_FILE" ]; then
         existing_pid=$(read_pid_file)
         if [ -z "$existing_pid" ] || ! is_current_inhibitor_pid "$existing_pid" || ! kill -0 "$existing_pid" 2>/dev/null; then
-            start_inhibitor
+            if ! start_inhibitor; then
+                rm -f "$STATE_FILE"
+                echo '{"text": "󰾪", "tooltip": "Caffeine: Off", "class": "deactivated"}'
+                exit 0
+            fi
         fi
         echo '{"text": "󰅶", "tooltip": "Caffeine: On", "class": "activated"}'
     else

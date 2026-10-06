@@ -5,8 +5,7 @@ set -euo pipefail
 command -v brightnessctl >/dev/null 2>&1 || exit 0
 
 ID=2000
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 LOCK_FILE="$RUNTIME_DIR/brightness-control.lock"
 
 if command -v flock >/dev/null 2>&1; then
@@ -46,7 +45,6 @@ case "${1:-}" in
     up)
         current=$(brightnessctl get)
         max=$(brightnessctl max)
-        min=$((max / 100)); [ "$min" -lt 1 ] && min=1
         step=$((max / 100)); [ "$step" -lt 1 ] && step=1
         target=$((current + step))
         [ "$target" -gt "$max" ] && target=$max

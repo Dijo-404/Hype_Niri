@@ -5,9 +5,12 @@ set -u
 USER_NAME="${USER:-$(id -un 2>/dev/null || printf user)}"
 MEDIA_DIR="/run/media/$USER_NAME"
 DRIVES_DIR="$HOME/Drives"
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 LOCK_FILE="$RUNTIME_DIR/hype-open-drives.lock"
+keyfile=""
+trap '[[ -z "$keyfile" ]] || rm -f -- "$keyfile"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if command -v flock >/dev/null 2>&1; then
     exec 9>"$LOCK_FILE"
@@ -41,7 +44,6 @@ is_mounted() {
     findmnt -rn -S "$1" >/dev/null 2>&1
 }
 
-# Cleartext holder of a LUKS device, or empty if still locked.
 luks_cleartext() {
     lsblk -nrpo NAME "$1" 2>/dev/null | sed -n '2p'
 }
@@ -82,18 +84,18 @@ mount_with_fallback() {
     return 1
 }
 
-# Name shown in the unlock prompt.
 luks_prompt_name() {
     local dev="$1" name
     name="$(lsblk -dno PARTLABEL "$dev" 2>/dev/null | head -n 1)"
     [ -n "${name// /}" ] || name="$(lsblk -dno LABEL "$dev" 2>/dev/null | head -n 1)"
     [ -n "${name// /}" ] || name="$(lsblk -dno SIZE "$dev" 2>/dev/null | head -n 1) drive"
-    name="$(printf '%s' "$name" | awk '{$1=$1};1')"   # trim padding from lsblk
+    name="${name#"${name%%[![:space:]]*}"}"
+    name="${name%"${name##*[![:space:]]}"}"
     printf '%s\n' "${name:-$(basename "$dev")}"
 }
 
 unlock_luks_volumes() {
-    local dev name pw keyfile
+    local dev name pw
 
     command -v fuzzel >/dev/null 2>&1 || {
         notify "Cannot unlock encrypted drives" "fuzzel is needed for the passphrase prompt."
@@ -103,14 +105,12 @@ unlock_luks_volumes() {
     while read -r dev; do
         [ -b "$dev" ] || continue
 
-        # Skip if already unlocked.
         [ -n "$(luks_cleartext "$dev")" ] && continue
 
         name="$(luks_prompt_name "$dev")"
         pw="$(fuzzel --dmenu --password --prompt "Unlock $name: " </dev/null 2>/dev/null)" || continue
         [ -n "$pw" ] || continue
 
-        # udisksctl takes the passphrase via key file, not stdin/TTY.
         keyfile="$(mktemp "$RUNTIME_DIR/hype-unlock.XXXXXX")" || continue
         chmod 600 "$keyfile"
         printf '%s' "$pw" > "$keyfile"
@@ -119,6 +119,7 @@ unlock_luks_volumes() {
         udisksctl unlock -b "$dev" --key-file "$keyfile" >/dev/null 2>&1 \
             || notify "Unlock failed" "Wrong passphrase for $name, or device busy."
         rm -f "$keyfile"
+        keyfile=""
     done < <(luks_devices)
 }
 
@@ -140,7 +141,6 @@ mount_unmounted_filesystems() {
     done < <(lsblk -prno NAME,FSTYPE,MOUNTPOINTS)
 }
 
-# True while a LUKS volume is still locked or a mountable filesystem is unmounted.
 pending_work() {
     local dev fstype mnt
 
@@ -161,8 +161,6 @@ pending_work() {
     return 1
 }
 
-# Poll up to ~20s, mounting/linking volumes as they appear (while the user types
-# each passphrase). Also remounts volumes that were only unmounted, not relocked.
 wait_and_mount() {
     local deadline=$((SECONDS + 20))
 
@@ -235,7 +233,6 @@ create_drive_links() {
 storage_ready=0
 have_storage_tools && storage_ready=1
 
-# Unlock encrypted volumes, then mount/link as they appear.
 if [ "$storage_ready" = 1 ]; then
     unlock_luks_volumes
     wait_and_mount

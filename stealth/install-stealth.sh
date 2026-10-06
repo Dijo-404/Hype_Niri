@@ -25,6 +25,13 @@ OLD_LOCK=/run/privacy-shield.lock
 for command in nft tor systemd-analyze systemctl visudo ip nmcli ss curl jq flock uuidgen od; do
     command -v "$command" >/dev/null || { printf 'Missing command: %s\n' "$command" >&2; exit 1; }
 done
+exec 9>/run/stealth.lock
+flock -n 9 || { printf 'Another Stealth operation is in progress; retry after it finishes.\n' >&2; exit 1; }
+if [[ -e $OLD_LOCK ]]; then
+    exec 8<"$OLD_LOCK"
+    flock -n 8 || { printf 'The previous backend is changing state; retry after it finishes.\n' >&2; exit 1; }
+fi
+
 [[ -f $TORRC ]] || { printf 'Missing Tor configuration: %s\n' "$TORRC" >&2; exit 1; }
 for service in stealth.service privacy-shield.service tor.service; do
     if systemctl is-active --quiet "$service"; then
@@ -44,11 +51,6 @@ for state in /run/stealth/state /run/privacy-shield/state; do
         exit 1
     fi
 done
-if [[ -e $OLD_LOCK ]]; then
-    exec 8<"$OLD_LOCK"
-    flock -n 8 || { printf 'The previous backend is changing state; retry after it finishes.\n' >&2; exit 1; }
-fi
-
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 cp "$SOURCE/stealth.sh" "$TMP/stealth"

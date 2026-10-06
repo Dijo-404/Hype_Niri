@@ -112,14 +112,13 @@ spawn-sh-at-startup "~/.config/scripts/start-waybar.sh"
 
 spawn-sh-at-startup "~/.config/scripts/start-tray-applets.sh"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
-spawn-sh-at-startup "gnome-keyring-daemon --start --components=secrets"
 spawn-at-startup "mako"
 spawn-at-startup "alacritty"
 
 spawn-sh-at-startup "~/.config/scripts/wallpaper.sh init"
 spawn-sh-at-startup "~/.config/scripts/display-scale.sh"
 
-spawn-sh-at-startup "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user restart hypridle.service || hypridle"
+spawn-sh-at-startup "dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE NIRI_SOCKET; systemctl --user restart hypridle.service || hypridle"
 
 spawn-sh-at-startup "wl-paste --type text --watch cliphist store"
 spawn-sh-at-startup "wl-paste --type image --watch cliphist store"

@@ -40,7 +40,7 @@
   "custom/caffeine": {
     "exec": "~/.config/scripts/caffeine-control.sh",
     "return-type": "json",
-    "interval": 5,
+    "interval": "once",
     "format": "{}",
     "on-click": "~/.config/scripts/caffeine-control.sh toggle",
     "signal": 15
@@ -48,7 +48,7 @@
   "custom/power-profile": {
     "exec": "~/.config/scripts/power-profile.sh",
     "return-type": "json",
-    "interval": 5,
+    "interval": "once",
     "format": "{icon}",
     "format-icons": ["󰾆", "󰾅", "󰓅"],
     "on-click": "~/.config/scripts/power-profile.sh menu",
@@ -122,7 +122,7 @@
   },
   "image#stealth": {
     "exec": "~/.config/scripts/stealth-indicator.sh",
-    "interval": 3,
+    "interval": 10,
     "size": 16
   },
 

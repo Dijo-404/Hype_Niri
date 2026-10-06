@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
+exec 9>"$RUNTIME_DIR/hype-tray-applets.lock"
+flock -n 9 || exit 0
+
 export GTK_THEME="${GTK_THEME:-Adwaita:dark}"
 
 start_once() {
@@ -8,11 +12,16 @@ start_once() {
     shift
 
     command -v "$1" >/dev/null 2>&1 || return 0
-    pgrep -x "$process" >/dev/null 2>&1 && return 0
+    pgrep -u "$UID" -x "$process" >/dev/null 2>&1 && return 0
+    exec 8>"$RUNTIME_DIR/hype-tray-$process.lock"
+    if ! flock -n 8; then
+        exec 8>&-
+        return 0
+    fi
 
-    "$@" >/dev/null 2>&1 &
+    "$@" >/dev/null 2>&1 9>&- &
+    exec 8>&-
 }
 
-# These are the live tray icons used for Wi-Fi and Bluetooth in Waybar.
 start_once "nm-applet" nm-applet --indicator
 start_once "blueman-applet" blueman-applet

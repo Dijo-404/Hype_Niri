@@ -4,8 +4,7 @@ set -euo pipefail
 
 CONFIG_FILE="${NIRI_CONFIG:-$HOME/.config/niri/config.kdl}"
 NOTIFY_ID=2006
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 LOCK_FILE="$RUNTIME_DIR/hype-monitor-refresh.lock"
 
 if command -v flock >/dev/null 2>&1; then
@@ -277,6 +276,7 @@ write_config_mode() {
     config_dir="$(dirname "$CONFIG_FILE")"
     mkdir -p "$config_dir"
     tmp_file="$(mktemp "$config_dir/.config.kdl.XXXXXX")"
+    trap 'rm -f -- "${tmp_file:-}"' EXIT
 
     if [ -f "$CONFIG_FILE" ]; then
         awk -v output="$output_kdl" -v mode="$mode" -v scale="$scale" '
@@ -407,6 +407,8 @@ main() {
     mode_height="${mode_rest%%@*}"
     scale="$(scale_for_resolution "$mode_width" "$mode_height")"
 
+    exec 8>"$RUNTIME_DIR/hype-niri-outputs.lock"
+    flock -w 5 8 || exit 0
     apply_mode "$output_name" "$mode"
     apply_scale "$output_name" "$scale"
     write_config_mode "$output_name" "$mode" "$scale"

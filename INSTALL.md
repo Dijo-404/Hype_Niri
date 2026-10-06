@@ -46,11 +46,7 @@ sudo pacman -Syu
 ```
 
 ```bash
-mapfile -t official < <(awk 'NF && $1 !~ /^#/ && !seen[$1]++ {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 && printf '%s\n' "$p"; done)
-mapfile -t aur < <(awk 'NF && $1 !~ /^#/ && !seen[$1]++ {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 || printf '%s\n' "$p"; done)
-
-[ "${#official[@]}" -eq 0 ] || sudo pacman -S --needed --noconfirm "${official[@]}"
-[ "${#aur[@]}" -eq 0 ] || yay -S --needed --noconfirm "${aur[@]}"
+bash -c 'source ./install.sh; install_packages'
 ```
 
 ### 2. Back Up Existing Configs
@@ -63,6 +59,7 @@ for target in \
     .config/niri .config/waybar .config/scripts .config/alacritty \
     .config/fuzzel .config/mako .config/fastfetch .config/wlogout .config/hypr \
     .config/gtk-3.0 .config/gtk-4.0 .config/autostart .config/fontconfig \
+    .config/systemd/user .config/wireplumber \
     .local/share/icons/Papirus-Dark \
     .zshrc .p10k.zsh .local/share/stealth .local/share/privacy-shield; do
     if [ -e "$HOME/$target" ] || [ -L "$HOME/$target" ]; then
@@ -88,6 +85,7 @@ cp zsh/.zshrc ~/
 cp zsh/.p10k.zsh ~/
 
 chmod +x ~/.config/scripts/*.sh
+bash -c 'source ./install.sh; setup_desktop_integrations'
 ```
 
 ### 4. Apply Dark Theme (GTK + dconf)
@@ -137,10 +135,12 @@ sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf
 
 sudo cp polkit/*.rules /etc/polkit-1/rules.d/
 
-sudo systemctl enable --now NetworkManager bluetooth docker power-profiles-daemon
+sudo systemctl enable --now NetworkManager bluetooth power-profiles-daemon
+bash -c 'source ./install.sh; configure_docker_socket'
 sudo usermod -aG docker "$USER"   # log out/in before using docker without sudo
 
-systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service
+systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service gnome-keyring-daemon.socket
+systemctl --user enable --now hype-auto-power-profile.service
 systemctl --user enable hypridle 2>/dev/null || true
 
 sudo mkdir -p /etc/systemd/logind.conf.d
@@ -164,6 +164,25 @@ sudo systemctl enable ly@tty2.service && sudo systemctl disable getty@tty2.servi
 ```
 
 If another display manager is enabled, disable its service only after deciding to replace it with Ly. Select **niri-session** at the next Ly login.
+
+#### Automatic power profiles
+
+The user service follows charger and battery events without polling:
+
+| Power source | Profile |
+| --- | --- |
+| Charger connected | Performance |
+| Battery at 30% or above | Balanced |
+| Battery below 30% | Power Saver |
+
+Hardware without Performance support falls back to Balanced. Manual Waybar selections last until the next charger or battery-threshold change. The service stops with the graphical session.
+
+```bash
+/usr/bin/python3 ~/.config/scripts/auto-power-profile.py --check
+systemctl --user status hype-auto-power-profile.service
+```
+
+Docker starts on demand through `docker.socket`; an existing service with running containers is preserved. WirePlumber handles headphone routing and suspends idle audio devices after five seconds. The installer removes the old audio-jack unit only when its expected script is missing, and excludes dependency/cache directories from file indexing while retaining existing exclusions.
 
 #### Memory pressure protection (systemd-oomd)
 

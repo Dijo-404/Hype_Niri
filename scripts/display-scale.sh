@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Persist per-output scales via niri's included outputs.kdl; a runtime
-# `niri msg output scale` is temporary and dropped on monitor reconnect.
 set -euo pipefail
+
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
+exec 9>"$RUNTIME_DIR/hype-niri-outputs.lock"
+flock -w 5 9 || exit 0
 
 outputs_kdl="${XDG_CONFIG_HOME:-$HOME/.config}/niri/outputs.kdl"
 reload=1
@@ -11,7 +13,7 @@ command -v niri >/dev/null 2>&1 || exit 0
 command -v jq >/dev/null 2>&1 || exit 0
 
 mkdir -p "$(dirname "$outputs_kdl")"
-[ -e "$outputs_kdl" ] || : > "$outputs_kdl"   # ensure the include target exists
+[ -e "$outputs_kdl" ] || : > "$outputs_kdl"
 
 scale_for_resolution() {
     local width="$1" height="$2" short
@@ -44,7 +46,6 @@ done < <(
     ' <<<"$outputs_json" 2>/dev/null | sort
 ) > "$tmp"
 
-# Rewrite + reload only when changed.
 if [ -s "$tmp" ] && ! cmp -s "$tmp" "$outputs_kdl" 2>/dev/null; then
     mv -f "$tmp" "$outputs_kdl"
     [ "$reload" = 1 ] && niri msg action load-config-file >/dev/null 2>&1 || true
