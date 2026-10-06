@@ -71,7 +71,7 @@ bemoji
 ripgrep
 unzip
 zip
-p7zip
+7zip
 unrar
 pacman-contrib
 man-db
@@ -108,10 +108,10 @@ libblockdev-lvm
 lvm2
 udisks2
 
-# ── Firewall ──────────────────────────────────────
+# ── Firewall (configuration opt-in) ───────────────
 ufw
 
-# ── Cloudflare WARP (opt-in privacy DNS/VPN) ──────
+# ── Cloudflare WARP (configuration opt-in) ─────────
 cloudflare-warp-bin
 
 # ── ProtonVPN ─────────────────────────────────────

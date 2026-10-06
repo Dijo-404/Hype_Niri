@@ -9,7 +9,7 @@ Aliases to speed up your terminal workflow in Hype Niri.
 - `la`, `lsa`: List all files (including hidden)
 - `lt`: Sort by modification time
 - `lS`: Sort by file size
-- `ld`: List directories only
+- `ldir`: List directories only
 - `tree`: Tree view hierarchy (`eza --tree`)
 - `..`, `...`, `....`: Go up one, two, or three directories
 - `~`: Go to home directory
@@ -42,7 +42,7 @@ Aliases to speed up your terminal workflow in Hype Niri.
 - `gb`: `git branch`
 
 ## Package Management (Yay)
-- `syu`: Update all packages (`yay -Syu`)
+- `syu`: Upgrade official packages, then AUR packages (`sudo pacman -Syu && yay -Syu`)
 - `install`: Install package (`yay -S`)
 - `remove`: Remove package & unused deps (`yay -Rns`)
 - `search`: Search for package (`yay -Ss`)
@@ -80,7 +80,7 @@ Aliases to speed up your terminal workflow in Hype Niri.
 - `du`: Human-readable file usage
 - `free`: Human-readable memory usage
 - `psg`: Search process list visually
-- `ports`: Show open ports natively (`netstat`)
+- `ports`: Show listening TCP and UDP sockets (`ss -tulnp`)
 - `ff`: Run `fastfetch` system info
 
 ## Stealth (Tor)
