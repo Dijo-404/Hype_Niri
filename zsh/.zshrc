@@ -48,7 +48,7 @@ alias df='df -h'
 alias du='du -h'
 alias free='free -h'
 alias psg='ps aux | grep -v grep | grep -i -e VSZ -e'
-alias ports='netstat -tulanp'
+alias ports='ss -tulnp'
 
 alias install='yay -S'
 alias remove='yay -Rns'

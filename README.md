@@ -34,7 +34,7 @@ Personal dotfiles for a minimal Arch Linux setup using the **Niri** scrollable t
 
 ## Installation
 
-For a fully automated installation, clone the repository and run the setup script:
+For an interactive installation, clone the repository and run the setup script:
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -57,7 +57,7 @@ git pull
 ./install.sh
 ```
 
-The install script can refresh Arch mirrors, update the Arch keyring/system packages, install official repository packages with `pacman`, install AUR packages with `yay`, and requires a backup before overwriting existing configs. Install `yay` first with your preferred method; the installer does not clone AUR repos to bootstrap it.
+The installer optionally refreshes Arch mirrors, requires a full system upgrade before installing packages, and backs up existing user configurations before replacing them. It uses `pacman` for official repository packages and `yay` for AUR packages. Run it as your regular user with sudo access, and install `yay` first with your preferred method.
 
 To update only packages without re-running the full script:
 
@@ -78,11 +78,12 @@ yay -Syu --aur
 ├── hypr/            # Hypridle + Hyprlock configuration
 ├── mako/            # Notification daemon configuration
 ├── niri/            # Core Niri compositor settings and rules
-├── polkit/          # Polkit rules for passwordless NetworkManager
+├── polkit/          # Polkit rules for NetworkManager and drive access
 ├── Wallpapers/      # Default curated wallpapers
 ├── scripts/         # Desktop utility and control scripts
 ├── systemd/         # OOM protection policy and standalone setup
 ├── stealth/         # Optional transparent Tor service and installer
+├── tests/           # Installer regression checks
 ├── waybar/          # Comprehensive status bar configuration
 ├── wlogout/         # Power menu configuration
 ├── zsh/             # Shell config, Stealth commands, and Powerlevel10k theme
@@ -99,3 +100,14 @@ yay -Syu --aur
 - **[Zsh Aliases](alias.md)** - Shell aliases
 - **[Stealth Tor Routing](INSTALL.md#stealth-tor-routing)** - Optional Tor routing commands
 - **[Installation Guide](INSTALL.md)** - Detailed setup instructions
+
+## Checks
+
+These checks use temporary fixtures and mocked system commands:
+
+```bash
+python3 tests/test-install.py
+bash stealth/test-stealth.sh
+bash stealth/test-install-stealth.sh
+shellcheck install.sh scripts/*.sh stealth/*.sh systemd/*.sh
+```

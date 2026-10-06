@@ -83,8 +83,8 @@ These are the primary default keybindings for the Hype Niri environment.
 | `F11` / `Vol Down` | `volume down` | Decrease Volume |
 | `F12` / `Vol Up` | `volume up` | Increase Volume |
 | `Mic Mute` | `mic mute` | Toggle Microphone Mute |
-| `F5` / `Bright Down`| `brightness down` | Decrease Screen Brightness |
-| `F6` / `Bright Up` | `brightness up` | Increase Screen Brightness |
+| `Bright Down` | `brightness down` | Decrease Screen Brightness |
+| `Bright Up` | `brightness up` | Increase Screen Brightness |
 | `Play/Pause/Next/Prev`| `playerctl` | Control Media Playback |
 
 ## Workspaces & Monitors

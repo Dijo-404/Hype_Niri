@@ -2,7 +2,7 @@
 
 ## Quick Install (Recommended)
 
-The automated install script handles everything: refreshing mirrors, updating the Arch keyring/system packages, installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services and memory pressure protection with `systemd-oomd`, and optionally configuring a firewall and Cloudflare WARP.
+The automated installer can refresh mirrors, performs a required Arch keyring and full system upgrade, installs packages, backs up and copies configurations, sets up Zsh and GTK theming, enables desktop services and memory pressure protection with `systemd-oomd`, and offers optional firewall, Cloudflare WARP, and Stealth configuration.
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -11,7 +11,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer is interactive at every irreversible step — mirror refresh, system update, backup, display manager switch, lid-switch behavior, firewall, WARP, and shell change all confirm before acting.
+Run the installer as your regular user with sudo access. It asks before refreshing mirrors, upgrading the system, replacing existing configurations, switching the display manager, setting lid-switch behavior, configuring networking, or changing your login shell. Declining the required system upgrade or a required backup stops the installation.
 
 > [!TIP]
 > The Powerlevel10k prompt theme is pre-configured. Run `p10k configure` if you want to customize it.
@@ -23,23 +23,22 @@ The installer is interactive at every irreversible step — mirror refresh, syst
 
 ## Manual Install
 
-If you prefer to understand what is happening under the hood or selectively apply configurations, follow these manual steps. The order matters — clean up stale configs before writing new ones.
+If you prefer to selectively apply configurations, follow these manual steps. Back up existing files before replacing them.
 
 ### 1. Install Required Packages
 
-The repository contains a `pkglist.txt` file for the base desktop packages. Stealth packages are installed separately when you choose that option.
+`pkglist.txt` contains the base desktop packages, including ufw and Cloudflare WARP. Their configuration is optional. Stealth packages are installed separately when you choose that option.
 
 For smoother downloads, refresh mirrors before installing packages. If `reflector` is already installed, use it:
 
 ```bash
 sudo cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.hype-niri.bak
 sudo reflector --protocol https --latest 30 --sort rate --save /etc/pacman.d/mirrorlist
-sudo pacman -Syy
 ```
 
 If `reflector` is not installed yet, the automated installer can download a fresh HTTPS mirrorlist directly from Arch's mirror status service before package installation.
 
-Then update the keyring and system before installing new packages:
+Then update the keyring and complete the full system upgrade before installing new packages:
 
 ```bash
 sudo pacman -Sy --needed archlinux-keyring
@@ -47,32 +46,29 @@ sudo pacman -Syu
 ```
 
 ```bash
-mapfile -t official < <(awk '!/^#/ && NF {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 && printf '%s\n' "$p"; done)
-mapfile -t aur < <(awk '!/^#/ && NF {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 || printf '%s\n' "$p"; done)
+mapfile -t official < <(awk 'NF && $1 !~ /^#/ && !seen[$1]++ {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 && printf '%s\n' "$p"; done)
+mapfile -t aur < <(awk 'NF && $1 !~ /^#/ && !seen[$1]++ {print $1}' pkglist.txt | while read -r p; do pacman -Si "$p" >/dev/null 2>&1 || printf '%s\n' "$p"; done)
 
 [ "${#official[@]}" -eq 0 ] || sudo pacman -S --needed --noconfirm "${official[@]}"
 [ "${#aur[@]}" -eq 0 ] || yay -S --needed --noconfirm "${aur[@]}"
 ```
 
-### 2. Back Up and Clean Up Existing Configs
+### 2. Back Up Existing Configs
 
-If you already have configs in `~/.config`, back them up before overwriting:
+Back up the desktop, scripts, theme settings, shell files, and any existing Stealth staging before overwriting them. This preserves files and symlinks:
 
 ```bash
-BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$BACKUP_DIR"
-for c in niri waybar alacritty fuzzel mako fastfetch wlogout hypr; do
-    [ -d "$HOME/.config/$c" ] && cp -r "$HOME/.config/$c" "$BACKUP_DIR/"
+BACKUP_DIR="$(mktemp -d "$HOME/.config-backup-$(date +%Y%m%d-%H%M%S).XXXXXX")"
+for target in \
+    .config/niri .config/waybar .config/scripts .config/alacritty \
+    .config/fuzzel .config/mako .config/fastfetch .config/wlogout .config/hypr \
+    .config/gtk-3.0 .config/gtk-4.0 .config/autostart \
+    .zshrc .p10k.zsh .local/share/stealth .local/share/privacy-shield; do
+    if [ -e "$HOME/$target" ] || [ -L "$HOME/$target" ]; then
+        mkdir -p "$BACKUP_DIR/$(dirname "$target")"
+        cp -a "$HOME/$target" "$BACKUP_DIR/$target"
+    fi
 done
-[ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
-[ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
-```
-
-Remove any stale configs from previous setups that will conflict (`qt5ct` / `qt6ct` are written fresh in step 4 — do **not** delete them):
-
-```bash
-rm -rf ~/.config/Kvantum ~/.config/rofi ~/.config/dunst
-[ -f ~/.config/hypr/hyprland.conf ] && rm ~/.config/hypr/hyprland.conf
 ```
 
 ### 3. Copy Configurations
@@ -83,8 +79,9 @@ Move the dotfiles to their respective locations in your home directory.
 mkdir -p ~/.config ~/.cache/cliphist ~/Pictures/Screenshots ~/Pictures/Wallpapers
 
 cp -r niri waybar scripts alacritty fuzzel mako fastfetch wlogout hypr ~/.config/
+touch ~/.config/niri/outputs.kdl
 
-[ -d Wallpapers ] && cp -r Wallpapers/* ~/Pictures/Wallpapers/
+[ -d Wallpapers ] && cp -an Wallpapers/. ~/Pictures/Wallpapers/
 
 cp zsh/.zshrc ~/
 cp zsh/.p10k.zsh ~/
@@ -92,12 +89,12 @@ cp zsh/.p10k.zsh ~/
 chmod +x ~/.config/scripts/*.sh
 ```
 
-### 4. Apply Dark Theme (GTK + Qt + dconf)
+### 4. Apply Dark Theme (GTK + dconf)
 
-Set the dark theme for GTK and Qt apps. Apply via `dconf` so GNOME apps (Nautilus, etc.) pick it up immediately.
+Set the dark theme for GTK apps. Apply via `dconf` so GNOME apps such as Nautilus pick it up immediately.
 
 ```bash
-mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0 ~/.config/qt5ct ~/.config/qt6ct
+mkdir -p ~/.config/gtk-3.0 ~/.config/gtk-4.0
 
 cat > ~/.config/gtk-3.0/settings.ini << 'EOF'
 [Settings]
@@ -110,13 +107,6 @@ gtk-application-prefer-dark-theme=true
 EOF
 
 cp ~/.config/gtk-3.0/settings.ini ~/.config/gtk-4.0/settings.ini
-
-cat > ~/.config/qt5ct/conf << 'EOF'
-[General]
-icon_theme=Papirus-Dark
-standard_dialogs=default
-EOF
-cp ~/.config/qt5ct/conf ~/.config/qt6ct/conf
 
 dconf write /org/gnome/desktop/interface/color-scheme   "'prefer-dark'"
 dconf write /org/gnome/desktop/interface/gtk-theme      "'Adwaita-dark'"
@@ -138,15 +128,10 @@ sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf
 
 sudo cp polkit/*.rules /etc/polkit-1/rules.d/
 
-for dm in sddm gdm lightdm greetd; do
-    systemctl is-enabled "$dm" &>/dev/null && sudo systemctl disable "$dm"
-done
-sudo systemctl enable ly
-
 sudo systemctl enable --now NetworkManager bluetooth docker power-profiles-daemon
 sudo usermod -aG docker "$USER"   # log out/in before using docker without sudo
 
-systemctl --user enable --now pipewire pipewire-pulse wireplumber 2>/dev/null || true
+systemctl --user enable --now pipewire.socket pipewire-pulse.socket wireplumber.service
 systemctl --user enable hypridle 2>/dev/null || true
 
 sudo mkdir -p /etc/systemd/logind.conf.d
@@ -161,6 +146,15 @@ HoldoffTimeoutSec=0s
 InhibitDelayMaxSec=5
 EOF
 ```
+
+To switch to Ly at the next boot, review your current display manager first. Arch ships `ly@tty2.service`. Enable it successfully before disabling an existing display manager, then reserve its TTY:
+
+```bash
+systemctl status display-manager.service --no-pager
+sudo systemctl enable ly@tty2.service && sudo systemctl disable getty@tty2.service
+```
+
+If another display manager is enabled, disable its service only after deciding to replace it with Ly. Select **niri-session** at the next Ly login.
 
 #### Memory pressure protection (systemd-oomd)
 
@@ -201,7 +195,7 @@ chsh -s /usr/bin/zsh
 
 ### 7. Optional Networking
 
-ufw, Cloudflare WARP, and Stealth Tor routing are **opt-in**. The automated installer asks before configuring each one.
+The base package list includes ufw and Cloudflare WARP; enabling and configuring them is **opt-in**. The automated installer asks before each setup step. Stealth installation is also **opt-in**, and its packages are installed only when accepted.
 
 #### Firewall (ufw)
 
@@ -249,11 +243,13 @@ The installer asks whether to install Stealth. Choosing Yes installs its package
 ```bash
 mkdir -p ~/.local/share/stealth
 sudo pacman -S --needed tor nftables iproute2 curl jq util-linux networkmanager
-cp zsh/stealth.zsh stealth/* ~/.local/share/stealth/
+cp zsh/stealth.zsh stealth/install-stealth.sh stealth/stealth.sh \
+    stealth/stealth.service stealth/stealth.nft stealth/stealth.sudoers \
+    stealth/torrc.conf ~/.local/share/stealth/
 sudo bash ~/.local/share/stealth/install-stealth.sh
 ```
 
-Open a new Zsh terminal after installing. The commands are `stealth-start`, `stealth-status`, and `stealth-stop`. If you use your own `.zshrc`, source `~/.local/share/stealth/stealth.zsh` from it. The direct commands `sudo stealth start`, `sudo stealth status`, and `sudo stealth stop` also work; a direct start leaves the systemd service inactive even while routing is active. The installer adds `/etc/sudoers.d/stealth` so sudo runs these commands without its pseudo-terminal; otherwise closing the terminal mid-command can leave sudo spinning at 100% CPU. When upgrading an earlier installation, stop its routing service first; the installer migrates its inactive system files.
+Open a new Zsh terminal after installing. The commands are `stealth-start`, `stealth-status`, and `stealth-stop`. If you use your own `.zshrc`, source `~/.local/share/stealth/stealth.zsh` from it. The direct commands `sudo stealth start`, `sudo stealth status`, and `sudo stealth stop` also work; a direct start leaves the systemd service inactive even while routing is active. The installer adds `/etc/sudoers.d/stealth` to disable sudo's pseudo-terminal for these commands, avoiding reproduced PTY teardown hangs when output cannot drain. A historical report of 100% CPU after terminal closure remains unconfirmed. When upgrading an earlier installation, stop its routing service first; the installer migrates its inactive system files.
 
 While Stealth is active, a green Stealth icon appears beside the Wi-Fi and Bluetooth icons in Waybar's tray pill. It disappears after Stealth stops.
 
@@ -282,7 +278,7 @@ git pull
 ./install.sh
 ```
 
-The install script requires a backup before overwriting existing configs and only installs new packages (uses `--needed`).
+The installer requires a full system upgrade before package installation and a backup before replacing existing user configurations. Package installation uses `--needed` to avoid reinstalling current versions. Existing wallpapers are preserved.
 
 To update packages without re-running the script:
 
@@ -297,7 +293,7 @@ yay -Syu --aur
 
 - **Powerlevel10k Prompt**: The theme is pre-configured out of the box. Run `p10k configure` in your terminal to customize it.
 - **Learn the Controls**: Check out `keybindings.md` to learn how to navigate the Niri compositor.
-- **Wallpapers**: The Waybar script automatically looks for wallpapers inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/niri/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
+- **Wallpapers**: The wallpaper script looks inside `~/Pictures/Wallpapers/`. Use `Super+Shift+W` to select one; the selected wallpaper is saved in `~/.local/state/niri/current_wallpaper` and restored after lock, sleep, reboot, and shutdown.
 - **Lock Screen**: `Super+L` locks via hyprlock and uses the saved wallpaper pointer from `~/.local/state/niri/current_wallpaper`.
 - **Firewall / WARP / Stealth**: If you skipped step 7, use the relevant commands above later. Stealth remains off until `stealth-start`.
 

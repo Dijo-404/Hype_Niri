@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -Eeuo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,8 +12,14 @@ BOLD='\033[1m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR=""
-PHASE_TOTAL=16
+INSTALL_PHASES=(
+    preflight refresh_mirrors update_system_packages install_packages
+    backup_configs copy_configs setup_shell setup_gtk setup_desktop_integrations
+    setup_system setup_logind setup_firewall setup_cloudflare setup_stealth
+)
+PHASE_TOTAL=$((${#INSTALL_PHASES[@]} + 1))
 PHASE_CURRENT=0
+DESKTOP_CONFIG_DIRS=(niri waybar scripts alacritty fuzzel mako fastfetch wlogout hypr)
 
 # Visual layout: 2-space indent, fixed inner box width (columns between borders).
 INDENT="  "
@@ -23,11 +29,15 @@ _tmp_resources=()
 cleanup_tmp() {
     local r
     for r in "${_tmp_resources[@]:-}"; do
-        [ -e "$r" ] && rm -rf -- "$r" 2>/dev/null || true
+        if [ -e "$r" ] || [ -L "$r" ]; then
+            rm -rf -- "$r" 2>/dev/null || true
+        fi
     done
 }
 trap cleanup_tmp EXIT
-trap 'echo; printf "  \033[0;31m✗\033[0m Installation interrupted\n"; exit 130' INT TERM
+trap 'echo; print_error "Installation interrupted"; exit 130' INT
+trap 'echo; print_error "Installation interrupted"; exit 143' TERM
+trap 'print_error "Installation failed at line $LINENO (status $?)."' ERR
 
 # Repeat a (possibly multi-byte) char N times.
 _repeat() {
@@ -56,7 +66,7 @@ _box_top() {
     echo -e "${INDENT}${CYAN}╭$(_repeat '─' "$BOX_W")╮${NC}"
 }
 
-# Top border carrying a left-aligned tag, e.g. "╭─ Phase 12 / 15 ─────╮"
+# Top border carrying the current phase label.
 _box_top_tag() {
     local tag="$1" fill
     fill=$(( BOX_W - 3 - ${#tag} ))
@@ -135,12 +145,12 @@ print_done() {
 }
 
 run_phase() {
-    shift  # drop the short label; the header now renders the full title
     PHASE_CURRENT=$((PHASE_CURRENT + 1))
     "$@"
 }
 
 confirm() {
+    local response
     [ -t 0 ] || return 1
     echo ""
     while true; do
@@ -167,9 +177,12 @@ save_install_log() {
     fi
 
     local persisted
-    persisted="/tmp/hype-niri-install-$(date +%Y%m%d-%H%M%S).log"
-    cp -- "$install_log" "$persisted" 2>/dev/null || true
-    print_warn "Full install log saved to: $persisted"
+    if persisted="$(mktemp /tmp/hype-niri-install-XXXXXXXX.log)" &&
+       cp -- "$install_log" "$persisted"; then
+        print_warn "Full install log saved to: $persisted"
+    else
+        print_warn "Could not preserve the full installation log"
+    fi
 }
 
 check_internet() {
@@ -199,28 +212,30 @@ refresh_mirrors() {
 
     local mirrorlist="/etc/pacman.d/mirrorlist"
     local backup="/etc/pacman.d/mirrorlist.hype-niri.bak"
-    local mirror_tmp=""
+    local mirror_tmp
 
     if [ -f "$mirrorlist" ]; then
         print_step "Backing up current mirrorlist to $backup..."
-        sudo cp "$mirrorlist" "$backup" 2>/dev/null || print_warn "Could not back up current mirrorlist"
+        if ! sudo cp "$mirrorlist" "$backup"; then
+            print_error "Could not back up current mirrorlist; mirror refresh stopped."
+            return 1
+        fi
     fi
+
+    mirror_tmp="$(mktemp)" || { print_error "Failed to create temp mirrorlist"; exit 1; }
+    _tmp_resources+=("$mirror_tmp")
 
     if command -v reflector &>/dev/null; then
         print_step "Ranking fresh HTTPS mirrors with reflector..."
-        if sudo reflector --protocol https --latest 30 --sort rate --save "$mirrorlist"; then
+        if reflector --protocol https --latest 30 --sort rate --save "$mirror_tmp" &&
+           grep -q '^Server = https://' "$mirror_tmp"; then
+            sudo install -m 644 "$mirror_tmp" "$mirrorlist"
             print_done "Mirrorlist refreshed with reflector"
-            print_step "Refreshing pacman package databases..."
-            sudo pacman -Syy
-            print_done "Package databases refreshed"
             return 0
         fi
 
         print_warn "reflector failed; falling back to Arch's mirrorlist service"
     fi
-
-    mirror_tmp="$(mktemp)" || { print_error "Failed to create temp mirrorlist"; exit 1; }
-    _tmp_resources+=("$mirror_tmp")
 
     print_step "Downloading fresh HTTPS mirrorlist from archlinux.org..."
     if command -v curl &>/dev/null; then
@@ -251,18 +266,15 @@ refresh_mirrors() {
     sudo install -m 644 "$mirror_tmp" "$mirrorlist"
     print_done "Mirrorlist refreshed from Arch mirror status"
 
-    print_step "Refreshing pacman package databases..."
-    sudo pacman -Syy
-    print_done "Package databases refreshed"
 }
 
 update_system_packages() {
     print_header "System Package Update" "refresh keyring and upgrade installed packages"
 
+    print_step "A full system upgrade is required before installing new Arch packages."
     if ! confirm "Update Arch keyring and system packages before installing?"; then
-        print_warn "Skipping system update"
-        print_warn "If package signatures or downloads fail, rerun and allow this step."
-        return 0
+        print_error "System upgrade declined; installation stopped before installing packages."
+        return 1
     fi
 
     local update_log
@@ -305,6 +317,29 @@ preflight() {
     fi
     print_done "Arch Linux detected"
 
+    local config file
+    for config in "${DESKTOP_CONFIG_DIRS[@]}"; do
+        if [ ! -d "$SCRIPT_DIR/$config" ]; then
+            print_error "Required source directory is missing: $SCRIPT_DIR/$config"
+            exit 1
+        fi
+    done
+    local required_files=(
+        pkglist.txt zsh/.zshrc zsh/.p10k.zsh
+        niri/config.kdl niri/opacity.kdl waybar/config.jsonc waybar/style.css
+        scripts/display-scale.sh
+        systemd/setup-oomd.sh systemd/user@.service.d/60-hype-niri-oomd.conf
+        polkit/49-udisks2.rules polkit/50-network-manager.rules
+    )
+    for file in "${required_files[@]}"; do
+        if [ ! -r "$SCRIPT_DIR/$file" ]; then
+            print_error "Required source file is missing or unreadable: $SCRIPT_DIR/$file"
+            exit 1
+        fi
+    done
+    print_done "Source files present"
+    ensure_yay
+
     if ! check_internet; then
         print_error "No internet connection"
         exit 1
@@ -324,14 +359,10 @@ install_packages() {
     local pacman_packages=()
     local aur_packages=()
     local total
-    local pkg
+    local pkg i
     local install_log
 
-    mapfile -t packages < <(
-        grep -v '^#' "$SCRIPT_DIR/pkglist.txt" | \
-        grep -v '^$' | \
-        awk '{print $1}'
-    )
+    mapfile -t packages < <(awk 'NF && $1 !~ /^#/ && !seen[$1]++ {print $1}' "$SCRIPT_DIR/pkglist.txt")
 
     total=${#packages[@]}
     print_step "Installing $total packages..."
@@ -360,6 +391,10 @@ install_packages() {
     print_step "Pacman packages: ${#pacman_packages[@]}"
     print_step "AUR packages: ${#aur_packages[@]}"
 
+    if [ "${#aur_packages[@]}" -gt 0 ]; then
+        ensure_yay
+    fi
+
     install_log="$(mktemp)" || { print_error "Failed to create temp log"; exit 1; }
     _tmp_resources+=("$install_log")
 
@@ -372,17 +407,11 @@ install_packages() {
     fi
 
     if [ "${#aur_packages[@]}" -gt 0 ]; then
-        ensure_yay
         print_step "Installing AUR packages with yay..."
         if ! stdbuf -oL -eL yay -S --needed --noconfirm "${aur_packages[@]}" 2>&1 | tee -a "$install_log"; then
             save_install_log "$install_log"
             exit 1
         fi
-    fi
-
-    if [ "${#pacman_packages[@]}" -eq 0 ] && [ "${#aur_packages[@]}" -eq 0 ]; then
-        print_error "No installable packages found in pkglist.txt"
-        exit 1
     fi
 
     print_done "All packages installed"
@@ -391,67 +420,85 @@ install_packages() {
 backup_configs() {
     print_header "Backing Up Existing Configs" "saved to a timestamped folder in your home"
 
-    BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d-%H%M%S)"
-
-    local configs_to_backup=(
-        "niri"
-        "waybar"
-        "scripts"
-        "alacritty"
-        "fuzzel"
-        "mako"
-        "fastfetch"
-        "wlogout"
-        "hypr"
+    local targets=(
+        .zshrc .p10k.zsh
+        .config/gtk-3.0 .config/gtk-4.0 .config/autostart
+        .local/share/stealth .local/share/privacy-shield
     )
+    local config target
+    for config in "${DESKTOP_CONFIG_DIRS[@]}"; do
+        targets+=(".config/$config")
+    done
 
-    local files_to_backup=(
-        "$HOME/.zshrc"
-        "$HOME/.p10k.zsh"
-    )
-
-    local has_existing=false
-    for config in "${configs_to_backup[@]}"; do
-        if [ -d "$HOME/.config/$config" ]; then
-            has_existing=true
-            break
+    local existing=()
+    for target in "${targets[@]}"; do
+        if [ -e "$HOME/$target" ] || [ -L "$HOME/$target" ]; then
+            existing+=("$target")
         fi
     done
-    for file in "${files_to_backup[@]}"; do
-        if [ -f "$file" ]; then
-            has_existing=true
-            break
-        fi
-    done
-    [ -d "$HOME/.local/share/stealth" ] && has_existing=true
-    [ -d "$HOME/.local/share/privacy-shield" ] && has_existing=true
 
-    if $has_existing; then
-        print_warn "Existing configs found"
-        if confirm "Back up existing configs to $BACKUP_DIR?"; then
-            mkdir -p "$BACKUP_DIR"
-            for config in "${configs_to_backup[@]}"; do
-                if [ -d "$HOME/.config/$config" ]; then
-                    cp -r "$HOME/.config/$config" "$BACKUP_DIR/"
-                    print_done "Backed up $config"
-                fi
-            done
-            [ -f "$HOME/.zshrc" ] && cp "$HOME/.zshrc" "$BACKUP_DIR/.zshrc"
-            [ -f "$HOME/.bashrc" ] && cp "$HOME/.bashrc" "$BACKUP_DIR/.bashrc"
-            [ -f "$HOME/.p10k.zsh" ] && cp "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh"
-            [ -d "$HOME/.local/share/stealth" ] && \
-                cp -r "$HOME/.local/share/stealth" "$BACKUP_DIR/stealth"
-            [ -d "$HOME/.local/share/nautilus" ] && \
-                cp -r "$HOME/.local/share/nautilus" "$BACKUP_DIR/nautilus-share"
-            [ -d "$HOME/.config/nautilus" ] && \
-                cp -r "$HOME/.config/nautilus" "$BACKUP_DIR/nautilus-config"
-            print_done "Backup saved to $BACKUP_DIR"
-        else
-            print_error "Backup declined. Existing configs will not be overwritten."
-            exit 1
-        fi
-    else
+    if [ "${#existing[@]}" -eq 0 ]; then
         print_done "No existing configs to back up"
+        return 0
+    fi
+
+    print_warn "Existing configs found"
+    if ! confirm "Back up existing configs before replacing them?"; then
+        print_error "Backup declined. Existing configs will not be overwritten."
+        exit 1
+    fi
+
+    BACKUP_DIR="$(mktemp -d "$HOME/.config-backup-$(date +%Y%m%d-%H%M%S).XXXXXX")" || {
+        print_error "Could not create a config backup directory"
+        return 1
+    }
+    for target in "${existing[@]}"; do
+        if ! mkdir -p "$(dirname "$BACKUP_DIR/$target")" ||
+           ! cp -a -- "$HOME/$target" "$BACKUP_DIR/$target"; then
+            print_error "Could not back up $target; existing configs will not be overwritten."
+            return 1
+        fi
+        print_done "Backed up $target"
+    done
+    print_done "Backup saved to $BACKUP_DIR"
+}
+
+# Publish a staged directory, restoring the previous path if the rename fails.
+replace_directory() {
+    local staged="$1" destination="$2" previous="$1.previous"
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+        mv -T -- "$destination" "$previous" || return 1
+    fi
+    if ! mv -T -- "$staged" "$destination"; then
+        if [ -e "$previous" ] || [ -L "$previous" ]; then
+            mv -T -- "$previous" "$destination" || \
+                print_error "Previous configuration remains at $previous"
+        fi
+        print_error "Could not install $destination"
+        return 1
+    fi
+    rm -rf -- "$previous"
+}
+
+# Generated files must replace symlinks without changing their external targets.
+prepare_generated_config_dir() {
+    local dir="$1" tmp
+    mkdir -p "$(dirname "$dir")"
+    if [ -L "$dir" ]; then
+        tmp="$(mktemp -d "${dir}.XXXXXX")" || return 1
+        _tmp_resources+=("$tmp")
+        if [ -d "$dir" ]; then
+            if ! cp -a -- "$dir/." "$tmp/"; then
+                print_error "Could not stage existing contents of $dir"
+                return 1
+            fi
+        elif [ -e "$dir" ]; then
+            print_error "Expected a configuration directory: $dir"
+            return 1
+        fi
+        replace_directory "$tmp" "$dir" || return 1
+    else
+        mkdir -p "$dir"
     fi
 }
 
@@ -460,30 +507,25 @@ copy_configs() {
 
     mkdir -p "$HOME/.config"
 
-    local configs=(
-        "niri"
-        "waybar"
-        "scripts"
-        "alacritty"
-        "fuzzel"
-        "mako"
-        "fastfetch"
-        "wlogout"
-        "hypr"
-    )
-
-    for config in "${configs[@]}"; do
-        if [ -d "$SCRIPT_DIR/$config" ]; then
-            local tmp="$HOME/.config/$config.new.$$"
-            rm -rf "$tmp"
-            cp -r "$SCRIPT_DIR/$config" "$tmp"
-            rm -rf "$HOME/.config/$config"
-            mv "$tmp" "$HOME/.config/$config"
-            print_done "Copied $config -> ~/.config/$config"
+    local config tmp
+    for config in "${DESKTOP_CONFIG_DIRS[@]}"; do
+        tmp="$(mktemp -d "$HOME/.config/.${config}.XXXXXX")" || {
+            print_error "Could not stage $config"
+            return 1
+        }
+        _tmp_resources+=("$tmp")
+        if ! cp -a -- "$SCRIPT_DIR/$config/." "$tmp/"; then
+            print_error "Could not copy $config; its existing configuration was retained."
+            return 1
         fi
+        replace_directory "$tmp" "$HOME/.config/$config" || return 1
+        print_done "Copied $config -> ~/.config/$config"
     done
 
-    chmod +x "$HOME/.config/scripts/"*.sh 2>/dev/null || true
+    if ! chmod +x "$HOME/.config/scripts/"*.sh; then
+        print_error "Could not make desktop scripts executable"
+        return 1
+    fi
     print_done "Made scripts executable"
 
     # Seed outputs.kdl so niri's include resolves on first launch.
@@ -495,25 +537,20 @@ copy_configs() {
     fi
     print_done "Seeded niri output-scale config"
 
-    if [ -d "$HOME/.config/waybar/colors" ]; then
-        print_done "Waybar colors directory present"
-    else
-        print_warn "Waybar colors directory missing"
-    fi
-
     mkdir -p "$HOME/Pictures/Screenshots"
     mkdir -p "$HOME/Pictures/Wallpapers"
-    if [ -d "$SCRIPT_DIR/Wallpapers" ] && [ "$(ls -A "$SCRIPT_DIR/Wallpapers" 2>/dev/null)" ]; then
-        cp -r "$SCRIPT_DIR/Wallpapers/"* "$HOME/Pictures/Wallpapers/" 2>/dev/null || true
-        print_done "Copied wallpapers -> ~/Pictures/Wallpapers"
+    if [ -d "$SCRIPT_DIR/Wallpapers" ]; then
+        cp -an -- "$SCRIPT_DIR/Wallpapers/." "$HOME/Pictures/Wallpapers/"
+        print_done "Added wallpapers -> ~/Pictures/Wallpapers (existing files preserved)"
     else
         print_warn "No wallpapers found in source directory"
     fi
 
     mkdir -p "$HOME/.local/state/niri"
     if [ ! -e "$HOME/.local/state/niri/current_wallpaper" ]; then
-        local seed_wallpaper
-        seed_wallpaper="$(find "$HOME/Pictures/Wallpapers" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | head -n 1)"
+        local wallpapers=() seed_wallpaper
+        mapfile -d '' -t wallpapers < <(find "$HOME/Pictures/Wallpapers" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0 | sort -z)
+        seed_wallpaper="${wallpapers[0]:-}"
         if [ -n "$seed_wallpaper" ] && [ -f "$seed_wallpaper" ]; then
             ln -sfn "$seed_wallpaper" "$HOME/.local/state/niri/current_wallpaper"
             print_done "Seeded wallpaper pointer -> ~/.local/state/niri/current_wallpaper"
@@ -524,19 +561,23 @@ copy_configs() {
 
     mkdir -p "$HOME/.cache/cliphist"
 
-    mkdir -p "$HOME/.config/autostart"
-    cat > "$HOME/.config/autostart/blueman.desktop" << 'EOF'
+    prepare_generated_config_dir "$HOME/.config/autostart"
+    tmp="$(mktemp "$HOME/.config/autostart/.blueman.XXXXXX")"
+    _tmp_resources+=("$tmp")
+    cat > "$tmp" << 'EOF'
 [Desktop Entry]
 Type=Application
 Hidden=true
 EOF
+    chmod 644 "$tmp"
+    mv -fT -- "$tmp" "$HOME/.config/autostart/blueman.desktop"
     print_done "Suppressed blueman tray autostart"
 }
 
 setup_shell() {
     print_header "Setting Up Zsh" "zsh, powerlevel10k and fzf-tab"
 
-    local current_shell
+    local current_shell dotfile tmp
 
     print_step "Checking fzf-tab plugin..."
     if [ -f /usr/share/zsh/plugins/fzf-tab/fzf-tab.plugin.zsh ] || \
@@ -546,17 +587,15 @@ setup_shell() {
         print_warn "fzf-tab not found -- ensure the 'fzf-tab' package installed from pkglist.txt"
     fi
 
-    if [ -f "$SCRIPT_DIR/zsh/.zshrc" ]; then
-        cp "$SCRIPT_DIR/zsh/.zshrc" "$HOME/.zshrc"
-        print_done "Copied .zshrc -> ~/.zshrc"
-    fi
+    for dotfile in .zshrc .p10k.zsh; do
+        tmp="$(mktemp "$HOME/${dotfile}.XXXXXX")"
+        _tmp_resources+=("$tmp")
+        cp -p -- "$SCRIPT_DIR/zsh/$dotfile" "$tmp"
+        mv -fT -- "$tmp" "$HOME/$dotfile"
+        print_done "Copied $dotfile -> ~/$dotfile"
+    done
 
-    if [ -f "$SCRIPT_DIR/zsh/.p10k.zsh" ]; then
-        cp "$SCRIPT_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
-        print_done "Copied .p10k.zsh -> ~/.p10k.zsh"
-    fi
-
-    current_shell=$(basename "$SHELL")
+    current_shell=$(basename "${SHELL:-}")
     if [ "$current_shell" != "zsh" ]; then
         if confirm "Change default shell to zsh?"; then
             chsh -s /usr/bin/zsh
@@ -569,10 +608,14 @@ setup_shell() {
 }
 
 setup_gtk() {
-    print_header "GTK Theme Setup" "dark GTK, Qt and icon theming"
+    print_header "GTK Theme Setup" "dark GTK and icon theming"
 
-    mkdir -p "$HOME/.config/gtk-3.0"
-    cat > "$HOME/.config/gtk-3.0/settings.ini" << 'EOF'
+    local gtk_dir tmp
+    for gtk_dir in gtk-3.0 gtk-4.0; do
+        prepare_generated_config_dir "$HOME/.config/$gtk_dir"
+        tmp="$(mktemp "$HOME/.config/$gtk_dir/.settings.XXXXXX")"
+        _tmp_resources+=("$tmp")
+        cat > "$tmp" << 'EOF'
 [Settings]
 gtk-theme-name=Adwaita-dark
 gtk-icon-theme-name=Papirus-Dark
@@ -581,29 +624,10 @@ gtk-cursor-theme-size=24
 gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=true
 EOF
-    print_done "Created GTK 3 settings"
-
-    mkdir -p "$HOME/.config/gtk-4.0"
-    cat > "$HOME/.config/gtk-4.0/settings.ini" << 'EOF'
-[Settings]
-gtk-theme-name=Adwaita-dark
-gtk-icon-theme-name=Papirus-Dark
-gtk-cursor-theme-name=Adwaita
-gtk-cursor-theme-size=24
-gtk-font-name=JetBrainsMono Nerd Font 10
-gtk-application-prefer-dark-theme=true
-EOF
-    print_done "Created GTK 4 settings"
-
-    mkdir -p "$HOME/.config/qt5ct"
-    mkdir -p "$HOME/.config/qt6ct"
-    cat > "$HOME/.config/qt5ct/conf" << 'EOF'
-[General]
-icon_theme=Papirus-Dark
-standard_dialogs=default
-EOF
-    cp "$HOME/.config/qt5ct/conf" "$HOME/.config/qt6ct/conf"
-    print_done "Created Qt5/Qt6 theme settings"
+        chmod 644 "$tmp"
+        mv -fT -- "$tmp" "$HOME/.config/$gtk_dir/settings.ini"
+        print_done "Created $gtk_dir settings"
+    done
 
     if command -v papirus-folders &>/dev/null; then
         print_step "Setting Papirus-Dark folder color to grey..."
@@ -618,22 +642,28 @@ EOF
 
     if command -v dconf &>/dev/null; then
         print_step "Applying dark theme via dconf..."
-        dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita-dark'" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/cursor-theme "'Adwaita'" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/cursor-size "24" 2>/dev/null || true
-        dconf write /org/gnome/desktop/interface/font-name "'JetBrainsMono Nerd Font 10'" 2>/dev/null || true
-        print_done "Dark theme applied via dconf"
+        if dconf write /org/gnome/desktop/interface/color-scheme "'prefer-dark'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/gtk-theme "'Adwaita-dark'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/icon-theme "'Papirus-Dark'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/cursor-theme "'Adwaita'" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/cursor-size "24" 2>/dev/null &&
+           dconf write /org/gnome/desktop/interface/font-name "'JetBrainsMono Nerd Font 10'" 2>/dev/null; then
+            print_done "Dark theme applied via dconf"
+        else
+            print_warn "Could not apply all dconf settings; GTK settings.ini files will still apply"
+        fi
     elif command -v gsettings &>/dev/null; then
         print_step "Applying dark theme via gsettings..."
-        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita' 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null || true
-        gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null || true
-        print_done "Dark theme applied via gsettings"
+        if gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface icon-theme 'Papirus-Dark' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface cursor-theme 'Adwaita' 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface cursor-size 24 2>/dev/null &&
+           gsettings set org.gnome.desktop.interface font-name 'JetBrainsMono Nerd Font 10' 2>/dev/null; then
+            print_done "Dark theme applied via gsettings"
+        else
+            print_warn "Could not apply all gsettings values; GTK settings.ini files will still apply"
+        fi
     else
         print_warn "Neither dconf nor gsettings found; GTK settings.ini files will still apply"
     fi
@@ -713,54 +743,72 @@ setup_system() {
 
     if [ -f /etc/pacman.conf ]; then
         print_step "Tuning pacman output..."
-        sudo sed -i 's/^#Color$/Color/' /etc/pacman.conf 2>/dev/null || true
-        sudo sed -i 's/^#VerbosePkgLists$/VerbosePkgLists/' /etc/pacman.conf 2>/dev/null || true
+        if ! grep -qx '\[options\]' /etc/pacman.conf; then
+            print_error "Missing [options] section in /etc/pacman.conf"
+            return 1
+        fi
+        sudo sed -i -e 's/^#Color$/Color/' -e 's/^#VerbosePkgLists$/VerbosePkgLists/' /etc/pacman.conf || return 1
+        local directive
+        for directive in Color VerbosePkgLists; do
+            if ! grep -qx "$directive" /etc/pacman.conf; then
+                sudo sed -i "/^\[options\]$/a $directive" /etc/pacman.conf || return 1
+            fi
+        done
         if grep -q '^#ParallelDownloads' /etc/pacman.conf; then
-            sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
+            sudo sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf || return 1
         elif grep -q '^ParallelDownloads' /etc/pacman.conf; then
-            sudo sed -i 's/^ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf 2>/dev/null || true
+            sudo sed -i 's/^ParallelDownloads.*/ParallelDownloads = 6/' /etc/pacman.conf || return 1
         else
-            printf '\nParallelDownloads = 6\n' | sudo tee -a /etc/pacman.conf >/dev/null
+            sudo sed -i '/^\[options\]$/a ParallelDownloads = 6' /etc/pacman.conf || return 1
         fi
         if ! grep -q '^ILoveCandy$' /etc/pacman.conf; then
-            sudo sed -i '/^Color$/a ILoveCandy' /etc/pacman.conf 2>/dev/null || printf '\nILoveCandy\n' | sudo tee -a /etc/pacman.conf >/dev/null
+            sudo sed -i '/^\[options\]$/a ILoveCandy' /etc/pacman.conf || return 1
         fi
         print_done "Pacman output tuned"
     fi
 
     if confirm "Set up ly as display manager?"; then
-        sudo systemctl daemon-reload >/dev/null 2>&1 || true
-        local installed_units
-        installed_units=$(systemctl list-unit-files --type=service --no-legend 2>/dev/null | awk '{print $1}')
+        sudo systemctl daemon-reload || return 1
+        local installed_units ly_unit
+        installed_units=$(systemctl list-unit-files --type=service --no-legend | awk '{print $1}') || return 1
 
-        if ! echo "$installed_units" | grep -q '^ly\.service$'; then
-            print_warn "ly.service not found -- ly may not be installed correctly"
-            print_warn "Try: sudo pacman -S ly && sudo systemctl daemon-reload"
+        if grep -qx 'ly@\.service' <<< "$installed_units"; then
+            ly_unit=ly@tty2.service
+        elif grep -qx 'ly\.service' <<< "$installed_units"; then
+            ly_unit=ly.service
         else
-            for dm in sddm gdm lightdm greetd; do
-                if echo "$installed_units" | grep -q "^${dm}\.service$"; then
-                    if systemctl is-enabled "$dm" &>/dev/null; then
-                        sudo systemctl disable "$dm" >/dev/null 2>&1 && print_step "Disabled $dm"
-                    fi
-                fi
-            done
-
-            if sudo systemctl enable ly >/dev/null 2>&1; then
-                print_done "Enabled ly display manager"
-            else
-                print_warn "Failed to enable ly -- run 'sudo systemctl enable ly' manually"
-            fi
+            print_error "Ly service unit is missing -- install ly before switching display managers"
+            return 1
         fi
+
+        # Configure the next boot without disrupting the current login session.
+        if ! sudo systemctl enable --force "$ly_unit"; then
+            print_error "Could not enable $ly_unit; the current display manager was retained"
+            return 1
+        fi
+        for dm in sddm gdm lightdm greetd; do
+            if grep -qx "${dm}\.service" <<< "$installed_units" && systemctl is-enabled --quiet "$dm.service"; then
+                if ! sudo systemctl disable "$dm.service"; then
+                    print_error "Could not disable $dm.service; finish the display manager switch before rebooting"
+                    return 1
+                fi
+                print_step "Disabled $dm.service"
+            fi
+        done
+        sudo systemctl disable getty@tty2.service || return 1
+        print_done "Enabled $ly_unit for the next boot"
     fi
 
     print_step "Installing Polkit rules (NetworkManager)..."
-    if [ -d "$SCRIPT_DIR/polkit" ] && [ "$(ls -A "$SCRIPT_DIR/polkit" 2>/dev/null)" ]; then
-        sudo cp -r "$SCRIPT_DIR/polkit/"*.rules /etc/polkit-1/rules.d/ 2>/dev/null || true
-        print_done "Polkit rules applied"
-    fi
+    local rule
+    for rule in "$SCRIPT_DIR/polkit/"*.rules; do
+        [ -f "$rule" ] || { print_error "Polkit rules are missing"; return 1; }
+        sudo install -Dm644 "$rule" "/etc/polkit-1/rules.d/${rule##*/}" || return 1
+    done
+    print_done "Polkit rules applied"
 
     if [ ! -f /etc/pam.d/hyprlock ]; then
-        printf '#%%PAM-1.0\nauth include login\n' | sudo tee /etc/pam.d/hyprlock >/dev/null
+        printf '#%%PAM-1.0\nauth include login\n' | sudo tee /etc/pam.d/hyprlock >/dev/null || return 1
         print_done "Created /etc/pam.d/hyprlock"
     else
         print_done "hyprlock PAM config present"
@@ -776,20 +824,26 @@ setup_system() {
         return 1
     fi
 
-    local system_services=(
+    local required_services=(
         "NetworkManager.service"
-        "bluetooth.service"
-        "docker.service"
         "power-profiles-daemon.service"
     )
+    local optional_services=("bluetooth.service" "docker.service")
+    local service
 
-    for service in "${system_services[@]}"; do
+    for service in "${required_services[@]}"; do
+        if ! enable_system_service_now "$service"; then
+            print_error "Required system service could not be configured: $service"
+            return 1
+        fi
+    done
+    for service in "${optional_services[@]}"; do
         enable_system_service_now "$service" || true
     done
 
     if command -v docker >/dev/null 2>&1 && getent group docker >/dev/null 2>&1; then
         local current_user
-        current_user="${SUDO_USER:-${USER:-$(id -un)}}"
+        current_user="$(id -un)"
 
         if id -nG "$current_user" 2>/dev/null | grep -qw docker; then
             print_done "User $current_user is already in docker group"
@@ -805,18 +859,19 @@ setup_system() {
         fi
     fi
 
-    local start_now_user_services=(
-        "pipewire.service"
-        "pipewire-pulse.service"
-        "wireplumber.service"
-    )
-
-    for service in "${start_now_user_services[@]}"; do
-        enable_user_service "$service" now || true
-    done
-
-    enable_user_service "hypridle.service" later || \
-        print_warn "Niri startup will still try to launch hypridle directly as a fallback"
+    if systemctl --user show-environment >/dev/null 2>&1; then
+        for service in pipewire.socket pipewire-pulse.socket wireplumber.service; do
+            if ! enable_user_service "$service" now; then
+                print_error "Required audio service could not be configured: $service"
+                return 1
+            fi
+        done
+        enable_user_service "hypridle.service" later || \
+            print_warn "Niri startup will still try to launch hypridle directly as a fallback"
+    else
+        print_warn "User systemd manager unavailable; audio services will use package defaults at login"
+        print_warn "Niri startup will launch hypridle with its service or direct fallback"
+    fi
     print_done "System services configured"
 }
 
@@ -831,8 +886,8 @@ setup_logind() {
     local conf_dir=/etc/systemd/logind.conf.d
     local conf_file="$conf_dir/10-hype-niri-lid.conf"
 
-    sudo mkdir -p "$conf_dir"
-    sudo tee "$conf_file" >/dev/null << 'EOF'
+    sudo mkdir -p "$conf_dir" || return 1
+    sudo tee "$conf_file" >/dev/null << 'EOF' || return 1
 [Login]
 HandleLidSwitch=suspend
 HandleLidSwitchExternalPower=suspend
@@ -862,16 +917,15 @@ setup_firewall() {
     fi
 
     print_step "Setting default policies..."
-    sudo ufw --force reset >/dev/null 2>&1 || true
-    sudo ufw default deny incoming   >/dev/null
-    sudo ufw default allow outgoing  >/dev/null
-    sudo ufw default allow routed    >/dev/null
+    sudo ufw default deny incoming   >/dev/null || return 1
+    sudo ufw default allow outgoing  >/dev/null || return 1
+    sudo ufw default allow routed    >/dev/null || return 1
 
-    sudo ufw allow in on lo  >/dev/null
-    sudo ufw allow out on lo >/dev/null
-    sudo ufw logging low >/dev/null
-    sudo ufw --force enable >/dev/null
-    sudo systemctl enable ufw.service >/dev/null 2>&1 || true
+    sudo ufw allow in on lo  >/dev/null || return 1
+    sudo ufw allow out on lo >/dev/null || return 1
+    sudo ufw logging low >/dev/null || return 1
+    sudo ufw --force enable >/dev/null || return 1
+    sudo systemctl enable ufw.service || return 1
 
     print_done "ufw enabled with desktop defaults"
     print_step "Current rules:"
@@ -891,49 +945,47 @@ setup_cloudflare() {
         return 0
     fi
 
-    if ! systemctl is-active --quiet warp-svc; then
-        if ! sudo systemctl enable --now warp-svc >/dev/null 2>&1; then
-            print_warn "Could not start/enable warp-svc -- skipping WARP setup"
-            print_warn "Retry later with: sudo systemctl enable --now warp-svc"
-            return 0
-        fi
-        print_done "warp-svc started + enabled"
-        sleep 1
-    else
-        print_done "warp-svc already running"
+    if ! sudo systemctl enable --now warp-svc; then
+        print_error "Could not enable and start warp-svc"
+        return 1
     fi
+    print_done "warp-svc enabled and running"
 
-    if ! warp-cli --accept-tos status >/dev/null 2>&1; then
+    if ! warp-cli --accept-tos registration show >/dev/null 2>&1; then
         if ! warp-cli --accept-tos registration new >/dev/null 2>&1; then
             print_warn "WARP registration failed (may need re-run after reboot)"
             print_warn "Manually retry with: warp-cli --accept-tos registration new"
-            return 0
+            return 1
         fi
         print_done "Device registered with Cloudflare"
     fi
 
     echo ""
     echo "  Choose WARP mode:"
-    echo "    1) DNS-over-HTTPS only (safest, no VPN tunnel)  [default]"
+    echo "    1) DNS-over-HTTPS only  [default]"
     echo "    2) Full WARP VPN (encrypted tunnel)"
-    echo "    3) Skip for now (leave configured but disconnected)"
+    echo "    3) Skip connection changes (preserve the current connection)"
+    local mode_choice
     read -rp "  Mode [1/2/3]: " mode_choice || mode_choice=""
     case "${mode_choice:-1}" in
         2)
             if warp-cli --accept-tos mode warp >/dev/null 2>&1; then
                 print_done "Mode: WARP (VPN)"
             else
-                print_warn "Failed to set WARP mode"
+                print_error "Failed to set WARP mode; connection was not changed"
+                return 1
             fi
             ;;
-        3) print_warn "WARP enabled but no mode set; run 'warp-cli mode doh' to switch later"; return 0 ;;
-        *)
+        3) print_warn "WARP mode and connection preserved"; return 0 ;;
+        1|"")
             if warp-cli --accept-tos mode doh >/dev/null 2>&1; then
                 print_done "Mode: DoH"
             else
-                print_warn "Failed to set DoH mode"
+                print_error "Failed to set DoH mode; connection was not changed"
+                return 1
             fi
             ;;
+        *) print_error "Invalid WARP mode; connection was not changed"; return 1 ;;
     esac
 
     if warp-cli --accept-tos connect >/dev/null 2>&1; then
@@ -942,7 +994,8 @@ setup_cloudflare() {
         status=$(warp-cli --accept-tos status 2>/dev/null || echo "unknown")
         print_done "WARP: $status"
     else
-        print_warn "warp-cli connect failed -- check 'warp-cli status' manually"
+        print_error "warp-cli connect failed -- check 'warp-cli status' manually"
+        return 1
     fi
 }
 
@@ -960,19 +1013,25 @@ setup_stealth() {
     fi
 
     print_step "Installing Stealth packages..."
-    sudo pacman -S --needed --noconfirm tor nftables iproute2 curl
+    sudo pacman -S --needed --noconfirm tor nftables iproute2 curl || return 1
 
-    mkdir -p "$HOME/.local/share/stealth"
-    cp "$SCRIPT_DIR/zsh/stealth.zsh" "$HOME/.local/share/stealth/stealth.zsh"
-    cp -r "$SCRIPT_DIR/stealth/." "$HOME/.local/share/stealth/"
-    print_done "Staged Stealth commands and installer -> ~/.local/share/stealth/"
+    local staging_dir destination
+    destination="$HOME/.local/share/stealth"
+    mkdir -p "$HOME/.local/share" || return 1
+    staging_dir=$(mktemp -d "$HOME/.local/share/.stealth.XXXXXXXX") || return 1
+    _tmp_resources+=("$staging_dir")
+    cp "$SCRIPT_DIR/zsh/stealth.zsh" "$staging_dir/stealth.zsh" || return 1
+    cp "$SCRIPT_DIR/stealth/"{install-stealth.sh,stealth.sh,stealth.service,stealth.nft,stealth.sudoers,torrc.conf} \
+        "$staging_dir/" || return 1
 
-    local installer="$HOME/.local/share/stealth/install-stealth.sh"
-    sudo bash "$installer"
-    if [ -d "$HOME/.local/share/privacy-shield" ]; then
-        mv "$HOME/.local/share/privacy-shield" "$BACKUP_DIR/stealth-legacy-staging"
-        print_done "Archived previous Stealth staging -> $BACKUP_DIR/stealth-legacy-staging"
+    if ! sudo bash "$staging_dir/install-stealth.sh"; then
+        print_error "Stealth installation failed; previous user commands were retained"
+        return 1
     fi
+
+    replace_directory "$staging_dir" "$destination" || return 1
+    rm -rf -- "$HOME/.local/share/privacy-shield" || return 1
+    print_done "Stealth commands and installer staged -> ~/.local/share/stealth/"
     print_done "Stealth service installed but inactive"
     print_warn "Open a new terminal, then use stealth-start, stealth-status, and stealth-stop"
 }
@@ -1030,7 +1089,7 @@ validate() {
     fi
 
     if command -v niri &>/dev/null; then
-        if niri validate 2>/dev/null; then
+        if niri validate -c "$HOME/.config/niri/config.kdl"; then
             print_done "Niri config is valid"
         else
             print_warn "Niri config validation failed -- check ~/.config/niri/config.kdl"
@@ -1043,6 +1102,7 @@ validate() {
     local critical_files=(
         "$HOME/.config/niri/config.kdl"
         "$HOME/.config/niri/opacity.kdl"
+        "$HOME/.config/niri/outputs.kdl"
         "$HOME/.config/waybar/config.jsonc"
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/scripts/brightness-control.sh"
@@ -1055,6 +1115,7 @@ validate() {
         "$HOME/.config/scripts/monitor-refresh.sh"
         "$HOME/.config/scripts/open-drives.sh"
         "$HOME/.config/scripts/opacity-toggle.sh"
+        "$HOME/.config/scripts/power-menu-action.sh"
         "$HOME/.config/scripts/power-profile.sh"
         "$HOME/.config/scripts/prepare-sleep.sh"
         "$HOME/.config/scripts/start-tray-applets.sh"
@@ -1078,8 +1139,6 @@ validate() {
         "$HOME/.config/wlogout/icons/suspend.png"
         "$HOME/.config/gtk-3.0/settings.ini"
         "$HOME/.config/gtk-4.0/settings.ini"
-        "$HOME/.config/qt5ct/conf"
-        "$HOME/.config/qt6ct/conf"
         "$HOME/.zshrc"
         "$HOME/.p10k.zsh"
     )
@@ -1130,24 +1189,43 @@ validate() {
         print_warn "fontconfig not found -- cannot validate Waybar fonts"
     fi
 
-    local unit
+    local unit required
     local unit_state
-    for unit in NetworkManager.service bluetooth.service docker.service power-profiles-daemon.service; do
+    for unit in NetworkManager.service power-profiles-daemon.service bluetooth.service docker.service; do
+        required=false
+        case "$unit" in
+            NetworkManager.service|power-profiles-daemon.service) required=true ;;
+        esac
         unit_state="$(systemctl list-unit-files "$unit" --no-legend 2>/dev/null || true)"
         if [ -n "$unit_state" ]; then
             if systemctl is-enabled --quiet "$unit" 2>/dev/null; then
                 print_done "System service enabled: ${unit%.service}"
             else
-                print_warn "System service not enabled: ${unit%.service}"
+                if $required; then
+                    print_error "Required system service not enabled: ${unit%.service}"
+                    all_ok=false
+                else
+                    print_warn "Optional system service not enabled: ${unit%.service}"
+                fi
             fi
 
             if systemctl is-active --quiet "$unit" 2>/dev/null; then
                 print_done "System service running: ${unit%.service}"
             else
-                print_warn "System service not running yet: ${unit%.service}"
+                if $required; then
+                    print_error "Required system service not running: ${unit%.service}"
+                    all_ok=false
+                else
+                    print_warn "Optional system service not running: ${unit%.service}"
+                fi
             fi
         else
-            print_warn "System service unit unavailable: $unit"
+            if $required; then
+                print_error "Required system service unit unavailable: $unit"
+                all_ok=false
+            else
+                print_warn "Optional system service unit unavailable: $unit"
+            fi
         fi
     done
 
@@ -1159,28 +1237,61 @@ validate() {
         all_ok=false
     fi
 
-    local oom_policy
-    oom_policy="$(systemctl show "user@$(id -u).service" \
-        -p ManagedOOMMemoryPressure -p ManagedOOMSwap 2>/dev/null || true)"
-    if grep -qx 'ManagedOOMMemoryPressure=kill' <<< "$oom_policy" && \
-        grep -qx 'ManagedOOMSwap=kill' <<< "$oom_policy"; then
-        print_done "User memory pressure and swap monitoring enabled"
+    if cmp -s "$SCRIPT_DIR/systemd/user@.service.d/60-hype-niri-oomd.conf" \
+        /etc/systemd/system/user@.service.d/60-hype-niri-oomd.conf; then
+        print_done "User memory pressure protection policy installed"
     else
-        print_error "User OOM monitoring policy is not active"
+        print_error "User memory pressure protection policy is missing or outdated"
         all_ok=false
+    fi
+    local oom_policy user_manager
+    user_manager="user@$(id -u).service"
+    if systemctl is-active --quiet "$user_manager"; then
+        oom_policy="$(systemctl show "$user_manager" \
+            -p MemoryAccounting -p ManagedOOMMemoryPressure -p ManagedOOMSwap \
+            -p ManagedOOMMemoryPressureLimit -p ManagedOOMMemoryPressureDurationUSec 2>/dev/null || true)"
+        # systemd normalizes 40% to UINT32_MAX * 40 / 100.
+        if grep -qx 'MemoryAccounting=yes' <<< "$oom_policy" && \
+            grep -qx 'ManagedOOMMemoryPressure=kill' <<< "$oom_policy" && \
+            grep -qx 'ManagedOOMSwap=kill' <<< "$oom_policy" && \
+            grep -qx 'ManagedOOMMemoryPressureLimit=1717986918' <<< "$oom_policy" && \
+            grep -qx 'ManagedOOMMemoryPressureDurationUSec=10s' <<< "$oom_policy"; then
+            print_done "User memory pressure and swap monitoring enabled"
+        else
+            print_error "User OOM monitoring policy differs from the required 40% for 10 seconds; check systemd drop-ins"
+            all_ok=false
+        fi
+    else
+        print_warn "User manager inactive; live OOM monitoring will apply at login"
     fi
 
     if systemctl --user show-environment >/dev/null 2>&1; then
-        for unit in pipewire.service pipewire-pulse.service wireplumber.service hypridle.service; do
+        for unit in pipewire.socket pipewire-pulse.socket wireplumber.service hypridle.service; do
+            required=true
+            [ "$unit" = hypridle.service ] && required=false
             unit_state="$(systemctl --user list-unit-files "$unit" --no-legend 2>/dev/null || true)"
             if [ -n "$unit_state" ]; then
                 if systemctl --user is-enabled --quiet "$unit" 2>/dev/null; then
                     print_done "User service enabled: ${unit%.service}"
                 else
-                    print_warn "User service not enabled: ${unit%.service}"
+                    if $required; then
+                        print_error "Required audio unit not enabled: $unit"
+                        all_ok=false
+                    else
+                        print_warn "hypridle service not enabled; Niri has a direct-launch fallback"
+                    fi
+                fi
+                if $required && ! systemctl --user is-active --quiet "$unit"; then
+                    print_error "Required audio unit not active: $unit"
+                    all_ok=false
                 fi
             else
-                print_warn "User service unit unavailable: $unit"
+                if $required; then
+                    print_error "Required audio unit unavailable: $unit"
+                    all_ok=false
+                else
+                    print_warn "hypridle service unavailable; Niri has a direct-launch fallback"
+                fi
             fi
         done
     else
@@ -1196,45 +1307,6 @@ validate() {
     return 1
 }
 
-cleanup_old_configs() {
-    print_header "Clean Up Old Configs" "remove leftover Hyprland, rofi and dunst configs"
-
-    if [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
-        print_warn "Found old Hyprland config at ~/.config/hypr/hyprland.conf"
-        if confirm "Remove old hyprland.conf?"; then
-            rm -f "$HOME/.config/hypr/hyprland.conf"
-            print_done "Removed hyprland.conf"
-        fi
-    fi
-
-    local old_configs=(
-        "$HOME/.config/Kvantum"
-        "$HOME/.config/rofi"
-        "$HOME/.config/dunst"
-    )
-
-    for config in "${old_configs[@]}"; do
-        if [ -d "$config" ]; then
-            print_warn "Found old config: $config"
-            if confirm "Remove $config?"; then
-                rm -rf "$config"
-                print_done "Removed $config"
-            fi
-        fi
-    done
-
-    if [ -d "$HOME/.config/nautilus" ] || [ -d "$HOME/.local/share/nautilus" ]; then
-        print_warn "Found existing Nautilus state (view prefs, bookmarks, tags)"
-        if confirm "Reset Nautilus so the new dark theme applies cleanly?"; then
-            rm -rf "$HOME/.config/nautilus" "$HOME/.local/share/nautilus"
-            if command -v dconf &>/dev/null; then
-                dconf reset -f /org/gnome/nautilus/ 2>/dev/null || true
-            fi
-            print_done "Nautilus state cleared"
-        fi
-    fi
-}
-
 print_summary() {
     echo ""
     _box_top
@@ -1244,7 +1316,7 @@ print_summary() {
     echo ""
     echo -e "  ${BOLD}Next steps${NC}"
     echo -e "    ${CYAN}1${NC}  Reboot your system"
-    echo -e "    ${CYAN}2${NC}  Select ${BOLD}niri-session${NC} at the ly login screen"
+    echo -e "    ${CYAN}2${NC}  Select ${BOLD}niri-session${NC} in your display manager"
     echo -e "    ${CYAN}3${NC}  Powerlevel10k is preconfigured (run ${BOLD}p10k configure${NC} to tweak)"
     echo -e "    ${CYAN}4${NC}  ${BOLD}Super+A${NC} app launcher  ${GREY}·${NC}  ${BOLD}Super+T${NC} terminal"
     echo ""
@@ -1272,7 +1344,21 @@ prompt_reboot() {
 }
 
 main() {
-    clear
+    if [ "$#" -eq 1 ] && [[ "$1" == --help || "$1" == -h ]]; then
+        printf 'Usage: ./install.sh\n\nRun interactively as your regular Arch Linux user with sudo access and yay installed.\n'
+        return 0
+    fi
+    if [ "$#" -ne 0 ]; then
+        print_error "Unknown arguments. Use ./install.sh --help for usage."
+        return 2
+    fi
+    if [ "$EUID" -eq 0 ]; then
+        print_error "Run ./install.sh as your regular user; it uses sudo when required."
+        return 1
+    fi
+    if [ -t 1 ] && [ -n "${TERM:-}" ]; then
+        clear || true
+    fi
     echo ""
     echo -e "${CYAN}${BOLD}"
     echo "    ╦ ╦╦ ╦╔═╗╔═╗  ╔╗╔╦╦═╗╦"
@@ -1290,22 +1376,11 @@ main() {
         exit 0
     fi
 
-    run_phase "Preflight checks" preflight
-    run_phase "Mirror refresh" refresh_mirrors
-    run_phase "System package update" update_system_packages
-    run_phase "Package installation" install_packages
-    run_phase "Config backup" backup_configs
-    run_phase "Old config cleanup" cleanup_old_configs
-    run_phase "Copy dotfiles" copy_configs
-    run_phase "Zsh setup" setup_shell
-    run_phase "GTK/Qt theme setup" setup_gtk
-    run_phase "Desktop integrations" setup_desktop_integrations
-    run_phase "System services" setup_system
-    run_phase "Lid switch behavior" setup_logind
-    run_phase "Firewall setup" setup_firewall
-    run_phase "Cloudflare WARP" setup_cloudflare
-    run_phase "Stealth Tor routing" setup_stealth
-    if run_phase "Validation" validate; then
+    local phase
+    for phase in "${INSTALL_PHASES[@]}"; do
+        run_phase "$phase"
+    done
+    if run_phase validate; then
         print_summary
         prompt_reboot
     else
@@ -1314,4 +1389,6 @@ main() {
     fi
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    main "$@"
+fi
