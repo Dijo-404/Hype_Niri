@@ -135,6 +135,9 @@ papirus-folders-catppuccin-git
 # ── Hardware & Firmware ───────────────────────────
 brightnessctl
 power-profiles-daemon
+upower
+python
+python-gobject
 lm_sensors
 intel-media-driver
 

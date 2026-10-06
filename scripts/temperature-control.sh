@@ -7,22 +7,18 @@ THERMAL_ROOT="${THERMAL_ROOT:-/sys/class/thermal}"
 WARNING_TEMP="${HYPE_NIRI_TEMP_WARNING:-70}"
 CRITICAL_TEMP="${HYPE_NIRI_TEMP_CRITICAL:-80}"
 
-[[ "$WARNING_TEMP" =~ ^[0-9]+$ ]] || WARNING_TEMP=70
-[[ "$CRITICAL_TEMP" =~ ^[0-9]+$ ]] || CRITICAL_TEMP=80
+[[ "$WARNING_TEMP" =~ ^[0-9]{1,3}$ ]] || WARNING_TEMP=70
+[[ "$CRITICAL_TEMP" =~ ^[0-9]{1,3}$ ]] || CRITICAL_TEMP=80
+WARNING_TEMP=$((10#$WARNING_TEMP))
+CRITICAL_TEMP=$((10#$CRITICAL_TEMP))
 
-# Cache the resolved sensor path in the runtime dir; clears on reboot.
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 CACHE_FILE="$RUNTIME_DIR/hype-niri-temp-sensor"
 
 best_score=-9999
 best_temp=""
 best_source=""
 best_input=""
-
-lower() {
-    printf '%s' "${1,,}"
-}
 
 read_first_line() {
     local file="$1"
@@ -33,24 +29,18 @@ read_first_line() {
     printf '%s' "$value"
 }
 
-json_escape() {
-    local value="$1"
-    value=${value//\\/\\\\}
-    value=${value//\"/\\\"}
-    value=${value//$'\n'/ }
-    value=${value//$'\r'/ }
-    printf '%s' "$value"
-}
-
 emit() {
-    local text="$1"
-    local tooltip="$2"
-    local class="$3"
-
-    printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' \
-        "$(json_escape "$text")" \
-        "$(json_escape "$tooltip")" \
-        "$(json_escape "$class")"
+    local value
+    local -a escaped=()
+    for value in "$@"; do
+        value=${value//\\/\\\\}
+        value=${value//\"/\\\"}
+        value=${value//$'\n'/ }
+        value=${value//$'\r'/ }
+        value=${value//$'\t'/ }
+        escaped+=("$value")
+    done
+    printf '{"text":"%s","tooltip":"%s","class":"%s"}\n' "${escaped[@]}"
 }
 
 to_celsius() {
@@ -58,15 +48,21 @@ to_celsius() {
 
     raw=${raw//[[:space:]]/}
     [[ "$raw" =~ ^-?[0-9]+$ ]] || return 1
+    (( ${#raw} <= 10 )) || return 1
+    if [[ "$raw" == -* ]]; then
+        raw=$((-10#${raw#-}))
+    else
+        raw=$((10#$raw))
+    fi
 
     if (( raw > 1000 || raw < -1000 )); then
         if (( raw < 0 )); then
-            printf '%d\n' $(((raw - 500) / 1000))
+            temperature_celsius=$(((raw - 500) / 1000))
         else
-            printf '%d\n' $(((raw + 500) / 1000))
+            temperature_celsius=$(((raw + 500) / 1000))
         fi
     else
-        printf '%d\n' "$raw"
+        temperature_celsius="$raw"
     fi
 }
 
@@ -77,9 +73,9 @@ score_sensor() {
     local haystack
     local score=0
 
-    name="$(lower "$1")"
-    label="$(lower "$2")"
-    path="$(lower "$3")"
+    name="${1,,}"
+    label="${2,,}"
+    path="${3,,}"
     haystack="$name $label $path"
 
     if [[ "$haystack" =~ (nvme|iwlwifi|wifi|wireless|bat|battery|ucsi|usb|charger|adapter|amdgpu|radeon|nouveau|nvidia|gpu|drm) ]]; then
@@ -115,8 +111,8 @@ consider_sensor() {
     local source
 
     raw="$(read_first_line "$input_file" 2>/dev/null || true)"
-    temp="$(to_celsius "$raw" 2>/dev/null || true)"
-    [ -n "$temp" ] || return 0
+    to_celsius "$raw" || return 0
+    temp="$temperature_celsius"
 
     if (( temp < -40 || temp > 150 )); then
         return 0
@@ -182,20 +178,17 @@ emit_temp() {
     emit "${temp}°" "CPU temperature: ${temp}°C (${source})" "$temp_class"
 }
 
-# Fast path: read the cached sensor; fall through to a rescan if it's stale.
 if [ -r "$CACHE_FILE" ]; then
     IFS=$'\t' read -r cached_path cached_source < "$CACHE_FILE" || true
-    if [ -n "${cached_path:-}" ] && [ -r "$cached_path" ]; then
-        cached_raw="$(read_first_line "$cached_path" 2>/dev/null || true)"
-        cached_temp="$(to_celsius "$cached_raw" 2>/dev/null || true)"
-        if [ -n "$cached_temp" ] && (( cached_temp >= -40 && cached_temp <= 150 )); then
-            emit_temp "$cached_temp" "${cached_source:-cached}"
+    if [[ "${cached_path:-}" == "$HWMON_ROOT"/hwmon*/temp*_input || "${cached_path:-}" == "$THERMAL_ROOT"/thermal_zone*/temp ]] && [ -r "$cached_path" ]; then
+        IFS= read -r cached_raw < "$cached_path" || cached_raw=""
+        if to_celsius "$cached_raw" && (( temperature_celsius >= -40 && temperature_celsius <= 150 )); then
+            emit_temp "$temperature_celsius" "${cached_source:-cached}"
             exit 0
         fi
     fi
 fi
 
-# Slow path: discover and score sensors, then cache the winner.
 scan_hwmon
 scan_thermal_zones
 
@@ -205,7 +198,10 @@ if [ -z "$best_temp" ] || (( best_score <= 0 )); then
 fi
 
 if [ -n "$best_input" ]; then
-    printf '%s\t%s\n' "$best_input" "$best_source" > "$CACHE_FILE" 2>/dev/null || true
+    tmp_cache="$(mktemp "$RUNTIME_DIR/.hype-temp-sensor.XXXXXX")"
+    trap 'rm -f -- "$tmp_cache"' EXIT
+    printf '%s\t%s\n' "$best_input" "$best_source" > "$tmp_cache"
+    mv -f -- "$tmp_cache" "$CACHE_FILE"
 fi
 
 emit_temp "$best_temp" "$best_source"

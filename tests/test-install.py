@@ -6,6 +6,7 @@ source copy redirects home paths without changing the real HOME environment.
 """
 
 import os
+import fcntl
 from pathlib import Path
 import re
 import shlex
@@ -24,6 +25,8 @@ class InstallerTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.user_home = self.root / "home"
         self.user_home.mkdir()
+        self.runtime = self.root / "runtime"
+        self.runtime.mkdir(mode=0o700)
         self.log = self.root / "commands"
         self.source = self.root / "install.sh"
         self.source.write_text(
@@ -35,6 +38,7 @@ class InstallerTests(unittest.TestCase):
         environment.update(
             INSTALL_TEST_HOME=str(self.user_home),
             INSTALL_TEST_LOG=str(self.log),
+            XDG_RUNTIME_DIR=str(self.runtime),
         )
         preamble = f"""
 source {shlex.quote(str(self.source))}
@@ -707,6 +711,127 @@ main
         self.run_installer("main --unknown", succeeds=False)
         self.assertEqual(self.commands(), [])
 
+    def test_concurrent_installer_stops_before_mutation(self):
+        with (self.runtime / "hype-niri-install.lock").open("w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            result = self.run_installer("""
+preflight() { printf 'unexpected mutation\n'; }
+main
+""", succeeds=False)
+        self.assertIn("Another Hype Niri installation is already running", result.stdout)
+        self.assertNotIn("unexpected mutation", result.stdout)
+        self.assertEqual(self.commands(), [])
+
+    def test_stale_audio_service_is_removed_without_touching_its_source(self):
+        external = self.root / "legacy.service"
+        external.write_text("[Service]\nExecStart=%h/.config/waybar/scripts/audio-jack-switch.sh\n")
+        unit = self.user_home / ".config/systemd/user/audio-jack-switch.service"
+        unit.parent.mkdir(parents=True)
+        unit.symlink_to(external)
+        self.run_installer("""
+systemctl() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+remove_stale_audio_service
+""")
+        self.assertFalse(unit.is_symlink())
+        self.assertTrue(external.exists())
+        self.assertIn("--user disable --now audio-jack-switch.service", self.commands())
+
+    def test_working_audio_service_is_retained(self):
+        unit = self.user_home / ".config/systemd/user/audio-jack-switch.service"
+        unit.parent.mkdir(parents=True)
+        unit.write_text("ExecStart=%h/.config/waybar/scripts/audio-jack-switch.sh\n")
+        script = self.user_home / ".config/waybar/scripts/audio-jack-switch.sh"
+        script.parent.mkdir(parents=True)
+        script.write_text("#!/bin/sh\n")
+        script.chmod(0o755)
+        self.run_installer("remove_stale_audio_service")
+        self.assertTrue(unit.exists())
+        self.assertEqual(self.commands(), [])
+
+    def test_existing_nonexecutable_audio_script_is_not_removed(self):
+        unit = self.user_home / ".config/systemd/user/audio-jack-switch.service"
+        unit.parent.mkdir(parents=True)
+        unit.write_text("ExecStart=%h/.config/waybar/scripts/audio-jack-switch.sh\n")
+        script = self.user_home / ".config/waybar/scripts/audio-jack-switch.sh"
+        script.parent.mkdir(parents=True)
+        script.write_text("#!/bin/sh\n")
+        self.run_installer("remove_stale_audio_service")
+        self.assertTrue(unit.exists())
+        self.assertEqual(self.commands(), [])
+
+    def test_audio_service_with_another_command_is_retained(self):
+        unit = self.user_home / ".config/systemd/user/audio-jack-switch.service"
+        unit.parent.mkdir(parents=True)
+        unit.write_text("ExecStart=%h/xconfig/waybar/scripts/audio-jack-switchXsh\n")
+        self.run_installer("remove_stale_audio_service")
+        self.assertTrue(unit.exists())
+        self.assertEqual(self.commands(), [])
+
+    def test_desktop_integrations_preserve_external_symlink_targets(self):
+        external = self.root / "external-systemd"
+        (external / "user").mkdir(parents=True)
+        existing = external / "user/hype-auto-power-profile.service"
+        existing.write_text("original service\n")
+        config = self.user_home / ".config"
+        config.mkdir()
+        (config / "systemd").symlink_to(external, target_is_directory=True)
+        self.run_installer("""
+xdg-user-dirs-update() { :; }
+configure_file_indexing() { :; }
+systemctl() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
+setup_desktop_integrations
+""")
+        self.assertEqual(existing.read_text(), "original service\n")
+        self.assertFalse((config / "systemd").is_symlink())
+        self.assertEqual(
+            (config / "systemd/user/hype-auto-power-profile.service").read_bytes(),
+            (REPO / "systemd/user/hype-auto-power-profile.service").read_bytes(),
+        )
+        self.assertEqual(
+            (config / "wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf").read_bytes(),
+            (REPO / "wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf").read_bytes(),
+        )
+        self.assertIn("--user daemon-reload", self.commands())
+
+    def test_power_service_is_enabled_without_a_running_user_manager(self):
+        self.run_installer("""
+xdg-user-dirs-update() { :; }
+configure_file_indexing() { :; }
+setup_desktop_integrations
+""")
+        link = self.user_home / ".config/systemd/user/graphical-session.target.wants/hype-auto-power-profile.service"
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(link.resolve().read_bytes(), (REPO / "systemd/user/hype-auto-power-profile.service").read_bytes())
+        self.assertEqual(self.commands(), [])
+
+    def docker_fixture(self, containers="", *, query_status=0):
+        return f"""
+enable_system_service_now() {{ printf 'enable %s\\n' "$*" >> "$INSTALL_TEST_LOG"; }}
+systemctl() {{ return 0; }}
+docker() {{
+    printf 'docker %s\\n' "$*" >> "$INSTALL_TEST_LOG"
+    [[ -z ${{DOCKER_HOST:-}} && -z ${{DOCKER_CONTEXT:-}} ]] || return 99
+    printf '%s\\n' {shlex.quote(containers)}
+    return {query_status}
+}}
+sudo() {{ printf '%s\\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }}
+DOCKER_HOST=tcp://remote.invalid:2375
+DOCKER_CONTEXT=remote
+configure_docker_socket
+"""
+
+    def test_idle_docker_switches_to_socket_activation(self):
+        self.run_installer(self.docker_fixture())
+        self.assertEqual(self.commands(), ["enable docker.socket", "docker --host unix:///run/docker.sock ps --quiet", "systemctl disable --now docker.service"])
+
+    def test_running_docker_containers_are_preserved(self):
+        self.run_installer(self.docker_fixture("running-container"))
+        self.assertEqual(self.commands(), ["enable docker.socket", "docker --host unix:///run/docker.sock ps --quiet"])
+
+    def test_failed_docker_query_preserves_existing_service(self):
+        self.run_installer(self.docker_fixture(query_status=1))
+        self.assertEqual(self.commands(), ["enable docker.socket", "docker --host unix:///run/docker.sock ps --quiet"])
+
     def test_ly_enable_failure_preserves_previous_display_manager(self):
         self.run_installer("""
 systemctl() { printf 'ly@.service disabled\nsddm.service enabled\n'; }
@@ -731,6 +856,7 @@ systemctl() {
 }
 sudo() { printf '%s\n' "$*" >> "$INSTALL_TEST_LOG"; return 0; }
 bash() { return 0; }
+docker() { return 0; }
 setup_system
 """)
         commands = self.commands()

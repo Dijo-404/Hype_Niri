@@ -21,7 +21,6 @@ PHASE_TOTAL=$((${#INSTALL_PHASES[@]} + 1))
 PHASE_CURRENT=0
 DESKTOP_CONFIG_DIRS=(niri waybar scripts alacritty fuzzel mako fastfetch wlogout hypr)
 
-# Visual layout: 2-space indent, fixed inner box width (columns between borders).
 INDENT="  "
 BOX_W=60
 
@@ -39,14 +38,12 @@ trap 'echo; print_error "Installation interrupted"; exit 130' INT
 trap 'echo; print_error "Installation interrupted"; exit 143' TERM
 trap 'print_error "Installation failed at line $LINENO (status $?)."' ERR
 
-# Repeat a (possibly multi-byte) char N times.
 _repeat() {
     local char="$1" count="$2" out="" i
     for ((i = 0; i < count; i++)); do out+="$char"; done
     printf '%s' "$out"
 }
 
-# Word-wrap plain text to a max visible width, one line per row.
 _wrap_text() {
     local text="$1" max="$2" line="" word
     for word in $text; do
@@ -66,7 +63,6 @@ _box_top() {
     echo -e "${INDENT}${CYAN}╭$(_repeat '─' "$BOX_W")╮${NC}"
 }
 
-# Top border carrying the current phase label.
 _box_top_tag() {
     local tag="$1" fill
     fill=$(( BOX_W - 3 - ${#tag} ))
@@ -78,7 +74,6 @@ _box_bottom() {
     echo -e "${INDENT}${CYAN}╰$(_repeat '─' "$BOX_W")╯${NC}"
 }
 
-# One content row: " text" left-aligned, padded, closed with a right border.
 _box_line() {
     local text="$1" color="${2:-}" padlen
     padlen=$(( BOX_W - 1 - ${#text} ))
@@ -86,7 +81,6 @@ _box_line() {
     echo -e "${INDENT}${CYAN}│${NC} ${color}${text}${NC}$(_repeat ' ' "$padlen")${CYAN}│${NC}"
 }
 
-# Slim overall-progress bar (filled vs remaining), aligned under the box.
 _progress_bar() {
     local current="$1" total="$2" barw pct filled empty
     barw=$(( BOX_W - 6 ))
@@ -340,7 +334,9 @@ preflight() {
         waybar/icons/16x16/panel/nm-signal-75.svg
         waybar/icons/16x16/panel/nm-signal-100.svg
         waybar/icons/16x16/panel/nm-no-connection.svg
-        scripts/display-scale.sh
+        scripts/display-scale.sh scripts/runtime-dir.sh scripts/auto-power-profile.py
+        systemd/user/hype-auto-power-profile.service
+        wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf
         systemd/setup-oomd.sh systemd/user@.service.d/60-hype-niri-oomd.conf
         polkit/49-udisks2.rules polkit/50-network-manager.rules
     )
@@ -465,6 +461,7 @@ backup_configs() {
     local targets=(
         .zshrc .p10k.zsh
         .config/gtk-3.0 .config/gtk-4.0 .config/autostart .config/fontconfig
+        .config/systemd/user .config/wireplumber
         .local/share/icons/Papirus-Dark
         .local/share/stealth .local/share/privacy-shield
     )
@@ -757,8 +754,43 @@ EOF
     fi
 }
 
+remove_stale_audio_service() {
+    local unit="$HOME/.config/systemd/user/audio-jack-switch.service"
+    [ -f "$unit" ] || return 0
+    grep -Fxq 'ExecStart=%h/.config/waybar/scripts/audio-jack-switch.sh' "$unit" || return 0
+    [ ! -e "$HOME/.config/waybar/scripts/audio-jack-switch.sh" ] || return 0
+
+    if systemctl --user show-environment >/dev/null 2>&1; then
+        systemctl --user disable --now audio-jack-switch.service || return 1
+        systemctl --user reset-failed audio-jack-switch.service 2>/dev/null || true
+    else
+        prepare_generated_config_dir "$HOME/.config/systemd/user/default.target.wants"
+        rm -f -- "$HOME/.config/systemd/user/default.target.wants/audio-jack-switch.service"
+    fi
+    rm -f -- "$unit"
+    print_done "Removed obsolete audio jack service; WirePlumber handles routing"
+}
+
+configure_file_indexing() {
+    /usr/bin/python3 - <<'PY'
+from gi.repository import Gio
+
+source = Gio.SettingsSchemaSource.get_default()
+schema = source.lookup("org.freedesktop.Tracker3.Miner.Files", True) if source else None
+if schema and schema.has_key("ignored-directories"):
+    settings = Gio.Settings.new_full(schema, None, None)
+    current = settings.get_strv("ignored-directories")
+    excluded = ["node_modules", ".venv", "venv", "miniconda3", "__pycache__", "target",
+                ".mypy_cache", ".pytest_cache", ".ruff_cache"]
+    updated = list(dict.fromkeys(current + excluded))
+    if updated != current and not settings.set_strv("ignored-directories", updated):
+        raise SystemExit("Could not update file indexing exclusions")
+    Gio.Settings.sync()
+PY
+}
+
 setup_desktop_integrations() {
-    print_header "Desktop Integration Setup" "initialize XDG user directories"
+    print_header "Desktop Integration Setup" "user directories, audio routing and automatic power profiles"
 
     if command -v xdg-user-dirs-update &>/dev/null; then
         xdg-user-dirs-update
@@ -766,6 +798,32 @@ setup_desktop_integrations() {
     else
         print_warn "xdg-user-dirs-update not found"
     fi
+
+    local dir file tmp destination
+    for dir in systemd systemd/user systemd/user/graphical-session.target.wants \
+        wireplumber wireplumber/wireplumber.conf.d; do
+        prepare_generated_config_dir "$HOME/.config/$dir"
+    done
+    for file in systemd/user/hype-auto-power-profile.service \
+        wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf; do
+        destination="$HOME/.config/$file"
+        tmp="$(mktemp "${destination}.XXXXXX")"
+        _tmp_resources+=("$tmp")
+        cp -- "$SCRIPT_DIR/$file" "$tmp"
+        chmod 644 "$tmp"
+        mv -fT -- "$tmp" "$destination"
+    done
+    destination="$HOME/.config/systemd/user/graphical-session.target.wants/hype-auto-power-profile.service"
+    tmp="$(mktemp "${destination}.XXXXXX")"
+    _tmp_resources+=("$tmp")
+    ln -sfT -- ../hype-auto-power-profile.service "$tmp"
+    mv -fT -- "$tmp" "$destination"
+    remove_stale_audio_service
+    configure_file_indexing || print_warn "Could not configure file indexing exclusions"
+    if systemctl --user show-environment >/dev/null 2>&1; then
+        systemctl --user daemon-reload
+    fi
+    print_done "Installed audio policy and automatic power service"
 }
 
 enable_system_service_now() {
@@ -824,6 +882,25 @@ enable_user_service() {
     fi
 
     return 1
+}
+
+configure_docker_socket() {
+    enable_system_service_now docker.socket || return 1
+    if systemctl is-enabled --quiet docker.service; then
+        local containers
+        if systemctl is-active --quiet docker.service; then
+            if ! containers="$(unset DOCKER_HOST DOCKER_CONTEXT; docker --host unix:///run/docker.sock ps --quiet 2>/dev/null)"; then
+                print_warn "Could not inspect Docker containers; existing service retained"
+                return 0
+            fi
+            if [ -n "$containers" ]; then
+                print_warn "Docker has running containers; existing service retained"
+                return 0
+            fi
+        fi
+        sudo systemctl disable --now docker.service || return 1
+    fi
+    print_done "Docker starts on demand through its socket"
 }
 
 setup_system() {
@@ -916,7 +993,7 @@ setup_system() {
         "NetworkManager.service"
         "power-profiles-daemon.service"
     )
-    local optional_services=("bluetooth.service" "docker.service")
+    local optional_services=("bluetooth.service")
     local service
 
     for service in "${required_services[@]}"; do
@@ -928,6 +1005,7 @@ setup_system() {
     for service in "${optional_services[@]}"; do
         enable_system_service_now "$service" || true
     done
+    configure_docker_socket || print_warn "Could not configure Docker socket activation"
 
     if command -v docker >/dev/null 2>&1 && getent group docker >/dev/null 2>&1; then
         local current_user
@@ -948,7 +1026,7 @@ setup_system() {
     fi
 
     if systemctl --user show-environment >/dev/null 2>&1; then
-        for service in pipewire.socket pipewire-pulse.socket wireplumber.service; do
+        for service in pipewire.socket pipewire-pulse.socket wireplumber.service gnome-keyring-daemon.socket; do
             if ! enable_user_service "$service" now; then
                 print_error "Required audio service could not be configured: $service"
                 return 1
@@ -956,6 +1034,11 @@ setup_system() {
         done
         enable_user_service "hypridle.service" later || \
             print_warn "Niri startup will still try to launch hypridle directly as a fallback"
+        local power_start=later
+        if systemctl --user is-active --quiet graphical-session.target; then
+            power_start=now
+        fi
+        enable_user_service "hype-auto-power-profile.service" "$power_start" || return 1
     else
         print_warn "User systemd manager unavailable; audio services will use package defaults at login"
         print_warn "Niri startup will launch hypridle with its service or direct fallback"
@@ -1169,6 +1252,7 @@ validate() {
         "brightnessctl"
         "powerprofilesctl"
         "loginctl"
+        "python3"
     )
     local optional_commands=(
         "pavucontrol"
@@ -1229,6 +1313,8 @@ validate() {
         "$HOME/.config/scripts/opacity-toggle.sh"
         "$HOME/.config/scripts/power-menu-action.sh"
         "$HOME/.config/scripts/power-profile.sh"
+        "$HOME/.config/scripts/auto-power-profile.py"
+        "$HOME/.config/scripts/runtime-dir.sh"
         "$HOME/.config/scripts/prepare-sleep.sh"
         "$HOME/.config/scripts/start-tray-applets.sh"
         "$HOME/.config/scripts/start-waybar.sh"
@@ -1252,6 +1338,8 @@ validate() {
         "$HOME/.config/gtk-3.0/settings.ini"
         "$HOME/.config/gtk-4.0/settings.ini"
         "$HOME/.config/fontconfig/conf.d/60-hype-niri-fonts.conf"
+        "$HOME/.config/systemd/user/hype-auto-power-profile.service"
+        "$HOME/.config/wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf"
         "$HOME/.zshrc"
         "$HOME/.p10k.zsh"
     )
@@ -1283,6 +1371,19 @@ validate() {
         fi
     done
 
+    if /usr/bin/python3 - "$HOME/.config/scripts/auto-power-profile.py" <<'PY'
+import ast
+from pathlib import Path
+import sys
+ast.parse(Path(sys.argv[1]).read_text())
+PY
+    then
+        print_done "Automatic power controller syntax valid"
+    else
+        print_error "Automatic power controller syntax invalid"
+        all_ok=false
+    fi
+
     if command -v fc-match &>/dev/null; then
         local font_match
         font_match=$(fc-match -f '%{family}\n' 'JetBrains Mono' 2>/dev/null | head -n 1 || true)
@@ -1309,9 +1410,9 @@ validate() {
         print_warn "fontconfig not found -- cannot validate Waybar fonts"
     fi
 
-    local unit required
+    local unit required check_active
     local unit_state
-    for unit in NetworkManager.service power-profiles-daemon.service bluetooth.service docker.service; do
+    for unit in NetworkManager.service power-profiles-daemon.service bluetooth.service docker.socket; do
         required=false
         case "$unit" in
             NetworkManager.service|power-profiles-daemon.service) required=true ;;
@@ -1386,9 +1487,14 @@ validate() {
     fi
 
     if systemctl --user show-environment >/dev/null 2>&1; then
-        for unit in pipewire.socket pipewire-pulse.socket wireplumber.service hypridle.service; do
+        for unit in pipewire.socket pipewire-pulse.socket wireplumber.service gnome-keyring-daemon.socket hypridle.service hype-auto-power-profile.service; do
             required=true
+            check_active=true
             [ "$unit" = hypridle.service ] && required=false
+            if [ "$unit" = hype-auto-power-profile.service ] && \
+                ! systemctl --user is-active --quiet graphical-session.target; then
+                check_active=false
+            fi
             unit_state="$(systemctl --user list-unit-files "$unit" --no-legend 2>/dev/null || true)"
             if [ -n "$unit_state" ]; then
                 if systemctl --user is-enabled --quiet "$unit" 2>/dev/null; then
@@ -1401,8 +1507,8 @@ validate() {
                         print_warn "hypridle service not enabled; Niri has a direct-launch fallback"
                     fi
                 fi
-                if $required && ! systemctl --user is-active --quiet "$unit"; then
-                    print_error "Required audio unit not active: $unit"
+                if $required && $check_active && ! systemctl --user is-active --quiet "$unit"; then
+                    print_error "Required user unit not active: $unit"
                     all_ok=false
                 fi
             else
@@ -1474,6 +1580,12 @@ main() {
     fi
     if [ "$EUID" -eq 0 ]; then
         print_error "Run ./install.sh as your regular user; it uses sudo when required."
+        return 1
+    fi
+    source "$SCRIPT_DIR/scripts/runtime-dir.sh"
+    exec 8>"$RUNTIME_DIR/hype-niri-install.lock"
+    if ! flock -n 8; then
+        print_error "Another Hype Niri installation is already running"
         return 1
     fi
     if [ -t 1 ] && [ -n "${TERM:-}" ]; then

@@ -2,9 +2,11 @@
 set -euo pipefail
 
 CONFIG_FILE="${WAYBAR_CONFIG:-$HOME/.config/waybar/config.jsonc}"
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
-[ -d "$RUNTIME_DIR" ] && [ -w "$RUNTIME_DIR" ] || RUNTIME_DIR="/tmp"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 GENERATED_CONFIG="$RUNTIME_DIR/hype-waybar-multi-output.json"
+exec 9>"$RUNTIME_DIR/hype-waybar.lock"
+flock -w 3 9 || exit 0
+pgrep -u "$UID" -x waybar >/dev/null 2>&1 && exit 0
 
 launch_waybar() {
     local config_file="$1"
@@ -61,8 +63,12 @@ if [ "$output_count" -lt 2 ]; then
     launch_waybar "$CONFIG_FILE"
 fi
 
-if build_multi_output_config "$outputs" >"$GENERATED_CONFIG"; then
+tmp_config="$(mktemp "$RUNTIME_DIR/.hype-waybar.XXXXXX")"
+trap 'rm -f "$tmp_config"' EXIT
+if build_multi_output_config "$outputs" >"$tmp_config"; then
+    mv -f -- "$tmp_config" "$GENERATED_CONFIG"
     launch_waybar "$GENERATED_CONFIG"
 fi
 
+rm -f -- "$tmp_config"
 launch_waybar "$CONFIG_FILE"

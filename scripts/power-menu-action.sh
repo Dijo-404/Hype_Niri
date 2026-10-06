@@ -9,10 +9,6 @@ close_wlogout() {
     pkill -x wlogout >/dev/null 2>&1 || true
 }
 
-save_wallpaper() {
-    "$SCRIPT_DIR/wallpaper.sh" current >/dev/null 2>&1 || true
-}
-
 stop_caffeine() {
     "$SCRIPT_DIR/caffeine-control.sh" stop >/dev/null 2>&1 || true
 }
@@ -33,13 +29,11 @@ case "$ACTION" in
         exec niri msg action quit --skip-confirmation
         ;;
     shutdown)
-        save_wallpaper
         stop_caffeine
         close_wlogout
         exec systemctl poweroff
         ;;
     reboot|restart)
-        save_wallpaper
         stop_caffeine
         close_wlogout
         exec systemctl reboot

@@ -5,12 +5,9 @@ set -euo pipefail
 CONFIG_FILE="${NIRI_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/niri/config.kdl}"
 CONFIG_DIR="$(dirname -- "$CONFIG_FILE")"
 OPACITY_FILE="$CONFIG_DIR/opacity.kdl"
-RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
 NOTIFY_ID=2007
 
-if [ ! -d "$RUNTIME_DIR" ] || [ ! -w "$RUNTIME_DIR" ]; then
-    RUNTIME_DIR="/tmp"
-fi
 
 notify() {
     command -v notify-send >/dev/null 2>&1 || return 0

@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+source "${BASH_SOURCE[0]%/*}/runtime-dir.sh"
+exec 9>"$RUNTIME_DIR/hype-wallpaper.lock"
+flock -w 2 9 || exit 0
+
 WALLPAPER_DIR="${WALLPAPER_DIR:-$HOME/Pictures/Wallpapers}"
 
 STATE_DIR="$HOME/.local/state/niri"
@@ -10,12 +14,23 @@ mkdir -p "$STATE_DIR"
 
 TRANSITION_TYPE="fade"
 TRANSITION_STEP=90
-TRANSITION_FPS=120
+TRANSITION_FPS=60
 TRANSITION_DURATION=1
 
 find_wallpaper() {
     [[ -d "$WALLPAPER_DIR" ]] || return 1
-    find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | head -n 1
+    local img
+    IFS= read -r -d '' img < <(find "$WALLPAPER_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0 | sort -z) || return 1
+    printf '%s' "$img"
+}
+
+update_current_link() {
+    local img
+    img="$(realpath -- "$1")"
+    tmp_link="$(mktemp "$STATE_DIR/.current-wallpaper.XXXXXX")"
+    trap 'rm -f -- "${tmp_link:-}"' EXIT
+    ln -sfT -- "$img" "$tmp_link"
+    mv -Tf -- "$tmp_link" "$CURRENT_LINK"
 }
 
 ensure_current_wallpaper() {
@@ -24,15 +39,15 @@ ensure_current_wallpaper() {
     local fallback
     fallback="$(find_wallpaper)" || true
     [[ -f "$fallback" ]] || return 1
-    ln -sfn "$fallback" "$CURRENT_LINK"
+    update_current_link "$fallback"
 }
 
 start_daemon() {
     command -v awww >/dev/null 2>&1 || return 1
 
-    if ! pgrep -x awww-daemon >/dev/null; then
+    if ! pgrep -u "$UID" -x awww-daemon >/dev/null; then
         local daemon_pid
-        awww-daemon --format xrgb >/dev/null 2>&1 &
+        awww-daemon --format xrgb >/dev/null 2>&1 9>&- &
         daemon_pid=$!
         sleep 0.3
         if ! kill -0 "$daemon_pid" 2>/dev/null; then
@@ -40,7 +55,7 @@ start_daemon() {
         fi
     fi
 
-    pgrep -x awww-daemon >/dev/null || return 1
+    pgrep -u "$UID" -x awww-daemon >/dev/null || return 1
 }
 
 apply_wallpaper() {
@@ -58,12 +73,15 @@ apply_wallpaper() {
 set_wallpaper() {
     local img="$1"
     if [[ -f "$img" ]]; then
-        ln -sfn "$img" "$CURRENT_LINK"
+        update_current_link "$img"
         apply_wallpaper "$img"
     fi
 }
 
 case "${1:-}" in
+    ensure)
+        ensure_current_wallpaper || exit 0
+        ;;
     init)
         ensure_current_wallpaper || exit 0
         apply_wallpaper "$CURRENT_LINK" none
@@ -74,13 +92,22 @@ case "${1:-}" in
         ;;
     random)
         [[ -d "$WALLPAPER_DIR" ]] || exit 0
-        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | shuf -n1) || true
+        IFS= read -r -d '' img < <(find "$WALLPAPER_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0 | shuf -z -n1) || true
         set_wallpaper "$img"
         ;;
     select)
         [[ -d "$WALLPAPER_DIR" ]] || exit 0
-        img=$(find "$WALLPAPER_DIR" -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' \) | sort | fuzzel --dmenu -p "Wallpaper: ") || true
-        set_wallpaper "$img"
+        mapfile -d '' -t images < <(find "$WALLPAPER_DIR" -type f \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) -print0 | sort -z)
+        choice="$(
+            for index in "${!images[@]}"; do
+                label="${images[index]//$'\n'/\\n}"
+                label="${label//$'\r'/\\r}"
+                label="${label//$'\t'/\\t}"
+                printf '%s\t%s\n' "$index" "$label"
+            done | fuzzel --dmenu -p "Wallpaper: " --only-match --with-nth 2 --accept-nth 1 --match-nth 2
+        )" || exit 0
+        [[ "$choice" =~ ^[0-9]+$ ]] && (( choice < ${#images[@]} )) || exit 0
+        set_wallpaper "${images[choice]}"
         ;;
     *)
         if [[ -f "${1:-}" ]]; then

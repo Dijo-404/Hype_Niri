@@ -1,4 +1,3 @@
-
 'builtin' 'local' '-a' 'p10k_config_opts'
 [[ ! -o 'aliases'         ]] || p10k_config_opts+=('aliases')
 [[ ! -o 'sh_glob'         ]] || p10k_config_opts+=('sh_glob')
@@ -13,59 +12,59 @@
   [[ $ZSH_VERSION == (5.<1->*|<6->.*) ]] || return
 
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
-    dir                     # current directory
-    vcs                     # git status
-    newline                 # \n
+    dir
+    vcs
+    newline
   )
 
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(
-    status                  # exit code of the last command
-    command_execution_time  # duration of the last command
-    background_jobs         # presence of background jobs
-    direnv                  # direnv status (https://direnv.net/)
-    asdf                    # asdf version manager (https://github.com/asdf-vm/asdf)
-    virtualenv              # python virtual environment (https://docs.python.org/3/library/venv.html)
-    anaconda                # conda environment (https://conda.io/)
-    pyenv                   # python environment (https://github.com/pyenv/pyenv)
-    goenv                   # go environment (https://github.com/syndbg/goenv)
-    nodenv                  # node.js version from nodenv (https://github.com/nodenv/nodenv)
-    nvm                     # node.js version from nvm (https://github.com/nvm-sh/nvm)
-    nodeenv                 # node.js environment (https://github.com/ekalinin/nodeenv)
-    rbenv                   # ruby version from rbenv (https://github.com/rbenv/rbenv)
-    rvm                     # ruby version from rvm (https://rvm.io)
-    fvm                     # flutter version management (https://github.com/leoafarias/fvm)
-    luaenv                  # lua version from luaenv (https://github.com/cehoffman/luaenv)
-    jenv                    # java version from jenv (https://github.com/jenv/jenv)
-    plenv                   # perl version from plenv (https://github.com/tokuhirom/plenv)
-    perlbrew                # perl version from perlbrew (https://github.com/gugod/App-perlbrew)
-    phpenv                  # php version from phpenv (https://github.com/phpenv/phpenv)
-    scalaenv                # scala version from scalaenv (https://github.com/scalaenv/scalaenv)
-    haskell_stack           # haskell version from stack (https://haskellstack.org/)
-    kubecontext             # current kubernetes context (https://kubernetes.io/)
-    terraform               # terraform workspace (https://www.terraform.io)
-    aws                     # aws profile (https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
-    aws_eb_env              # aws elastic beanstalk environment (https://aws.amazon.com/elasticbeanstalk/)
-    azure                   # azure account name (https://docs.microsoft.com/en-us/cli/azure)
-    gcloud                  # google cloud cli account and project (https://cloud.google.com/)
-    google_app_cred         # google application credentials (https://cloud.google.com/docs/authentication/production)
-    toolbox                 # toolbox name (https://github.com/containers/toolbox)
-    context                 # user@hostname
-    nordvpn                 # nordvpn connection status, linux only (https://nordvpn.com/)
-    ranger                  # ranger shell (https://github.com/ranger/ranger)
-    yazi                    # yazi shell (https://github.com/sxyazi/yazi)
-    nnn                     # nnn shell (https://github.com/jarun/nnn)
-    lf                      # lf shell (https://github.com/gokcehan/lf)
-    xplr                    # xplr shell (https://github.com/sayanarijit/xplr)
-    vim_shell               # vim shell indicator (:sh)
-    midnight_commander      # midnight commander shell (https://midnight-commander.org/)
-    nix_shell               # nix shell (https://nixos.org/nixos/nix-pills/developing-with-nix-shell.html)
-    chezmoi_shell           # chezmoi shell (https://www.chezmoi.io/)
-    vi_mode                 # vi mode (you don't need this if you've enabled prompt_char)
-    todo                    # todo items (https://github.com/todotxt/todo.txt-cli)
-    timewarrior             # timewarrior tracking status (https://timewarrior.net/)
-    taskwarrior             # taskwarrior task count (https://taskwarrior.org/)
-    per_directory_history   # Oh My Zsh per-directory-history local/global indicator
-    newline                 # \n
+    status
+    command_execution_time
+    background_jobs
+    direnv
+    asdf
+    virtualenv
+    anaconda
+    pyenv
+    goenv
+    nodenv
+    nvm
+    nodeenv
+    rbenv
+    rvm
+    fvm
+    luaenv
+    jenv
+    plenv
+    perlbrew
+    phpenv
+    scalaenv
+    haskell_stack
+    kubecontext
+    terraform
+    aws
+    aws_eb_env
+    azure
+    gcloud
+    google_app_cred
+    toolbox
+    context
+    nordvpn
+    ranger
+    yazi
+    nnn
+    lf
+    xplr
+    vim_shell
+    midnight_commander
+    nix_shell
+    chezmoi_shell
+    vi_mode
+    todo
+    timewarrior
+    taskwarrior
+    per_directory_history
+    newline
   )
 
   typeset -g POWERLEVEL9K_MODE=nerdfont-v3
@@ -103,20 +102,6 @@
   typeset -g POWERLEVEL9K_LEFT_PROMPT_FIRST_SEGMENT_START_SYMBOL='%250F\uE0B6'
   typeset -g POWERLEVEL9K_RIGHT_PROMPT_LAST_SEGMENT_END_SYMBOL='%250F\uE0B4'
   typeset -g POWERLEVEL9K_EMPTY_LINE_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL=
-
-  typeset -g POWERLEVEL9K_OS_ICON_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_BACKGROUND=
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=250
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_ERROR_{VIINS,VICMD,VIVIS,VIOWR}_FOREGROUND=250
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIINS_CONTENT_EXPANSION='❯'
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VICMD_CONTENT_EXPANSION='❮'
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIVIS_CONTENT_EXPANSION='V'
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_{OK,ERROR}_VIOWR_CONTENT_EXPANSION='▶'
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_OVERWRITE_STATE=true
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_LEFT_PROMPT_LAST_SEGMENT_END_SYMBOL=
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_LEFT_PROMPT_FIRST_SEGMENT_START_SYMBOL=
-  typeset -g POWERLEVEL9K_PROMPT_CHAR_LEFT_{LEFT,RIGHT}_WHITESPACE=
 
   typeset -g POWERLEVEL9K_DIR_FOREGROUND=232
   typeset -g POWERLEVEL9K_SHORTEN_STRATEGY=truncate_to_unique
@@ -159,9 +144,7 @@
 
   typeset -g POWERLEVEL9K_DIR_SHOW_WRITABLE=v3
 
-
   typeset -g POWERLEVEL9K_DIR_CLASSES=()
-
 
   typeset -g POWERLEVEL9K_VCS_BRANCH_ICON=
 
@@ -175,37 +158,26 @@
       return
     fi
 
-    if (( $1 )); then
-      local       meta='%232F'  # dark grey
-      local      clean='%232F'  # dark grey
-      local   modified='%232F'  # dark grey
-      local  untracked='%232F'  # dark grey
-      local conflicted='%232F'  # dark grey
-    else
-      local       meta='%232F'  # dark grey
-      local      clean='%232F'  # dark grey
-      local   modified='%232F'  # dark grey
-      local  untracked='%232F'  # dark grey
-      local conflicted='%232F'  # dark grey
-    fi
+    local meta='%232F' clean='%232F' modified='%232F'
+    local untracked='%232F' conflicted='%232F'
 
     local res
 
     if [[ -n $VCS_STATUS_LOCAL_BRANCH ]]; then
       local branch=${(V)VCS_STATUS_LOCAL_BRANCH}
-      (( $#branch > 32 )) && branch[13,-13]="…"  # <-- this line
+      (( $#branch > 32 )) && branch[13,-13]="…"
       res+="${clean}${(g::)POWERLEVEL9K_VCS_BRANCH_ICON}${branch//\%/%%}"
     fi
 
     if [[ -n $VCS_STATUS_TAG
-          && -z $VCS_STATUS_LOCAL_BRANCH  # <-- this line
+          && -z $VCS_STATUS_LOCAL_BRANCH
         ]]; then
       local tag=${(V)VCS_STATUS_TAG}
-      (( $#tag > 32 )) && tag[13,-13]="…"  # <-- this line
+      (( $#tag > 32 )) && tag[13,-13]="…"
       res+="${meta}#${clean}${tag//\%/%%}"
     fi
 
-    [[ -z $VCS_STATUS_LOCAL_BRANCH && -z $VCS_STATUS_TAG ]] &&  # <-- this line
+    [[ -z $VCS_STATUS_LOCAL_BRANCH && -z $VCS_STATUS_TAG ]] &&
       res+="${meta}@${clean}${VCS_STATUS_COMMIT[1,8]}"
 
     if [[ -n ${VCS_STATUS_REMOTE_BRANCH:#$VCS_STATUS_LOCAL_BRANCH} ]]; then
@@ -220,7 +192,6 @@
       (( VCS_STATUS_COMMITS_BEHIND )) && res+=" ${clean}⇣${VCS_STATUS_COMMITS_BEHIND}"
       (( VCS_STATUS_COMMITS_AHEAD && !VCS_STATUS_COMMITS_BEHIND )) && res+=" "
       (( VCS_STATUS_COMMITS_AHEAD  )) && res+="${clean}⇡${VCS_STATUS_COMMITS_AHEAD}"
-    elif [[ -n $VCS_STATUS_REMOTE_BRANCH ]]; then
     fi
 
     (( VCS_STATUS_PUSH_COMMITS_BEHIND )) && res+=" ${clean}⇠${VCS_STATUS_PUSH_COMMITS_BEHIND}"
@@ -293,7 +264,6 @@
 
   typeset -g POWERLEVEL9K_ASDF_FOREGROUND=232
 
-
   typeset -g POWERLEVEL9K_ASDF_SOURCES=(shell local global)
 
   typeset -g POWERLEVEL9K_ASDF_PROMPT_ALWAYS_SHOW=false
@@ -339,7 +309,7 @@
   typeset -g POWERLEVEL9K_NORDVPN_{DISCONNECTED,CONNECTING,DISCONNECTING}_VISUAL_IDENTIFIER_EXPANSION=
 
   typeset -g POWERLEVEL9K_RANGER_FOREGROUND=232
-  
+
   typeset -g POWERLEVEL9K_YAZI_FOREGROUND=232
 
   typeset -g POWERLEVEL9K_NNN_FOREGROUND=232
@@ -354,17 +324,7 @@
 
   typeset -g POWERLEVEL9K_NIX_SHELL_FOREGROUND=232
 
-
-
-
   typeset -g POWERLEVEL9K_CHEZMOI_SHELL_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_DISK_USAGE_NORMAL_FOREGROUND=232
-  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_FOREGROUND=232
-  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_FOREGROUND=232
-  typeset -g POWERLEVEL9K_DISK_USAGE_WARNING_LEVEL=90
-  typeset -g POWERLEVEL9K_DISK_USAGE_CRITICAL_LEVEL=95
-  typeset -g POWERLEVEL9K_DISK_USAGE_ONLY_WARNING=false
 
   typeset -g POWERLEVEL9K_VI_COMMAND_MODE_STRING=NORMAL
   typeset -g POWERLEVEL9K_VI_MODE_NORMAL_FOREGROUND=232
@@ -375,37 +335,17 @@
   typeset -g POWERLEVEL9K_VI_INSERT_MODE_STRING=
   typeset -g POWERLEVEL9K_VI_MODE_INSERT_FOREGROUND=232
 
-  typeset -g POWERLEVEL9K_RAM_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_SWAP_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_LOAD_WHICH=5
-  typeset -g POWERLEVEL9K_LOAD_NORMAL_FOREGROUND=232
-  typeset -g POWERLEVEL9K_LOAD_WARNING_FOREGROUND=232
-  typeset -g POWERLEVEL9K_LOAD_CRITICAL_FOREGROUND=232
-
   typeset -g POWERLEVEL9K_TODO_FOREGROUND=232
   typeset -g POWERLEVEL9K_TODO_HIDE_ZERO_TOTAL=true
   typeset -g POWERLEVEL9K_TODO_HIDE_ZERO_FILTERED=false
 
-
-
   typeset -g POWERLEVEL9K_TIMEWARRIOR_FOREGROUND=232
   typeset -g POWERLEVEL9K_TIMEWARRIOR_CONTENT_EXPANSION='${P9K_CONTENT:0:24}${${P9K_CONTENT:24}:+…}'
 
-
   typeset -g POWERLEVEL9K_TASKWARRIOR_FOREGROUND=232
-
-
 
   typeset -g POWERLEVEL9K_PER_DIRECTORY_HISTORY_LOCAL_FOREGROUND=232
   typeset -g POWERLEVEL9K_PER_DIRECTORY_HISTORY_GLOBAL_FOREGROUND=232
-
-
-
-  typeset -g POWERLEVEL9K_CPU_ARCH_FOREGROUND=232
-
-
 
   typeset -g POWERLEVEL9K_CONTEXT_ROOT_FOREGROUND=232
   typeset -g POWERLEVEL9K_CONTEXT_{REMOTE,REMOTE_SUDO}_FOREGROUND=250
@@ -417,7 +357,6 @@
 
   typeset -g POWERLEVEL9K_CONTEXT_{DEFAULT,SUDO}_{CONTENT,VISUAL_IDENTIFIER}_EXPANSION=
 
-
   typeset -g POWERLEVEL9K_VIRTUALENV_FOREGROUND=232
   typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_PYTHON_VERSION=false
   typeset -g POWERLEVEL9K_VIRTUALENV_SHOW_WITH_PYENV=false
@@ -427,14 +366,12 @@
 
   typeset -g POWERLEVEL9K_ANACONDA_CONTENT_EXPANSION='${${${${CONDA_PROMPT_MODIFIER#\(}% }%\)}:-${CONDA_PREFIX:t}}'
 
-
   typeset -g POWERLEVEL9K_PYENV_FOREGROUND=232
   typeset -g POWERLEVEL9K_PYENV_SOURCES=(shell local global)
   typeset -g POWERLEVEL9K_PYENV_PROMPT_ALWAYS_SHOW=false
   typeset -g POWERLEVEL9K_PYENV_SHOW_SYSTEM=true
 
   typeset -g POWERLEVEL9K_PYENV_CONTENT_EXPANSION='${P9K_CONTENT}${${P9K_CONTENT:#$P9K_PYENV_PYTHON_VERSION(|/*)}:+ $P9K_PYENV_PYTHON_VERSION}'
-
 
   typeset -g POWERLEVEL9K_GOENV_FOREGROUND=232
   typeset -g POWERLEVEL9K_GOENV_SOURCES=(shell local global)
@@ -453,29 +390,6 @@
   typeset -g POWERLEVEL9K_NODEENV_FOREGROUND=232
   typeset -g POWERLEVEL9K_NODEENV_SHOW_NODE_VERSION=false
   typeset -g POWERLEVEL9K_NODEENV_{LEFT,RIGHT}_DELIMITER=
-
-  typeset -g POWERLEVEL9K_NODE_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_NODE_VERSION_PROJECT_ONLY=true
-
-  typeset -g POWERLEVEL9K_GO_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_GO_VERSION_PROJECT_ONLY=true
-
-  typeset -g POWERLEVEL9K_RUST_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_RUST_VERSION_PROJECT_ONLY=true
-
-  typeset -g POWERLEVEL9K_DOTNET_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_DOTNET_VERSION_PROJECT_ONLY=true
-
-  typeset -g POWERLEVEL9K_PHP_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_PHP_VERSION_PROJECT_ONLY=true
-
-  typeset -g POWERLEVEL9K_LARAVEL_VERSION_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_JAVA_VERSION_FOREGROUND=232
-  typeset -g POWERLEVEL9K_JAVA_VERSION_PROJECT_ONLY=true
-  typeset -g POWERLEVEL9K_JAVA_VERSION_FULL=false
-
-  typeset -g POWERLEVEL9K_PACKAGE_FOREGROUND=232
 
   typeset -g POWERLEVEL9K_RBENV_FOREGROUND=232
   typeset -g POWERLEVEL9K_RBENV_SOURCES=(shell local global)
@@ -526,8 +440,6 @@
       '*'         OTHER)
   typeset -g POWERLEVEL9K_TERRAFORM_OTHER_FOREGROUND=232
 
-  typeset -g POWERLEVEL9K_TERRAFORM_VERSION_FOREGROUND=232
-
   typeset -g POWERLEVEL9K_KUBECONTEXT_SHOW_ON_COMMAND='kubectl|helm|kubens|kubectx|oc|istioctl|kogito|k9s|helmfile|flux|fluxctl|stern|kubeseal|skaffold|kubent|kubecolor|cmctl|sparkctl'
 
   typeset -g POWERLEVEL9K_KUBECONTEXT_CLASSES=(
@@ -537,7 +449,6 @@
   typeset -g POWERLEVEL9K_KUBECONTEXT_DEFAULT_CONTENT_EXPANSION=
   POWERLEVEL9K_KUBECONTEXT_DEFAULT_CONTENT_EXPANSION+='${P9K_KUBECONTEXT_CLOUD_CLUSTER:-${P9K_KUBECONTEXT_NAME}}'
   POWERLEVEL9K_KUBECONTEXT_DEFAULT_CONTENT_EXPANSION+='${${:-/$P9K_KUBECONTEXT_NAMESPACE}:#/default}'
-
 
   typeset -g POWERLEVEL9K_AWS_SHOW_ON_COMMAND='aws|awless|cdk|terraform|pulumi|terragrunt'
 
@@ -564,7 +475,6 @@
 
   typeset -g POWERLEVEL9K_GCLOUD_REFRESH_PROJECT_NAME_SECONDS=60
 
-
   typeset -g POWERLEVEL9K_GOOGLE_APP_CRED_SHOW_ON_COMMAND='terraform|pulumi|terragrunt'
 
   typeset -g POWERLEVEL9K_GOOGLE_APP_CRED_CLASSES=(
@@ -575,43 +485,6 @@
 
   typeset -g POWERLEVEL9K_TOOLBOX_FOREGROUND=232
   typeset -g POWERLEVEL9K_TOOLBOX_CONTENT_EXPANSION='${P9K_TOOLBOX_NAME:#fedora-toolbox-*}'
-
-  typeset -g POWERLEVEL9K_PUBLIC_IP_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_VPN_IP_FOREGROUND=232
-  typeset -g POWERLEVEL9K_VPN_IP_CONTENT_EXPANSION=
-  typeset -g POWERLEVEL9K_VPN_IP_INTERFACE='(gpd|wg|(.*tun)|tailscale)[0-9]*|(zt.*)'
-  typeset -g POWERLEVEL9K_VPN_IP_SHOW_ALL=false
-
-  typeset -g POWERLEVEL9K_IP_FOREGROUND=232
-  typeset -g POWERLEVEL9K_IP_CONTENT_EXPANSION='${P9K_IP_RX_RATE:+%250F⇣$P9K_IP_RX_RATE }${P9K_IP_TX_RATE:+%250F⇡$P9K_IP_TX_RATE }%250F$P9K_IP_IP'
-  typeset -g POWERLEVEL9K_IP_INTERFACE='[ew].*'
-
-  typeset -g POWERLEVEL9K_PROXY_FOREGROUND=232
-
-  typeset -g POWERLEVEL9K_BATTERY_LOW_THRESHOLD=20
-  typeset -g POWERLEVEL9K_BATTERY_LOW_FOREGROUND=232
-  typeset -g POWERLEVEL9K_BATTERY_{CHARGING,CHARGED}_FOREGROUND=250
-  typeset -g POWERLEVEL9K_BATTERY_DISCONNECTED_FOREGROUND=232
-  typeset -g POWERLEVEL9K_BATTERY_STAGES='\UF008E\UF007A\UF007B\UF007C\UF007D\UF007E\UF007F\UF0080\UF0081\UF0082\UF0079'
-  typeset -g POWERLEVEL9K_BATTERY_VERBOSE=false
-
-  typeset -g POWERLEVEL9K_WIFI_FOREGROUND=232
-
-
-  typeset -g POWERLEVEL9K_TIME_FOREGROUND=232
-  typeset -g POWERLEVEL9K_TIME_FORMAT='%D{%H:%M:%S}'
-  typeset -g POWERLEVEL9K_TIME_UPDATE_ON_COMMAND=false
-  typeset -g POWERLEVEL9K_TIME_VISUAL_IDENTIFIER_EXPANSION=
-
-  function prompt_example() {
-    p10k segment -f 208 -i '⭐' -t 'hello, %n'
-  }
-
-  function instant_prompt_example() {
-    prompt_example
-  }
-
 
   typeset -g POWERLEVEL9K_TRANSIENT_PROMPT=off
 
