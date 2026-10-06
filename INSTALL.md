@@ -224,7 +224,7 @@ cp zsh/stealth.zsh stealth/* ~/.local/share/stealth/
 sudo bash ~/.local/share/stealth/install-stealth.sh
 ```
 
-Open a new Zsh terminal after installing. The commands are `stealth-start`, `stealth-status`, and `stealth-stop`. If you use your own `.zshrc`, source `~/.local/share/stealth/stealth.zsh` from it. The direct commands `sudo stealth start`, `sudo stealth status`, and `sudo stealth stop` also work; a direct start leaves the systemd service inactive even while routing is active. When upgrading an earlier installation, stop its routing service first; the installer migrates its inactive system files.
+Open a new Zsh terminal after installing. The commands are `stealth-start`, `stealth-status`, and `stealth-stop`. If you use your own `.zshrc`, source `~/.local/share/stealth/stealth.zsh` from it. The direct commands `sudo stealth start`, `sudo stealth status`, and `sudo stealth stop` also work; a direct start leaves the systemd service inactive even while routing is active. The installer adds `/etc/sudoers.d/stealth` so sudo runs these commands without its pseudo-terminal; otherwise closing the terminal mid-command can leave sudo spinning at 100% CPU. When upgrading an earlier installation, stop its routing service first; the installer migrates its inactive system files.
 
 While Stealth is active, a green Stealth icon appears beside the Wi-Fi and Bluetooth icons in Waybar's tray pill. It disappears after Stealth stops.
 

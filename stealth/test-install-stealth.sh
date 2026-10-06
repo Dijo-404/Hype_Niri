@@ -5,8 +5,8 @@ SOURCE=$(dirname "$(realpath "$0")")
 TEST_ROOT=$(mktemp -d)
 trap 'rm -rf "$TEST_ROOT"' EXIT
 export STEALTH_TEST_ROOT=$TEST_ROOT
-mkdir -p "$TEST_ROOT"/{bin,stage,live/etc/tor/torrc.d,live/etc/systemd/system,live/usr/local/bin,live/var/log,live/run}
-cp "$SOURCE"/{stealth.sh,stealth.nft,stealth.service,torrc.conf} "$TEST_ROOT/stage/"
+mkdir -p "$TEST_ROOT"/{bin,stage,live/etc/tor/torrc.d,live/etc/sudoers.d,live/etc/systemd/system,live/usr/local/bin,live/var/log,live/run}
+cp "$SOURCE"/{stealth.sh,stealth.nft,stealth.service,stealth.sudoers,torrc.conf} "$TEST_ROOT/stage/"
 sed \
     -e "s|/usr/local/bin/stealth|$TEST_ROOT/live/usr/local/bin/stealth|g" \
     -e "s|/usr/local/bin/privacy-shield.sh|$TEST_ROOT/live/usr/local/bin/privacy-shield.sh|g" \
@@ -15,6 +15,7 @@ sed \
     -e "s|/etc/stealth.nft|$TEST_ROOT/live/etc/stealth.nft|g" \
     -e "s|/etc/privacy-shield.nft|$TEST_ROOT/live/etc/privacy-shield.nft|g" \
     -e "s|/etc/tor|$TEST_ROOT/live/etc/tor|g" \
+    -e "s|/etc/sudoers.d|$TEST_ROOT/live/etc/sudoers.d|g" \
     -e "s|/var/backups/stealth|$TEST_ROOT/live/var/backups/stealth|g" \
     -e "s|/run/stealth|$TEST_ROOT/live/run/stealth|g" \
     -e "s|/run/privacy-shield|$TEST_ROOT/live/run/privacy-shield|g" \
@@ -50,6 +51,18 @@ case "${0##*/}" in
         fi
         ;;
     systemd-analyze) ;;
+    visudo)
+        case "$*" in
+            '-cqf '*) /usr/bin/visudo "$@" 2> >(grep -v 'sudo.conf is owned' >&2) ;;
+            '-c')
+                [[ ${MOCK_VISUDO_FAIL:-0} == 1 ]] && exit 1
+                for file in "$root"/live/etc/sudoers.d/*; do
+                    [[ -e $file ]] && printf '%s: parsed OK\n' "$file"
+                done
+                ;;
+            *) printf 'Unexpected visudo command: %s\n' "$*" >&2; exit 1 ;;
+        esac
+        ;;
     systemctl)
         case "$*" in
             'daemon-reload') ;;
@@ -63,13 +76,13 @@ case "${0##*/}" in
 esac
 MOCK
 chmod +x "$TEST_ROOT/bin/mock-command"
-for command in nft tor systemd-analyze systemctl; do
+for command in nft tor systemd-analyze systemctl visudo; do
     ln -s mock-command "$TEST_ROOT/bin/$command"
 done
 
 run_install() {
     unshare -Urn env PATH="$TEST_ROOT/bin:$PATH" STEALTH_TEST_ROOT="$TEST_ROOT" \
-        MOCK_TOR_FAIL_AT="${MOCK_TOR_FAIL_AT:-0}" \
+        MOCK_TOR_FAIL_AT="${MOCK_TOR_FAIL_AT:-0}" MOCK_VISUDO_FAIL="${MOCK_VISUDO_FAIL:-0}" \
         bash "$TEST_ROOT/stage/install-stealth.sh"
 }
 
@@ -84,6 +97,7 @@ assert_legacy_restored() {
     [[ ! -e $TEST_ROOT/live/etc/systemd/system/stealth.service ]]
     [[ ! -e $TEST_ROOT/live/etc/stealth.nft ]]
     [[ ! -e $TEST_ROOT/live/etc/tor/torrc.d/stealth.conf ]]
+    [[ ! -e $TEST_ROOT/live/etc/sudoers.d/stealth ]]
     [[ ! -e $TEST_ROOT/live/var/log/stealth.log ]]
     [[ $(rg -c '^%include ' "$TEST_ROOT/live/etc/tor/torrc") == 1 ]]
     rg -Fq 'privacy-shield.conf' "$TEST_ROOT/live/etc/tor/torrc"
@@ -100,11 +114,22 @@ assert_legacy_restored
 unset MOCK_TOR_FAIL_AT
 rm "$TEST_ROOT/tor_count"
 
-run_install > "$TEST_ROOT/successful-install.out"
+# An invalid combined sudoers policy must remove the drop-in again.
+if MOCK_VISUDO_FAIL=1 run_install > "$TEST_ROOT/sudoers-failed-install.out" 2>&1; then
+    printf 'Expected installer rollback after sudoers validation.\n' >&2
+    exit 1
+fi
+assert_legacy_restored
+rm "$TEST_ROOT/tor_count"
+
+run_install > "$TEST_ROOT/successful-install.out" 2>&1
 rg -q 'stealth-transparent-v2' "$TEST_ROOT/live/usr/local/bin/stealth"
 [[ -f $TEST_ROOT/live/etc/systemd/system/stealth.service ]]
 [[ -f $TEST_ROOT/live/etc/stealth.nft ]]
 [[ -f $TEST_ROOT/live/etc/tor/torrc.d/stealth.conf ]]
+[[ $(stat -c '%a' "$TEST_ROOT/live/etc/sudoers.d/stealth") == 440 ]]
+rg -q '^Defaults!STEALTH_CMDS !use_pty$' "$TEST_ROOT/live/etc/sudoers.d/stealth"
+[[ $(cat "$TEST_ROOT/successful-install.out") != *Warning* ]]
 [[ $(stat -c '%a' "$TEST_ROOT/live/var/log/stealth.log") == 600 ]]
 [[ $(cat "$TEST_ROOT/live/var/log/stealth.log") == 'old log' ]]
 [[ -d $TEST_ROOT/live/var/backups/stealth ]]
@@ -121,4 +146,4 @@ run_install > "$TEST_ROOT/reinstall.out"
 [[ $(rg -c '^%include ' "$TEST_ROOT/live/etc/tor/torrc") == 1 ]]
 [[ $(stat -c '%a' "$TEST_ROOT/live/var/log/stealth.log") == 600 ]]
 
-printf 'PASS: migration, rollback after legacy cleanup, backups, Tor include, log permissions, and reinstall\n'
+printf 'PASS: migration, rollback after legacy cleanup or sudoers failure, backups, Tor include, sudoers drop-in, log permissions, and reinstall\n'
