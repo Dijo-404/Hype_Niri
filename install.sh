@@ -768,6 +768,14 @@ setup_system() {
 
     print_step "Enabling system services..."
 
+    print_step "Configuring memory pressure protection..."
+    if bash "$SCRIPT_DIR/systemd/setup-oomd.sh"; then
+        print_done "systemd-oomd configured for sustained user memory pressure"
+    else
+        print_error "Could not configure systemd-oomd"
+        return 1
+    fi
+
     local system_services=(
         "NetworkManager.service"
         "bluetooth.service"
@@ -1142,6 +1150,25 @@ validate() {
             print_warn "System service unit unavailable: $unit"
         fi
     done
+
+    if systemctl is-enabled --quiet systemd-oomd.service 2>/dev/null && \
+        systemctl is-active --quiet systemd-oomd.service 2>/dev/null; then
+        print_done "systemd-oomd enabled and running"
+    else
+        print_error "systemd-oomd must be enabled and running"
+        all_ok=false
+    fi
+
+    local oom_policy
+    oom_policy="$(systemctl show "user@$(id -u).service" \
+        -p ManagedOOMMemoryPressure -p ManagedOOMSwap 2>/dev/null || true)"
+    if grep -qx 'ManagedOOMMemoryPressure=kill' <<< "$oom_policy" && \
+        grep -qx 'ManagedOOMSwap=kill' <<< "$oom_policy"; then
+        print_done "User memory pressure and swap monitoring enabled"
+    else
+        print_error "User OOM monitoring policy is not active"
+        all_ok=false
+    fi
 
     if systemctl --user show-environment >/dev/null 2>&1; then
         for unit in pipewire.service pipewire-pulse.service wireplumber.service hypridle.service; do

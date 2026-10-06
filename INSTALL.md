@@ -2,7 +2,7 @@
 
 ## Quick Install (Recommended)
 
-The automated install script handles everything: refreshing mirrors, updating the Arch keyring/system packages, installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services, and optionally configuring a firewall and Cloudflare WARP.
+The automated install script handles everything: refreshing mirrors, updating the Arch keyring/system packages, installing packages, copying configurations, setting up your shell environment, applying the dark theme, enabling necessary system services and memory pressure protection with `systemd-oomd`, and optionally configuring a firewall and Cloudflare WARP.
 
 ```bash
 git clone https://github.com/Dijo-404/Hype_Niri.git
@@ -161,6 +161,35 @@ HoldoffTimeoutSec=0s
 InhibitDelayMaxSec=5
 EOF
 ```
+
+#### Memory pressure protection (systemd-oomd)
+
+The automated installer enables this by default. To apply only OOM protection on an existing setup, run from the repository:
+
+```bash
+bash systemd/setup-oomd.sh
+```
+
+The script installs `systemd/user@.service.d/60-hype-niri-oomd.conf` into `/etc/systemd/system/user@.service.d/`, reloads systemd, and runs `sudo systemctl enable --now systemd-oomd.service`. Arch includes the daemon in its `systemd` package; this policy requires systemd 257 or newer, cgroup v2, and PSI. It applies to running user managers without restarting the desktop.
+
+User applications are monitored for memory pressure above **40% for 10 seconds**, plus the default swap exhaustion threshold. The pressure percentage measures time stalled waiting for memory, rather than RAM usage. This reduces the chance that runaway agent tests freeze the desktop; it does not guarantee a kill within ten seconds of allocation starting. Keep swap enabled so the daemon has time to react.
+
+OOMD kills all processes in the selected application group. An agent inside an editor or terminal may cause that entire application to close. Use **niri-session** so applications run in separate systemd groups. For memory-intensive tests, an explicit cap in a separate scope provides additional protection:
+
+```bash
+systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=1G -- your-test-command
+```
+
+Verify monitoring and inspect previous kills:
+
+```bash
+systemctl is-enabled systemd-oomd.service
+systemctl is-active systemd-oomd.service
+oomctl --no-pager
+journalctl -u systemd-oomd.service --no-pager -n 30
+```
+
+`oomctl` should list `/user.slice/user-<UID>.slice/user@<UID>.service` under both swap and memory pressure monitoring. Merely enabling the daemon without a monitored-group policy provides no proactive protection. See the [systemd OOMD documentation](https://github.com/systemd/systemd/blob/main/man/systemd-oomd.service.xml) for how groups are selected.
 
 ### 6. Shell Setup
 
