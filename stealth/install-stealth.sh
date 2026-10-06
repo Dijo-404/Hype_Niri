@@ -10,6 +10,7 @@ RULES=/etc/stealth.nft
 TORRC=/etc/tor/torrc
 TOR_DROPIN=/etc/tor/torrc.d/stealth.conf
 INCLUDE_LINE='%include /etc/tor/torrc.d/stealth.conf'
+SUDOERS_DROPIN=/etc/sudoers.d/stealth
 LOG=/var/log/stealth.log
 
 # These paths are only used to migrate an earlier installation.
@@ -21,7 +22,7 @@ OLD_INCLUDE_LINE='%include /etc/tor/torrc.d/privacy-shield.conf'
 OLD_LOG=/var/log/privacy-shield.log
 OLD_LOCK=/run/privacy-shield.lock
 
-for command in nft tor systemd-analyze systemctl ip nmcli ss curl jq flock uuidgen od; do
+for command in nft tor systemd-analyze systemctl visudo ip nmcli ss curl jq flock uuidgen od; do
     command -v "$command" >/dev/null || { printf 'Missing command: %s\n' "$command" >&2; exit 1; }
 done
 [[ -f $TORRC ]] || { printf 'Missing Tor configuration: %s\n' "$TORRC" >&2; exit 1; }
@@ -54,12 +55,14 @@ cp "$SOURCE/stealth.sh" "$TMP/stealth"
 cp "$SOURCE/stealth.service" "$TMP/stealth.service"
 cp "$SOURCE/stealth.nft" "$TMP/stealth.nft"
 cp "$SOURCE/torrc.conf" "$TMP/torrc.conf"
+cp "$SOURCE/stealth.sudoers" "$TMP/stealth.sudoers"
 awk -v new="$INCLUDE_LINE" -v old="$OLD_INCLUDE_LINE" \
     '$0 != new && $0 != old' "$TORRC" > "$TMP/torrc.preview"
 cat "$TMP/torrc.conf" >> "$TMP/torrc.preview"
 bash -n "$TMP/stealth"
 tor --verify-config -f "$TMP/torrc.preview" >/dev/null
 nft -c -D 'uplink="wlan0"' -f "$TMP/stealth.nft"
+visudo -cqf "$TMP/stealth.sudoers"
 
 install -d -m 700 /var/backups/stealth
 BACKUP=$(mktemp -d /var/backups/stealth/install.XXXXXXXX)
@@ -85,6 +88,7 @@ save_file "$UNIT" unit
 save_file "$RULES" rules
 save_file "$TORRC" torrc
 save_file "$TOR_DROPIN" tor-dropin
+save_file "$SUDOERS_DROPIN" sudoers
 save_file "$LOG" log
 save_file "$OLD_SCRIPT" old-script
 save_file "$OLD_UNIT" old-unit
@@ -104,6 +108,7 @@ rollback() {
     restore_file "$RULES" rules
     restore_file "$TORRC" torrc
     restore_file "$TOR_DROPIN" tor-dropin
+    restore_file "$SUDOERS_DROPIN" sudoers
     restore_file "$LOG" log
     restore_file "$OLD_SCRIPT" old-script
     restore_file "$OLD_UNIT" old-unit
@@ -124,6 +129,11 @@ install -m 644 "$TMP/stealth.service" "$UNIT"
 install -m 644 "$TMP/stealth.nft" "$RULES"
 install -d -m 755 /etc/tor/torrc.d
 install -m 644 "$TMP/torrc.conf" "$TOR_DROPIN"
+install -d -m 750 /etc/sudoers.d
+install -m 440 "$TMP/stealth.sudoers" "$SUDOERS_DROPIN"
+sudoers_report=$(visudo -c)
+grep -Fq "$SUDOERS_DROPIN:" <<< "$sudoers_report" ||
+    printf 'Warning: /etc/sudoers does not include %s; sudo keeps its pty for Stealth.\n' "$SUDOERS_DROPIN" >&2
 awk -v new="$INCLUDE_LINE" -v old="$OLD_INCLUDE_LINE" \
     '$0 != new && $0 != old' "$TORRC" > "$TMP/torrc.rewritten"
 printf '\n%s\n' "$INCLUDE_LINE" >> "$TMP/torrc.rewritten"
