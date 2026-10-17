@@ -21,6 +21,7 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + Space` | `toggle-window-floating` | Toggle floating mode for a window |
 | `Super + Shift + Space` | `switch-focus` | Switch focus between floating/tiling |
 | `Super + L` | `lock-dim` | Lock the screen, then power off monitors after 30s (any input wakes them) |
+| Hold `Super`, double-press `Copilot` | `copilot-shortcut` | Lock and turn off displays; repeat to show the password prompt. Applications keep running. |
 
 ## Focus & Navigation
 
@@ -68,12 +69,19 @@ These are the primary default keybindings for the Hype Niri environment.
 | `Super + D` | `monitor-refresh` | View connected monitors and save refresh-rate defaults |
 | `Super + U` | `open-drives` | Mount/unlock known external/secondary drives, then launch Nautilus |
 | `Super + C` | `nvim` | Launch Neovim |
+| `Super + Copilot` | `copilot-shortcut` | Open VS Code after a 400ms double-press window |
 | `Super + B` | `firefox` | Launch Browser |
 | `Ctrl + Shift + Esc`| `htop` | Launch System Monitor |
 | `Super + A` | `fuzzel` | Launch Application Menu |
 | `Super + Tab` | `toggle-overview` | Open Window Overview |
 | `Super + .` | `bemoji` | Open Emoji Picker |
 | `Super + V` | `cliphist` | Open Clipboard History List |
+
+For the Copilot shortcuts, hold Super and press Copilot once to open VS Code, or twice within 400ms to lock and turn off the displays without opening VS Code. Ordinary keyboard and mouse input leaves the displays off. Repeat Super + double Copilot to show Hyprlock's password prompt, then enter your Linux account password (normally the same password used by sudo) to unlock the desktop. A single press while locked does nothing.
+
+This mode temporarily disables the enabled outputs, waits one second, then starts Hyprlock while the displays are off. It restores the outputs on the next double press; monitor modes and scales in the configuration remain unchanged. The script confirms Niri's session lock through logind before restoring outputs. If locking fails, it keeps the displays off and allows another double press to retry.
+
+These bindings support the common `Super+Shift+F23` Copilot sequence and `Super+XF86Assistant` keyboards. Some Copilot keys send Super themselves, so Copilot alone can also activate these shortcuts.
 
 ## Audio & Brightness
 

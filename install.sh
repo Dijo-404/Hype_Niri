@@ -334,7 +334,7 @@ preflight() {
         waybar/icons/16x16/panel/nm-signal-75.svg
         waybar/icons/16x16/panel/nm-signal-100.svg
         waybar/icons/16x16/panel/nm-no-connection.svg
-        scripts/display-scale.sh scripts/runtime-dir.sh scripts/auto-power-profile.py
+        scripts/copilot-display.sh scripts/copilot-shortcut.sh scripts/display-scale.sh scripts/runtime-dir.sh scripts/auto-power-profile.py
         systemd/user/hype-auto-power-profile.service
         wireplumber/wireplumber.conf.d/60-hype-niri-audio.conf
         systemd/setup-oomd.sh systemd/user@.service.d/60-hype-niri-oomd.conf
@@ -1303,6 +1303,8 @@ validate() {
         "$HOME/.config/waybar/style.css"
         "$HOME/.config/scripts/brightness-control.sh"
         "$HOME/.config/scripts/caffeine-control.sh"
+        "$HOME/.config/scripts/copilot-display.sh"
+        "$HOME/.config/scripts/copilot-shortcut.sh"
         "$HOME/.config/scripts/display-scale.sh"
         "$HOME/.config/scripts/fullscreen-toggle.sh"
         "$HOME/.config/scripts/lock-screen.sh"

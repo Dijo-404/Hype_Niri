@@ -166,6 +166,10 @@ binds {
     Mod+D hotkey-overlay-title="Display Refresh Rate" { spawn-sh "~/.config/scripts/monitor-refresh.sh"; }
     Mod+U { spawn-sh "~/.config/scripts/open-drives.sh"; }
     Mod+C { spawn-sh "alacritty -e nvim"; }
+    // Copilot commonly sends Super+Shift+F23; newer keyboards use XF86Assistant.
+    Mod+Shift+F23 repeat=false allow-when-locked=true hotkey-overlay-title="Copilot: VS Code / double press: lock displays or show password prompt" { spawn-sh "~/.config/scripts/copilot-shortcut.sh"; }
+    Mod+F23 repeat=false allow-when-locked=true { spawn-sh "~/.config/scripts/copilot-shortcut.sh"; }
+    Mod+XF86Assistant repeat=false allow-when-locked=true { spawn-sh "~/.config/scripts/copilot-shortcut.sh"; }
     Mod+B { spawn "firefox"; }
     Ctrl+Shift+Escape { spawn-sh "alacritty -e htop"; }
 
