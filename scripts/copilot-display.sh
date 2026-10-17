@@ -6,7 +6,27 @@ state_file="$RUNTIME_DIR/hype-copilot-displays.state"
 exec 9>"$RUNTIME_DIR/hype-copilot-displays.lock"
 flock -x 9
 
-[[ "${1:-toggle}" == toggle ]] || { echo "Usage: $0 [toggle]" >&2; exit 2; }
+mode="${1:-toggle}"
+case "$mode" in
+    toggle|resume) ;;
+    *) echo "Usage: $0 [toggle|resume]" >&2; exit 2 ;;
+esac
+
+if [[ "$mode" == resume ]]; then
+    # A delayed press from before sleep must not blank the displays after resume.
+    (
+        flock -x 8
+        rm -f -- "$RUNTIME_DIR/hype-copilot.state"
+    ) 8>"$RUNTIME_DIR/hype-copilot.lock"
+elif [[ -n "${HYPE_COPILOT_TOKEN:-}" ]]; then
+    # Recheck after taking the display lock: resume may have cancelled this press
+    # while its controller was waiting to run.
+    (
+        flock -x 8
+        read -r token phase 2>/dev/null < "$RUNTIME_DIR/hype-copilot.state" || exit 1
+        [[ "$token" == "$HYPE_COPILOT_TOKEN" && "$phase" == double ]]
+    ) 8>"$RUNTIME_DIR/hype-copilot.lock" || exit 0
+fi
 
 notify_failure() {
     printf '%s\n' "$1" >&2
@@ -77,12 +97,15 @@ restore_outputs() {
     (( failed == 0 ))
 }
 
-if [[ -f "$state_file" ]]; then
+if [[ -f "$state_file" || "$mode" == resume ]]; then
     if ! ensure_locked; then
         notify_failure "Could not confirm the session lock; displays remain off."
         exit 1
     fi
-    if restore_outputs; then
+    if [[ ! -f "$state_file" ]]; then
+        # Normal suspend/resume needs only DPMS wake, with the session locked.
+        niri msg action power-on-monitors
+    elif restore_outputs; then
         rm -f -- "$state_file"
     else
         notify_failure "Could not restore all displays. Double-press Copilot with Super to retry."

@@ -39,6 +39,7 @@ read -r current current_action 2>/dev/null < "$state_file" || exit 0
 if [[ "$action" == double ]]; then
     # Retain the token briefly so a third press cannot launch the editor.
     exec 9>&-
+    export HYPE_COPILOT_TOKEN="$token"
     exec "${BASH_SOURCE[0]%/*}/copilot-display.sh" toggle
 else
     rm -f -- "$state_file"

@@ -200,9 +200,9 @@ fi
                 outputs[name]["current_mode"] = 0 if enabled else None
         path.write_text(json.dumps(outputs))
 
-    def run_copilot_display(self, succeeds=True):
+    def run_copilot_display(self, succeeds=True, mode="toggle"):
         result = subprocess.run(
-            ["bash", str(self.scripts / "copilot-display.sh"), "toggle"],
+            ["bash", str(self.scripts / "copilot-display.sh"), mode],
             env=self.environment,
             capture_output=True,
             text=True,
@@ -361,6 +361,93 @@ fi
         self.assertNotIn("sleep 1", commands)
         self.assertTrue(ready.exists())
         self.assertFalse(state.exists())
+
+    def test_copilot_display_resume_restores_saved_outputs_after_confirming_password_lock(self):
+        state, ready = self.copilot_display_fixture()
+        state.write_text("eDP-1\nDP-1\n")
+        self.set_copilot_output_modes(enabled=False)
+        commands = self.run_copilot_display(mode="resume")
+        locked_index = commands.index("loginctl yes")
+        self.assertLess(commands.index("lock sleep"), locked_index)
+        restored = [command for command in commands if command.endswith(" on")]
+        self.assertEqual(set(restored), {"niri msg output eDP-1 on", "niri msg output DP-1 on"})
+        self.assertTrue(all(locked_index < commands.index(command) for command in restored))
+        self.assertIn("niri msg action power-on-monitors", commands)
+        self.assertFalse(any(command.endswith(" off") for command in commands))
+        self.assertNotIn("sleep 1", commands)
+        self.assertTrue(ready.exists())
+        self.assertFalse(state.exists())
+
+    def test_copilot_display_resume_without_snapshot_repeatedly_wakes_only_after_lock(self):
+        state, ready = self.copilot_display_fixture()
+        for resume_number in range(2):
+            with self.subTest(resume_number=resume_number):
+                self.log.unlink(missing_ok=True)
+                commands = self.run_copilot_display(mode="resume")
+                power_index = commands.index("niri msg action power-on-monitors")
+                self.assertLess(commands.index("loginctl yes"), power_index)
+                if resume_number == 0:
+                    self.assertLess(commands.index("lock sleep"), power_index)
+                self.assertEqual(commands.count("niri msg action power-on-monitors"), 1)
+                self.assertFalse(any(command.startswith("niri msg output ") for command in commands))
+                self.assertNotIn("sleep 1", commands)
+                self.assertTrue(ready.exists())
+                self.assertFalse(state.exists(), "resume accidentally entered the display-off toggle mode")
+
+    def test_copilot_display_resume_failures_preserve_recovery_state(self):
+        state, ready = self.copilot_display_fixture()
+        for failure in ("lock", "apply", "power", "lock-without-snapshot"):
+            with self.subTest(failure=failure):
+                self.log.unlink(missing_ok=True)
+                ready.unlink(missing_ok=True)
+                state.unlink(missing_ok=True)
+                if failure != "lock-without-snapshot":
+                    state.write_text("eDP-1\nDP-1\n")
+                self.set_copilot_output_modes(enabled=False)
+                self.environment["RUNTIME_TEST_LOCK_NEVER_READY"] = "1" if failure.startswith("lock") else "0"
+                self.environment["RUNTIME_TEST_IGNORE_APPLY"] = "on" if failure == "apply" else ""
+                self.environment["RUNTIME_TEST_POWER_ON_FAIL"] = "1" if failure == "power" else "0"
+                commands = self.run_copilot_display(succeeds=False, mode="resume")
+                self.assertFalse(any(command.endswith(" off") for command in commands))
+                if failure.startswith("lock"):
+                    self.assertFalse(any(command.endswith(" on") for command in commands))
+                    self.assertNotIn("niri msg action power-on-monitors", commands)
+                else:
+                    self.assertIn("niri msg output eDP-1 on", commands)
+                if failure == "lock-without-snapshot":
+                    self.assertFalse(state.exists())
+                else:
+                    self.assertEqual(state.read_text(), "eDP-1\nDP-1\n")
+
+    def test_copilot_display_resume_cancels_queued_gesture_and_accepts_fresh_gesture(self):
+        state, _ = self.copilot_display_fixture()
+        pending = self.runtime / "hype-copilot.state"
+        stale_token = str(time.time_ns() // 1000)
+        pending.write_text(f"{stale_token} double\n")
+        self.run_copilot_display(mode="resume")
+        self.assertFalse(pending.exists(), "resume left a queued display-off gesture active")
+        self.log.unlink(missing_ok=True)
+        self.environment["HYPE_COPILOT_TOKEN"] = stale_token
+        commands = self.run_copilot_display()
+        self.assertFalse(any(command.endswith(" off") for command in commands))
+        self.assertFalse(state.exists())
+        fresh_token = str(time.time_ns() // 1000)
+        pending.write_text(f"{fresh_token} double\n")
+        self.environment["HYPE_COPILOT_TOKEN"] = fresh_token
+        commands = self.run_copilot_display()
+        self.assertIn("niri msg output eDP-1 off", commands)
+        self.assertIn("niri msg output DP-1 off", commands)
+        self.assertTrue(state.exists())
+
+    def test_hypridle_resumes_saved_displays_only_after_system_sleep(self):
+        hooks = {"after_sleep_cmd": [], "on-resume": []}
+        for line in (REPO / "hypr/hypridle.conf").read_text().splitlines():
+            key, separator, value = line.partition("=")
+            if separator and key.strip() in hooks:
+                hooks[key.strip()].append(value.strip())
+        self.assertEqual(hooks["after_sleep_cmd"], ["~/.config/scripts/copilot-display.sh resume"])
+        self.assertTrue(hooks["on-resume"])
+        self.assertTrue(all(command == "niri msg action power-on-monitors" for command in hooks["on-resume"]))
 
     def test_copilot_display_already_locked_does_not_restart_locker(self):
         state, ready = self.copilot_display_fixture()

@@ -81,6 +81,8 @@ For the Copilot shortcuts, hold Super and press Copilot once to open VS Code, or
 
 This mode temporarily disables the enabled outputs, waits one second, then starts Hyprlock while the displays are off. It restores the outputs on the next double press; monitor modes and scales in the configuration remain unchanged. The script confirms Niri's session lock through logind before restoring outputs. If locking fails, it keeps the displays off and allows another double press to retry.
 
+Sleep takes priority over this mode: after lid-close suspend or another system sleep, resume restores the saved displays and shows Hyprlock automatically. Your password is still required; another Copilot shortcut is unnecessary. Ordinary idle activity continues to leave the manual blackout in effect.
+
 These bindings support the common `Super+Shift+F23` Copilot sequence and `Super+XF86Assistant` keyboards. Some Copilot keys send Super themselves, so Copilot alone can also activate these shortcuts.
 
 ## Audio & Brightness
